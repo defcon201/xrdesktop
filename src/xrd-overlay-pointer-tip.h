@@ -14,10 +14,6 @@
 #include "openvr-overlay-uploader.h"
 #include "openvr-overlay.h"
 
-#define SCREENSPACE_INTERSECTION_WIDTH 0.025
-/* worldspace width, in case a HMD pose can not be acquired for some reason. */
-#define DEFAULT_INTERSECTION_WIDTH 0.025
-
 G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_POINTER_TIP xrd_overlay_pointer_tip_get_type()
@@ -32,6 +28,10 @@ struct _XrdOverlayPointerTip
   GulkanTexture *texture;
   gboolean active;
 
+  float screen_space_width;
+  /* default width in meters, as a fallback */
+  float default_width;
+
   /* 0, or the id of the currently running animation. */
   guint animation_callback_id;
 
@@ -41,6 +41,11 @@ struct _XrdOverlayPointerTip
 };
 
 XrdOverlayPointerTip *xrd_overlay_pointer_tip_new (int controller_index);
+
+XrdOverlayPointerTip *
+xrd_overlay_pointer_tip_new_width (int controller_index,
+                                   float screenspace_width,
+                                   float default_width);
 
 void
 xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self);

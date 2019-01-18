@@ -667,7 +667,10 @@ main ()
       if (self.pointer_ray[i] == NULL)
         return -1;
       // openvr_overlay_hide (OPENVR_OVERLAY (self.pointer_ray[i]));
-      self.pointer_tip[i] = xrd_overlay_pointer_tip_new (i);
+      /* relatively large pointer, so the effects can be observed well */
+      self.pointer_tip[i] = xrd_overlay_pointer_tip_new_width (i,
+                                                               0.1,
+                                                               0.05);
       if (self.pointer_tip[i] == NULL)
         return -1;
       xrd_overlay_pointer_tip_init_vulkan (self.pointer_tip[i], self.uploader);

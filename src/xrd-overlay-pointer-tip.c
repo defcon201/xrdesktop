@@ -190,6 +190,20 @@ xrd_overlay_pointer_tip_new (int controller_index)
    */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 1);
 
+  self->screen_space_width = 0.05;
+  self->default_width = 0.033;
+
+  return self;
+}
+
+XrdOverlayPointerTip *
+xrd_overlay_pointer_tip_new_width (int controller_index,
+                                   float screenspace_width,
+                                   float default_width)
+{
+  XrdOverlayPointerTip *self = xrd_overlay_pointer_tip_new (controller_index);
+  self->screen_space_width = screenspace_width;
+  self->default_width = default_width;
   return self;
 }
 
@@ -315,7 +329,7 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
     {
       g_print ("Error: NO HMD POSE\n");
       openvr_overlay_set_width_meters (OPENVR_OVERLAY(self),
-                                       DEFAULT_INTERSECTION_WIDTH);
+                                       self->default_width);
       return;
     }
 
@@ -336,7 +350,7 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
    * into worldspace, reusing the same w, yields an approximate point with the
    * desired radius in worldspace. */
   graphene_point3d_t intersection_right_screenspace = {
-    intersection_screenspace.x + SCREENSPACE_INTERSECTION_WIDTH / 2.,
+    intersection_screenspace.x + self->screen_space_width / 2.,
     intersection_screenspace.y,
     intersection_screenspace.z
   };
