@@ -245,6 +245,16 @@ xrd_overlay_manager_add_overlay (XrdOverlayManager *self,
 }
 
 void
+xrd_overlay_manager_poll_overlay_events (XrdOverlayManager *self)
+{
+  for (GSList *l = self->hover_overlays; l != NULL; l = l->next)
+    {
+      OpenVROverlay *overlay = (OpenVROverlay*) l->data;
+      openvr_overlay_poll_event (overlay);
+    }
+}
+
+void
 xrd_overlay_manager_remove_overlay (XrdOverlayManager *self,
                                     OpenVROverlay     *overlay)
 {

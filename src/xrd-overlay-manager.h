@@ -131,6 +131,9 @@ gboolean
 xrd_overlay_manager_is_hovered (XrdOverlayManager *self,
                                 OpenVROverlay *overlay);
 
+void
+xrd_overlay_manager_poll_overlay_events (XrdOverlayManager *self);
+
 G_END_DECLS
 
 #endif /* XRD_OVERLAY_MANAGER_H_ */
