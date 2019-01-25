@@ -136,8 +136,8 @@ xrd_overlay_manager_arrange_reset (XrdOverlayManager *self)
 
 gboolean
 xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
-                                       uint32_t              grid_width,
-                                       uint32_t              grid_height)
+                                    uint32_t           grid_width,
+                                    uint32_t           grid_height)
 {
   float theta_start = M_PI / 2.0f;
   float theta_end = M_PI - M_PI / 8.0f;
@@ -212,7 +212,7 @@ xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_save_reset_transform (XrdOverlayManager *self,
-                                             OpenVROverlay        *overlay)
+                                          OpenVROverlay     *overlay)
 {
   graphene_matrix_t *transform =
     g_hash_table_lookup (self->reset_transforms, overlay);
@@ -221,8 +221,8 @@ xrd_overlay_manager_save_reset_transform (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_add_overlay (XrdOverlayManager *self,
-                                    OpenVROverlay        *overlay,
-                                    OpenVROverlayFlags    flags)
+                                 OpenVROverlay     *overlay,
+                                 OpenVROverlayFlags flags)
 {
   /* Freed with manager */
   if (flags & OPENVR_OVERLAY_DESTROY_WITH_PARENT)
@@ -246,7 +246,7 @@ xrd_overlay_manager_add_overlay (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_remove_overlay (XrdOverlayManager *self,
-                                       OpenVROverlay        *overlay)
+                                    OpenVROverlay     *overlay)
 {
   self->destroy_overlays = g_slist_remove (self->destroy_overlays, overlay);
   self->grab_overlays = g_slist_remove (self->grab_overlays, overlay);
@@ -258,8 +258,8 @@ xrd_overlay_manager_remove_overlay (XrdOverlayManager *self,
 
 void
 _test_hover (XrdOverlayManager *self,
-             graphene_matrix_t    *pose,
-             int                   controller_index)
+             graphene_matrix_t *pose,
+             int                controller_index)
 {
   OpenVRHoverEvent *hover_event = g_malloc (sizeof (OpenVRHoverEvent));
   hover_event->distance = FLT_MAX;
@@ -352,8 +352,8 @@ _test_hover (XrdOverlayManager *self,
 
 void
 _drag_overlay (XrdOverlayManager *self,
-               graphene_matrix_t    *pose,
-               int                   controller_index)
+               graphene_matrix_t *pose,
+               int                controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
   GrabState *grab_state = &self->grab_state[controller_index];
@@ -418,7 +418,7 @@ _drag_overlay (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_drag_start (XrdOverlayManager *self,
-                                   int                   controller_index)
+                                int                controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
   GrabState *grab_state = &self->grab_state[controller_index];
@@ -482,9 +482,9 @@ xrd_overlay_manager_drag_start (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_scale (XrdOverlayManager *self,
-                              GrabState *grab_state,
-                              float factor,
-                              float update_rate_ms)
+                           GrabState *grab_state,
+                           float factor,
+                           float update_rate_ms)
 {
   if (grab_state->overlay == NULL)
     return;
@@ -506,7 +506,7 @@ xrd_overlay_manager_scale (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_check_grab (XrdOverlayManager *self,
-                                   int                   controller_index)
+                                int                controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
 
@@ -521,7 +521,7 @@ xrd_overlay_manager_check_grab (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_check_release (XrdOverlayManager *self,
-                                      int                   controller_index)
+                                   int                controller_index)
 {
   GrabState *grab_state = &self->grab_state[controller_index];
 
@@ -537,8 +537,8 @@ xrd_overlay_manager_check_release (XrdOverlayManager *self,
 
 void
 xrd_overlay_manager_update_pose (XrdOverlayManager *self,
-                                    graphene_matrix_t    *pose,
-                                    int                   controller_index)
+                                 graphene_matrix_t *pose,
+                                 int                controller_index)
 {
   /* Drag test */
   if (self->grab_state[controller_index].overlay != NULL)
@@ -567,7 +567,7 @@ xrd_overlay_manager_is_grabbing (XrdOverlayManager *self)
 
 gboolean
 xrd_overlay_manager_is_grabbed (XrdOverlayManager *self,
-                                   OpenVROverlay *overlay)
+                                OpenVROverlay     *overlay)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     if (self->grab_state[i].overlay == overlay)
@@ -577,7 +577,7 @@ xrd_overlay_manager_is_grabbed (XrdOverlayManager *self,
 
 gboolean
 xrd_overlay_manager_is_hovered (XrdOverlayManager *self,
-                                   OpenVROverlay *overlay)
+                                OpenVROverlay     *overlay)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     if (self->hover_state[i].overlay == overlay)
