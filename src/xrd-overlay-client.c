@@ -96,6 +96,7 @@ _action_hand_pose_cb (OpenVRAction            *action,
                       OpenVRPoseEvent         *event,
                       XrdClientController     *controller)
 {
+  (void) action;
   XrdOverlayClient *self = controller->self;
   xrd_overlay_manager_update_pose (self->manager, &event->pose,
                                    controller->index);
@@ -110,6 +111,7 @@ _action_push_pull_cb (OpenVRAction        *action,
                       OpenVRAnalogEvent   *event,
                       XrdClientController *controller)
 {
+  (void) action;
   XrdOverlayClient *self = controller->self;
 
   GrabState *grab_state =
@@ -136,6 +138,7 @@ _action_grab_cb (OpenVRAction        *action,
                  OpenVRDigitalEvent  *event,
                  XrdClientController *controller)
 {
+  (void) action;
   XrdOverlayClient *self = controller->self;
   if (event->changed)
     {
@@ -153,6 +156,7 @@ _overlay_grab_start_cb (OpenVROverlay              *overlay,
                         OpenVRControllerIndexEvent *event,
                         gpointer                    _self)
 {
+  (void) overlay;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
   xrd_overlay_manager_drag_start (self->manager, event->index);
   openvr_overlay_hide (OPENVR_OVERLAY (self->intersection[event->index]));
@@ -254,6 +258,7 @@ _button_sphere_press_cb (OpenVROverlay             *overlay,
                          OpenVRControllerIndexEvent *event,
                          gpointer                  _self)
 {
+  (void) event;
   (void) overlay;
   XrdOverlayClient *self = _self;
   xrd_overlay_manager_arrange_sphere (self->manager, 5, 5);
@@ -264,6 +269,7 @@ _button_reset_press_cb (OpenVROverlay              *overlay,
                         OpenVRControllerIndexEvent *event,
                         gpointer                   _self)
 {
+  (void) event;
   (void) overlay;
   XrdOverlayClient *self = _self;
   xrd_overlay_manager_arrange_reset (self->manager);
@@ -300,6 +306,7 @@ _keyboard_press_cb (OpenVROverlay    *overlay,
                     GdkEventKey      *event,
                     XrdOverlayClient *self)
 {
+  (void) overlay;
   g_signal_emit (self, signals[KEYBOARD_PRESS_EVENT], 0, event);
 }
 
@@ -307,6 +314,8 @@ static void
 _keyboard_close_cb (OpenVROverlay    *overlay,
                     XrdOverlayClient *self)
 {
+  (void) overlay;
+  (void) self;
   g_print ("Keyboard closed\n");
 }
 
@@ -348,6 +357,7 @@ _action_left_click_cb (OpenVRAction       *action,
                        OpenVRDigitalEvent *event,
                        XrdOverlayClient   *self)
 {
+  (void) action;
   if (self->hover_window && event->changed)
     {
       _emit_click (self, self->hover_window,
@@ -366,6 +376,7 @@ _action_right_click_cb (OpenVRAction       *action,
                         OpenVRDigitalEvent *event,
                         XrdOverlayClient   *self)
 {
+  (void) action;
   if (self->hover_window && event->changed)
     {
       _emit_click (self, self->hover_window,
@@ -414,6 +425,7 @@ _action_scroll_cb (OpenVRAction      *action,
                    OpenVRAnalogEvent *event,
                    XrdOverlayClient  *self)
 {
+  (void) action;
   /* When z is not zero we get bogus data. We ignore this completely */
   if (graphene_vec3_get_z (&event->state) != 0.0)
     return;
@@ -494,6 +506,7 @@ _overlay_hover_end_cb (OpenVROverlay              *overlay,
                        OpenVRControllerIndexEvent *event,
                        XrdOverlayClient           *self)
 {
+  (void) event;
   XrdOverlayWindow *win =  g_hash_table_lookup (self->overlays_to_windows,
                                                 overlay);
 
@@ -518,6 +531,7 @@ _manager_no_hover_cb (XrdOverlayManager  *manager,
                       OpenVRNoHoverEvent *event,
                       XrdOverlayClient   *self)
 {
+  (void) manager;
   XrdOverlayPointer *pointer_overlay = self->pointer[event->controller_index];
   XrdOverlayPointerTip *intersection =
     self->intersection[event->controller_index];
