@@ -8,13 +8,15 @@ xrdesktop_sources = [
   'xrd-overlay-pointer-tip.c',
   'xrd-overlay-pointer.c',
   'xrd-overlay-manager.c',
+  'xrd-overlay-client.c',
+  'xrd-overlay-window.c',
   'xrd-scene-model.c',
   'xrd-scene-device-manager.c',
   'xrd-scene-device.c',
   'xrd-scene-client.c',
   'xrd-scene-window.c',
   'xrd-scene-pointer.c',
-  'xrd-scene-object.c'
+  'xrd-scene-object.c',
 ]
 
 xrdesktop_headers = [
@@ -24,6 +26,8 @@ xrdesktop_headers = [
   'xrd-overlay-pointer-tip.h',
   'xrd-overlay-pointer.h',
   'xrd-overlay-manager.h',
+  'xrd-overlay-client.h',
+  'xrd-overlay-window.h',
   'xrd-scene-model.h',
   'xrd-scene-device-manager.h',
   'xrd-scene-device.h',
