@@ -687,11 +687,11 @@ xrd_overlay_client_init (XrdOverlayClient *self)
   self->right.index = 1;
 
   if (!openvr_io_load_cached_action_manifest (
-        "gnome-shell",
-        "/res/vr-input-bindings",
-        "gnome-shell-actions.json",
-        "gnome-shell-bindings-vive-controller.json",
-        "gnome-shell-bindings-knuckles-controller.json",
+        "xrdesktop",
+        "/res/bindings",
+        "actions.json",
+        "bindings_vive_controller.json",
+        "bindings_knuckles_controller.json",
         NULL))
     {
       g_print ("Failed to load action bindings!\n");
