@@ -17,6 +17,7 @@ xrdesktop_sources = [
   'xrd-scene-window.c',
   'xrd-scene-pointer.c',
   'xrd-scene-object.c',
+  binding_resources
 ]
 
 xrdesktop_headers = [

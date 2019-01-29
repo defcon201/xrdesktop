@@ -53,7 +53,7 @@ egl_dep = dependency('egl', required : false)
 ###
 
 subdir('shaders')
-subdir('src')
 subdir('res')
+subdir('src')
 subdir('tests')
 subdir('examples')

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/res">
+    <file>bindings/actions.json</file>
+    <file>bindings/bindings_vive_controller.json</file>
+    <file>bindings/bindings_knuckles_controller.json</file>
+  </gresource>
+</gresources>
