@@ -57,19 +57,13 @@ configure_file(
   install_dir: join_paths(get_option('includedir'), api_path)
 )
 
-openvr_deps = [
-  openvr_dep,
-  stdcpp_dep,
-  dl_dep,
-]
-
-xrdesktop_deps = openvr_deps + [
+xrdesktop_deps = [
+  m_dep,
   gio_dep,
+  gdk_dep,
   gdk_pixbuf_dep,
-  gtk3_dep,
   vulkan_dep,
   graphene_dep,
-  m_dep,
   gulkan_dep,
   openvr_glib_dep
 ]
