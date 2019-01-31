@@ -10,12 +10,9 @@
 #include <gdk/gdk.h>
 #include <openvr-io.h>
 #include <glib/gprintf.h>
-
+#include "xrd-settings.h"
 #include <openvr-math.h>
 
-/* TODO: Move this to configuration */
-#define scroll_threshold 0.1
-#define SCROLL_TO_PUSH_RATIO 2
 #define SCALE_FACTOR 0.75
 #define ANALOG_TRESHOLD 0.000001
 #define POLL_RATE_MS 20
@@ -96,7 +93,7 @@ xrd_overlay_client_finalize (GObject *gobject)
   /* Uploader needs to be freed after context! */
   g_object_unref (self->uploader);
 
-
+  xrd_settings_destroy_instance ();
 }
 
 static void
@@ -139,7 +136,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
       HoverState *hover_state =
         &self->manager->hover_state[controller->index];
       hover_state->distance +=
-        SCROLL_TO_PUSH_RATIO *
+        self->scroll_to_push_ratio *
         hover_state->distance *
         graphene_vec3_get_y (&event->state) *
         (POLL_RATE_MS / 1000.);
@@ -303,7 +300,7 @@ _hover_end_cb (OpenVROverlay              *overlay,
   gboolean active = self->manager->hover_state[event->index].overlay != NULL;
 
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
-  xrd_overlay_pointer_tip_set_active (pointer_tip, self->uploader, active);
+  xrd_overlay_pointer_tip_set_active (pointer_tip, active);
 
   _reset_press_state (self, overlay);
 
@@ -454,8 +451,7 @@ _action_left_click_cb (OpenVRAction        *action,
             {
               XrdOverlayPointerTip *pointer_tip =
                   self->pointer_tip[controller->index];
-              xrd_overlay_pointer_tip_animate_pulse (pointer_tip,
-                                                     self->uploader);
+              xrd_overlay_pointer_tip_animate_pulse (pointer_tip);
             }
         }
       else
@@ -535,15 +531,15 @@ _action_scroll_cb (OpenVRAction      *action,
    * Scroll as many times as the threshold has been exceeded.
    * e.g. user scrolled 0.32 with threshold of 0.1 -> scroll 3 times.
    */
-  int steps_x = x_acc / scroll_threshold;
-  int steps_y = y_acc / scroll_threshold;
+  int steps_x = x_acc / self->scroll_threshold;
+  int steps_y = y_acc / self->scroll_threshold;
 
   /*
    * We need to keep the rest in the accumulator to not lose part of the
    * user's movement e.g. 0.32: -> 0.2 and -0.32 -> -0.2
    */
-  float rest_x = x_acc - (float)steps_x * scroll_threshold;
-  float rest_y = y_acc - (float)steps_y * scroll_threshold;
+  float rest_x = x_acc - (float)steps_x * self->scroll_threshold;
+  float rest_y = y_acc - (float)steps_y * self->scroll_threshold;
   graphene_vec3_init (&self->scroll_accumulator, rest_x, rest_y, 0);
 
   _do_scroll (self, steps_x, steps_y);
@@ -614,7 +610,7 @@ _overlay_hover_start_cb (OpenVROverlay              *overlay,
   (void) event;
 
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
-  xrd_overlay_pointer_tip_set_active (pointer_tip, self->uploader, TRUE);
+  xrd_overlay_pointer_tip_set_active (pointer_tip, TRUE);
 
   g_free (event);
 }
@@ -656,7 +652,7 @@ _manager_no_hover_cb (XrdOverlayManager  *manager,
 
   xrd_overlay_pointer_tip_set_constant_width (pointer_tip);
 
-  xrd_overlay_pointer_tip_set_active (pointer_tip, self->uploader, FALSE);
+  xrd_overlay_pointer_tip_set_active (pointer_tip, FALSE);
 
   g_free (event);
 
@@ -760,11 +756,45 @@ xrd_overlay_client_poll_events_cb (gpointer _self)
 }
 
 static void
+_update_scroll_threshold (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayClient *self = user_data;
+  self->scroll_threshold = g_settings_get_double (settings, key);
+  /* g_print ("Update scroll threshold %f\n", self->scroll_threshold); */
+}
+
+static void
+_update_scroll_to_push (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayClient *self = user_data;
+  self->scroll_to_push_ratio = g_settings_get_double (settings, key);
+}
+
+static void
+_update_poll_rate (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayClient *self = user_data;
+  if (self->poll_event_source_id != 0)
+    g_source_remove (self->poll_event_source_id);
+  int poll_rate = g_settings_get_int (settings, key);
+
+  self->poll_event_source_id =
+      g_timeout_add (poll_rate, xrd_overlay_client_poll_events_cb, self);
+}
+
+static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_threshold),
+                                  "scroll-threshold", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_to_push),
+                                  "scroll-to-push-ratio", self);
+
   self->hover_window = NULL;
   self->button_press_state = 0;
   self->new_overlay_index = 0;
+  self->poll_event_source_id = 0;
 
   graphene_point_init (&self->hover_position, 0, 0);
 
@@ -795,14 +825,13 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       self->pointer_ray[i] = xrd_overlay_pointer_new (i);
       if (self->pointer_ray[i] == NULL)
         return;
-      self->pointer_tip[i] = xrd_overlay_pointer_tip_new_width (i, 0.1, 0.05);
+
+      self->pointer_tip[i] = xrd_overlay_pointer_tip_new (i, self->uploader);
       if (self->pointer_tip[i] == NULL)
         return;
 
-      xrd_overlay_pointer_tip_init_vulkan (self->pointer_tip[i],
-                                           self->uploader);
-      xrd_overlay_pointer_tip_set_active (self->pointer_tip[i],
-                                          self->uploader, FALSE);
+      xrd_overlay_pointer_tip_init_vulkan (self->pointer_tip[i]);
+      xrd_overlay_pointer_tip_set_active (self->pointer_tip[i], FALSE);
       openvr_overlay_show (OPENVR_OVERLAY (self->pointer_tip[i]));
     }
 
@@ -897,6 +926,6 @@ xrd_overlay_client_init (XrdOverlayClient *self)
   g_signal_connect (self->manager, "no-hover-event",
                     (GCallback) _manager_no_hover_cb, self);
 
-  self->poll_event_source_id =
-    g_timeout_add (POLL_RATE_MS, xrd_overlay_client_poll_events_cb, self);
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_poll_rate),
+                                  "event-update-rate-ms", self);
 }

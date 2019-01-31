@@ -77,6 +77,9 @@ struct _XrdOverlayClient
   guint poll_event_source_id;
 
   guint new_overlay_index;
+
+  double scroll_threshold;
+  double scroll_to_push_ratio;
 };
 
 XrdOverlayClient *xrd_overlay_client_new (void);

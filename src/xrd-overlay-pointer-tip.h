@@ -28,6 +28,7 @@ struct _XrdOverlayPointerTip
   GulkanTexture *texture;
   gboolean active;
 
+  gboolean use_screenspace_width;
   float screen_space_width;
   /* default width in meters, as a fallback */
   float default_width;
@@ -38,14 +39,23 @@ struct _XrdOverlayPointerTip
   /* Pointer to the data of the currently running animation.
    * Must be freed when an animation callback is cancelled. */
   struct Animation *animation_data;
+
+  OpenVROverlayUploader  *uploader;
+
+  double inactive_r;
+  double inactive_g;
+  double inactive_b;
+  double active_r;
+  double active_g;
+  double active_b;
+  double background_alpha;
+  int texture_width;
+  int texture_height;
 };
 
-XrdOverlayPointerTip *xrd_overlay_pointer_tip_new (int controller_index);
-
 XrdOverlayPointerTip *
-xrd_overlay_pointer_tip_new_width (int controller_index,
-                                   float screenspace_width,
-                                   float default_width);
+xrd_overlay_pointer_tip_new (int controller_index,
+                             OpenVROverlayUploader *uploader);
 
 void
 xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self);
@@ -57,19 +67,13 @@ xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
 
 void
 xrd_overlay_pointer_tip_set_active (XrdOverlayPointerTip  *self,
-                                    OpenVROverlayUploader *uploader,
                                     gboolean               active);
 
 void
-xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip  *self,
-                                     OpenVROverlayUploader *uploader);
+xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip  *self);
 
 void
-xrd_overlay_pointer_tip_init_raw (XrdOverlayPointerTip *self);
-
-void
-xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip  *self,
-                                       OpenVROverlayUploader *uploader);
+xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip  *self);
 
 G_END_DECLS
 

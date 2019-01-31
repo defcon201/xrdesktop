@@ -376,7 +376,7 @@ main ()
   if (self.pointer_overlay == NULL)
     return -1;
 
-  self.intersection_overlay = xrd_overlay_pointer_tip_new (1);
+  self.intersection_overlay = xrd_overlay_pointer_tip_new (1, self.uploader);
   if (self.intersection_overlay == NULL)
     return -1;
 

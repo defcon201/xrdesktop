@@ -8,6 +8,7 @@
 #include <gdk/gdk.h>
 #include "xrd-overlay-pointer-tip.h"
 #include "openvr-math.h"
+#include "xrd-settings.h"
 
 G_DEFINE_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, OPENVR_TYPE_OVERLAY)
 
@@ -25,27 +26,11 @@ xrd_overlay_pointer_tip_class_init (XrdOverlayPointerTipClass *klass)
 static void
 xrd_overlay_pointer_tip_init (XrdOverlayPointerTip *self)
 {
-  (void) self;
   self->active = FALSE;
   self->texture = NULL;
   self->animation_callback_id = 0;
   self->animation_data = NULL;
 }
-
-/* the backing texture behind the intersection overlay will have
- * WIDTH*2 x HEIGHT*2 pixels to keep room for the pulse animation */
-#define WIDTH 64
-#define HEIGHT 64
-
-#define ACTIVE_R 0.078
-#define ACTIVE_G 0.471
-#define ACTIVE_B 0.675
-
-#define INACTIVE_R 1.0
-#define INACTIVE_G 1.0
-#define INACTIVE_B 1.0
-
-#define BACKGROUND_ALPHA 0.1
 
 typedef struct Animation
 {
@@ -58,7 +43,8 @@ typedef struct Animation
  * scale affects the radius of the circle and should be in [0,2].
  * a_in is the alpha value at the center, a_out at the outer border. */
 void
-draw_gradient_circle (cairo_t *cr,
+draw_gradient_circle (XrdOverlayPointerTip *self,
+                      cairo_t *cr,
                       double r,
                       double g,
                       double b,
@@ -66,10 +52,10 @@ draw_gradient_circle (cairo_t *cr,
                       double a_out,
                       float  scale)
 {
-  double center_x = WIDTH;
-  double center_y = HEIGHT;
+  double center_x = self->texture_width;
+  double center_y = self->texture_height;
 
-  double radius = (WIDTH / 2.) * scale;
+  double radius = (self->texture_width / 2.) * scale;
 
   cairo_pattern_t *pat = cairo_pattern_create_radial (center_x, center_y,
                                                       0.75 * radius,
@@ -89,29 +75,46 @@ draw_gradient_circle (cairo_t *cr,
  * If background scale is > 1, a transparent white background circle is rendered
  * behind the pointer tip. */
 GdkPixbuf*
-_render_tip_pixbuf (double r, double g, double b, float background_scale)
+_render_tip_pixbuf (XrdOverlayPointerTip *self,
+                    double r, double g, double b, float background_scale)
 {
-  cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-                                                         WIDTH * 2, HEIGHT * 2);
+  cairo_surface_t *surface =
+      cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+                                  self->texture_width * 2,
+                                  self->texture_height * 2);
 
   cairo_t *cr = cairo_create (surface);
   cairo_set_source_rgba (cr, 0, 0, 0, 0);
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_paint (cr);
-  draw_gradient_circle (cr, 1.0, 1.0, 1.0, 0.1, 0.1, background_scale);
+  draw_gradient_circle (self, cr, 1.0, 1.0, 1.0, 0.1, 0.1, background_scale);
 
   cairo_set_operator (cr, CAIRO_OPERATOR_MULTIPLY);
-  draw_gradient_circle (cr, r, g, b, 1.0, 0.0, 1.0);
+  draw_gradient_circle (self, cr, r, g, b, 1.0, 0.0, 1.0);
 
   cairo_destroy (cr);
 
   /* Since we cannot set a different format for raw upload,
    * we need to use GdkPixbuf to suit OpenVRs needs */
   GdkPixbuf *pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0,
-                                                   WIDTH * 2, HEIGHT * 2);
+                                                   self->texture_width * 2,
+                                                   self->texture_height * 2);
 
   cairo_surface_destroy (surface);
 
+  return pixbuf;
+}
+
+/** _render_current_tip:
+ * single place deciding how the rendering based on current state looks like */
+GdkPixbuf*
+_render_current_tip (XrdOverlayPointerTip *self, float background_scale)
+{
+  GdkPixbuf* pixbuf = self->active ?
+      _render_tip_pixbuf (self, self->active_r, self->active_g,
+                          self->active_b, background_scale) :
+      _render_tip_pixbuf (self, self->inactive_r, self->inactive_g,
+                          self->inactive_b, background_scale);
   return pixbuf;
 }
 
@@ -119,12 +122,11 @@ gboolean
 _animate_cb (gpointer _animation)
 {
   Animation *animation = (Animation *) _animation;
+  XrdOverlayPointerTip *self = animation->self;
 
   GulkanClient *client = GULKAN_CLIENT (animation->uploader);
-  GdkPixbuf* active_pixbuf =_render_tip_pixbuf (ACTIVE_R,
-                                                ACTIVE_G,
-                                                ACTIVE_B,
-                                                2 - 2 * animation->progress);
+  GdkPixbuf* active_pixbuf =_render_current_tip (self,
+                                                 2 - 2 * animation->progress);
   gulkan_client_upload_pixbuf (client,
                                animation->self->texture,
                                active_pixbuf);
@@ -148,26 +150,120 @@ _animate_cb (gpointer _animation)
 }
 
 void
-xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip *self,
-                                       OpenVROverlayUploader *uploader)
+xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip *self)
 {
   if (self->animation_callback_id != 0)
     {
-      xrd_overlay_pointer_tip_set_active (self, uploader, self->active);
+      xrd_overlay_pointer_tip_set_active (self, self->active);
     }
   Animation *animation =  g_malloc (sizeof *animation);
   animation->progress = 0;
-  animation->uploader = uploader;
+  animation->uploader = self->uploader;
   animation->self = self;
   self->animation_callback_id = g_timeout_add (20, _animate_cb, animation);
   self->animation_data = animation;
 }
 
+static void
+_update_width_screenspace (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  self->screen_space_width = g_settings_get_double (settings, key);
+  xrd_overlay_pointer_tip_set_constant_width (self);
+}
+
+static void
+_update_width_meter (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  self->default_width = g_settings_get_double (settings, key);
+  openvr_overlay_set_width_meters
+      (OPENVR_OVERLAY (self), self->default_width);
+}
+
+static void
+_update_use_screenspace (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  self->use_screenspace_width = g_settings_get_boolean (settings, key);
+  if (self->use_screenspace_width)
+    xrd_overlay_pointer_tip_set_constant_width (self);
+  else
+    openvr_overlay_set_width_meters
+        (OPENVR_OVERLAY (self), self->default_width);
+}
+
+static void
+_update_active_rgb (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  GVariant *active_rgb = g_settings_get_value (settings, key);
+  g_variant_get (active_rgb, "(ddd)",
+                 &self->active_r, &self->active_g, &self->active_b);
+}
+
+static void
+_update_inactive_rgb (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  GVariant *inactive_rgb = g_settings_get_value (settings, key);
+  g_variant_get (inactive_rgb, "(ddd)",
+                 &self->inactive_r, &self->inactive_g, &self->inactive_b);
+}
+
+static void
+_update_texture_res (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  GVariant *texture_res = g_settings_get_value (settings, key);
+  g_variant_get (texture_res, "(ii)",
+                 &self->texture_width, &self->texture_height);
+
+  if (self->texture)
+    g_object_unref (self->texture);
+
+  xrd_overlay_pointer_tip_init_vulkan (self);
+}
+
+static void
+_update_background_alpha (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  self->background_alpha = g_settings_get_double (settings, key);
+}
+
 XrdOverlayPointerTip *
-xrd_overlay_pointer_tip_new (int controller_index)
+xrd_overlay_pointer_tip_new (int controller_index,
+                             OpenVROverlayUploader  *uploader)
 {
   XrdOverlayPointerTip *self =
     (XrdOverlayPointerTip*) g_object_new (XRD_TYPE_OVERLAY_POINTER_TIP, 0);
+
+  /* our uploader ref needs to stay valid as long as pointer tip exists */
+  g_object_ref (uploader);
+  self->uploader = uploader;
+
+  /* tip resolution config has to happen after self->uploader gets set */
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_texture_res),
+                                  "pointer-tip-resolution", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_inactive_rgb),
+                                  "inactive-pointer-tip-color", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_active_rgb),
+                                  "active-pointer-tip-color", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_background_alpha),
+                                  "pointer-tip-animation-alpha", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_screenspace),
+                                  "pointer-tip-width-screenspace", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_meter),
+                                  "pointer-tip-width-meter", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_use_screenspace),
+                                  "constant-pointer-tip-width", self);
 
   char key[k_unVROverlayMaxKeyLength];
   snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%d",
@@ -176,7 +272,7 @@ xrd_overlay_pointer_tip_new (int controller_index)
   /* the texture has 2x the size of the pointer, so the overlay should be 2x
    * the desired size of the default pointer too. */
   openvr_overlay_create_width (OPENVR_OVERLAY (self),
-                               key, key, 0.025 * 2);
+                               key, key, self->default_width * 2);
 
   if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
     {
@@ -190,33 +286,17 @@ xrd_overlay_pointer_tip_new (int controller_index)
    */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 1);
 
-  self->screen_space_width = 0.05;
-  self->default_width = 0.033;
 
-  return self;
-}
 
-XrdOverlayPointerTip *
-xrd_overlay_pointer_tip_new_width (int controller_index,
-                                   float screenspace_width,
-                                   float default_width)
-{
-  XrdOverlayPointerTip *self = xrd_overlay_pointer_tip_new (controller_index);
-  self->screen_space_width = screenspace_width;
-  self->default_width = default_width;
   return self;
 }
 
 void
-xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip   *self,
-                                     OpenVROverlayUploader  *uploader)
+xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip *self)
 {
-  GulkanClient *client = GULKAN_CLIENT (uploader);
+  GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
-  GdkPixbuf* pixbuf = _render_tip_pixbuf (INACTIVE_R,
-                                          INACTIVE_G,
-                                          INACTIVE_B,
-                                          0.0);
+  GdkPixbuf* pixbuf = _render_current_tip (self, 0.0);
   self->texture =
     gulkan_texture_new_from_pixbuf (client->device, pixbuf,
                                     VK_FORMAT_R8G8B8A8_UNORM);
@@ -224,20 +304,11 @@ xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip   *self,
   g_object_unref (pixbuf);
 }
 
-void
-xrd_overlay_pointer_tip_init_raw (XrdOverlayPointerTip *self)
-{
-  GdkPixbuf *default_pixbuf = _render_tip_pixbuf (1.0, 1.0, 1.0, 0.0);
-  openvr_overlay_set_gdk_pixbuf_raw (OPENVR_OVERLAY (self), default_pixbuf);
-  g_object_unref (default_pixbuf);
-}
-
 /** xrd_overlay_pointer_tip_set_active:
  * Changes whether the active or inactive style is rendered.
  * Also cancels animations. */
 void
 xrd_overlay_pointer_tip_set_active (XrdOverlayPointerTip *self,
-                                    OpenVROverlayUploader *uploader,
                                     gboolean active)
 {
   if (self->texture == NULL)
@@ -255,20 +326,16 @@ xrd_overlay_pointer_tip_set_active (XrdOverlayPointerTip *self,
    * An animation changes the texture, so when an animation is cancelled, we
    * want to re-render the current state. */
 
-  GulkanClient *client = GULKAN_CLIENT (uploader);
+  GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
-  GdkPixbuf* pixbuf = active ?
-      _render_tip_pixbuf (ACTIVE_R, ACTIVE_G, ACTIVE_B, 0.0) :
-      _render_tip_pixbuf (INACTIVE_R, INACTIVE_G, INACTIVE_B, 0.0);
+  self->active = active;
+  GdkPixbuf* pixbuf = _render_current_tip (self, 0.0);
 
   gulkan_client_upload_pixbuf (client, self->texture, pixbuf);
   g_object_unref (pixbuf);
 
-  openvr_overlay_uploader_submit_frame (uploader, OPENVR_OVERLAY (self),
-                                       self->texture);
-
-  self->active = active;
-
+  openvr_overlay_uploader_submit_frame (self->uploader, OPENVR_OVERLAY (self),
+                                        self->texture);
 }
 
 static void
@@ -276,6 +343,9 @@ xrd_overlay_pointer_tip_finalize (GObject *gobject)
 {
   XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (gobject);
   (void) self;
+
+  /* release the ref we set in pointer tip init */
+  g_object_unref (self->uploader);
   if (self->texture)
     g_object_unref (self->texture);
 }
@@ -311,6 +381,9 @@ _get_hmd_pose (graphene_matrix_t *pose)
 void
 xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
 {
+  if (!self->use_screenspace_width)
+    return;
+  
   graphene_matrix_t intersection_pose;
   openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self),
                                          &intersection_pose);

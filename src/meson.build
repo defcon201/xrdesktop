@@ -17,6 +17,7 @@ xrdesktop_sources = [
   'xrd-scene-window.c',
   'xrd-scene-pointer.c',
   'xrd-scene-object.c',
+  'xrd-settings.c',
   binding_resources
 ]
 
@@ -35,7 +36,8 @@ xrdesktop_headers = [
   'xrd-scene-client.h',
   'xrd-scene-window.h',
   'xrd-scene-pointer.h',
-  'xrd-scene-object.h'
+  'xrd-scene-object.h',
+  'xrd-settings.h',
 ]
 
 version_split = meson.project_version().split('.')
