@@ -60,7 +60,7 @@ struct _XrdOverlayClient
   XrdOverlayButton *button_reset;
   XrdOverlayButton *button_sphere;
 
-  OpenVROverlayUploader *vk_uploader;
+  OpenVROverlayUploader *uploader;
 
   OpenVRActionSet *wm_actions;
   OpenVRActionSet *synth_actions;

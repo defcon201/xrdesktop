@@ -11,6 +11,10 @@
 
 #include "xrd-overlay-client.h"
 
+#define GRID_WIDTH 6
+#define GRID_HEIGHT 5
+#define WINDOW_WIDTH 0.5f
+
 typedef struct Example
 {
   GMainLoop *loop;
@@ -26,12 +30,74 @@ _sigint_cb (gpointer _self)
   return TRUE;
 }
 
-void
-_init_cats (Example *self)
+GdkPixbuf *
+load_gdk_pixbuf (const gchar* name)
 {
-  XrdOverlayWindow *window =
-    xrd_overlay_client_add_window (self->client, "A cat.", NULL, 10, 10);
-  self->windows = g_slist_append (self->windows, window);
+  GError * error = NULL;
+  GdkPixbuf *pixbuf_rgb = gdk_pixbuf_new_from_resource (name, &error);
+
+  if (error != NULL)
+    {
+      g_printerr ("Unable to read file: %s\n", error->message);
+      g_error_free (error);
+      return NULL;
+    }
+
+  GdkPixbuf *pixbuf = gdk_pixbuf_add_alpha (pixbuf_rgb, false, 0, 0, 0);
+  g_object_unref (pixbuf_rgb);
+  return pixbuf;
+}
+
+gboolean
+_init_windows (Example *self)
+{
+  GulkanClient *gc = GULKAN_CLIENT (self->client->uploader);
+
+  GdkPixbuf *pixbuf = load_gdk_pixbuf ("/res/hawk.jpg");
+  if (pixbuf == NULL)
+    {
+      g_printerr ("Could not load image.\n");
+      return FALSE;
+    }
+
+  float width = WINDOW_WIDTH;
+
+  float pixbuf_aspect = (float) gdk_pixbuf_get_width (pixbuf) /
+                        (float) gdk_pixbuf_get_height (pixbuf);
+
+  float height = width / pixbuf_aspect;
+
+  GulkanTexture *texture =
+    gulkan_texture_new_from_pixbuf (gc->device, pixbuf,
+                                    VK_FORMAT_R8G8B8A8_UNORM);
+
+  gulkan_client_upload_pixbuf (gc, texture, pixbuf);
+
+  for (float x = 0; x < GRID_WIDTH * width; x += width)
+    for (float y = 0; y < GRID_HEIGHT * height; y += height)
+      {
+        XrdOverlayWindow *window =
+          xrd_overlay_client_add_window (self->client, "A window.", NULL,
+                                         gdk_pixbuf_get_width (pixbuf),
+                                         gdk_pixbuf_get_height (pixbuf));
+        self->windows = g_slist_append (self->windows, window);
+
+        openvr_overlay_uploader_submit_frame (self->client->uploader,
+                                              window->overlay, texture);
+
+        openvr_overlay_set_width_meters (window->overlay, width);
+        graphene_point3d_t point = {
+          .x = x,
+          .y = y,
+          .z = -3
+        };
+        openvr_overlay_set_translation (window->overlay, &point);
+
+        xrd_overlay_manager_save_reset_transform (self->client->manager,
+                                                  window->overlay);
+      }
+
+  return TRUE;
 }
 
 void
@@ -52,7 +118,8 @@ main ()
     .windows = NULL
   };
 
-  _init_cats (&self);
+  if (!_init_windows (&self))
+    return -1;
 
   g_unix_signal_add (SIGINT, _sigint_cb, &self);
 

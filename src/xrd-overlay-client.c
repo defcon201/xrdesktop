@@ -79,6 +79,9 @@ xrd_overlay_client_finalize (GObject *gobject)
 
   g_object_unref (self->synth_actions);
   g_object_unref (self->wm_actions);
+
+  g_hash_table_unref (self->overlays_to_windows);
+
   g_object_unref (self->manager);
 
 
@@ -86,9 +89,9 @@ xrd_overlay_client_finalize (GObject *gobject)
   self->context = NULL;
 
   /* Uploader needs to be freed after context! */
-  g_object_unref (self->vk_uploader);
+  g_object_unref (self->uploader);
 
-  g_hash_table_unref (self->overlays_to_windows);
+
 }
 
 static void
@@ -475,6 +478,12 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
   XrdOverlayWindow *win = g_hash_table_lookup (self->overlays_to_windows,
                                                overlay);
 
+  if (!win)
+    {
+      g_printerr ("Error: Could not get XrdWindow for overlay %p\n", overlay);
+      return;
+    }
+
   /* update pointer length and intersection overlay */
   XrdOverlayPointerTip *intersection =
     self->intersection[event->controller_index];
@@ -591,7 +600,6 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
                                    OPENVR_OVERLAY_HOVER |
                                    OPENVR_OVERLAY_GRAB |
                                    OPENVR_OVERLAY_DESTROY_WITH_PARENT);
-
   g_signal_connect (overlay, "grab-start-event",
                     (GCallback) _overlay_grab_start_cb, self);
   g_signal_connect (overlay, "grab-event",
@@ -656,8 +664,8 @@ xrd_overlay_client_init (XrdOverlayClient *self)
   g_assert (openvr_context_init_overlay (self->context));
   g_assert (openvr_context_is_valid (self->context));
 
-  self->vk_uploader = openvr_overlay_uploader_new ();
-  if (!openvr_overlay_uploader_init_vulkan (self->vk_uploader, false))
+  self->uploader = openvr_overlay_uploader_new ();
+  if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))
     g_printerr ("Unable to initialize Vulkan!\n");
 
   self->manager = xrd_overlay_manager_new ();
@@ -672,9 +680,9 @@ xrd_overlay_client_init (XrdOverlayClient *self)
         return;
 
       xrd_overlay_pointer_tip_init_vulkan (self->intersection[i],
-                                           self->vk_uploader);
+                                           self->uploader);
       xrd_overlay_pointer_tip_set_active (self->intersection[i],
-                                          self->vk_uploader, FALSE);
+                                          self->uploader, FALSE);
       openvr_overlay_show (OPENVR_OVERLAY (self->intersection[i]));
     }
 
