@@ -138,6 +138,6 @@
       }
    },
    "controller_type" : "vive_controller",
-   "description" : "GNOME VR bindings for the Vive controller",
-   "name" : "GNOME VR Vive Controller"
+   "description" : "XR Desktop bindings for the Vive controller",
+   "name" : "XR Desktop Vive Controller"
 }

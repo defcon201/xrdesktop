@@ -156,6 +156,6 @@
       }
    },
    "controller_type" : "knuckles",
-   "description" : "GNOME VR bindings for the Knuckles Controller",
-   "name" : "GNOME VR Knuckles Controller"
+   "description" : "XR Desktop bindings for the Knuckles Controller",
+   "name" : "XR Desktop Knuckles Controller"
 }
