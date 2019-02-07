@@ -204,6 +204,8 @@ xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
 
           openvr_overlay_get_transform_absolute (overlay, &transition->from);
 
+          openvr_overlay_get_width_meters (overlay, &transition->from_width);
+
           if (!openvr_math_matrix_equals (&transition->from, &transform))
             {
               transition->interpolate = 0;
@@ -211,6 +213,9 @@ xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
               g_object_ref (overlay);
 
               graphene_matrix_init_from_matrix (&transition->to, &transform);
+
+              float *width = g_hash_table_lookup (self->reset_widths, overlay);
+              transition->to_width = *width;
 
               g_timeout_add (20, _interpolate_cb, transition);
             }
