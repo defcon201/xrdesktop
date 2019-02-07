@@ -49,8 +49,8 @@ struct _XrdOverlayClient
 
   OpenVRContext *context;
 
-  XrdOverlayPointer *pointer[OPENVR_CONTROLLER_COUNT];
-  XrdOverlayPointerTip *intersection[OPENVR_CONTROLLER_COUNT];
+  XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
+  XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
 
   XrdOverlayManager *manager;
 

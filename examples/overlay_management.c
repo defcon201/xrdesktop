@@ -50,8 +50,6 @@ typedef struct Example
 
   GMainLoop *loop;
 
-  float pointer_default_length;
-
   OpenVRActionSet *action_set_wm;
   OpenVRActionSet *action_set_mouse_synth;
 
@@ -200,8 +198,8 @@ _hover_cb (OpenVROverlay    *overlay,
 
   graphene_matrix_t overlay_pose;
   openvr_overlay_get_transform_absolute (overlay, &overlay_pose);
-
   xrd_overlay_pointer_tip_update (pointer_tip, &overlay_pose, &event->point);
+
 
   XrdOverlayPointer *pointer_ray = self->pointer_ray[event->controller_index];
   xrd_overlay_pointer_set_length (pointer_ray, event->distance);
@@ -403,7 +401,7 @@ _init_cat_overlays (Example *self)
 
 gboolean
 _init_button (Example            *self,
-              XrdOverlayButton      **button,
+              XrdOverlayButton  **button,
               gchar              *id,
               gchar              *label,
               graphene_point3d_t *position,
@@ -421,7 +419,7 @@ _init_button (Example            *self,
   openvr_overlay_set_transform_absolute (overlay, &transform);
 
   xrd_overlay_manager_add_overlay (self->manager, overlay,
-                                      OPENVR_OVERLAY_HOVER);
+                                   OPENVR_OVERLAY_HOVER);
 
   if (!openvr_overlay_set_width_meters (overlay, 0.5f))
     return FALSE;
@@ -442,9 +440,7 @@ _button_sphere_press_cb (OpenVROverlay   *overlay,
   (void) overlay;
   (void) event;
   Example *self = (Example*) _self;
-  xrd_overlay_manager_arrange_sphere (self->manager,
-                                         GRID_WIDTH,
-                                         GRID_HEIGHT);
+  xrd_overlay_manager_arrange_sphere (self->manager, GRID_WIDTH, GRID_HEIGHT);
   g_free (event);
 }
 
@@ -650,8 +646,7 @@ main ()
     .loop = g_main_loop_new (NULL, FALSE),
     .action_set_wm = openvr_action_set_new_from_url ("/actions/wm"),
     .action_set_mouse_synth = openvr_action_set_new_from_url ("/actions/mouse_synth"),
-    .manager = xrd_overlay_manager_new (),
-    .pointer_default_length = 5.0
+    .manager = xrd_overlay_manager_new ()
   };
 
   self.uploader = openvr_overlay_uploader_new ();
@@ -700,6 +695,7 @@ main ()
   openvr_action_set_connect (self.action_set_wm, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_right",
                              (GCallback) _hand_pose_cb, &data_right);
+
   openvr_action_set_connect (self.action_set_wm, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window_left",
                              (GCallback) _grab_cb, &data_left);
