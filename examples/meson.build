@@ -13,13 +13,6 @@ executable(
   install: false)
 
 executable(
-  'overlay_management', ['overlay_management.c', test_resources],
-  dependencies: xrdesktop_deps,
-  link_with: xrdesktop_lib,
-  include_directories: xrdesktop_inc,
-  install: false)
-
-executable(
   'overlay_client', ['overlay_client.c', test_resources],
   dependencies: xrdesktop_deps,
   link_with: xrdesktop_lib,
