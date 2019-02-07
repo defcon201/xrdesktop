@@ -76,11 +76,11 @@
       },
       {
          "name":"/actions/mouse_synth/in/scroll_left",
-         "type": "vector3"
+         "type": "vector2"
       },
       {
          "name":"/actions/mouse_synth/in/scroll_right",
-         "type": "vector3"
+         "type": "vector2"
       }
    ],
    "action_sets": [
