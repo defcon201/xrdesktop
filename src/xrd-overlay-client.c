@@ -25,7 +25,6 @@ enum {
   MOVE_CURSOR_EVENT,
   LAST_SIGNAL
 };
-
 static guint signals[LAST_SIGNAL] = { 0 };
 
 static void
@@ -79,7 +78,6 @@ xrd_overlay_client_finalize (GObject *gobject)
       g_object_unref (self->pointer_tip[i]);
     }
 
-  g_object_unref (self->synth_actions);
   g_object_unref (self->wm_actions);
 
   g_hash_table_unref (self->overlays_to_windows);
@@ -243,44 +241,6 @@ _button_hover_cb (OpenVROverlay    *overlay,
 }
 
 void
-_emit_click (XrdOverlayClient *self,
-             XrdOverlayWindow *window,
-             graphene_point_t *position,
-             int               button,
-             gboolean          state)
-{
-  XrdClickEvent *click_event = g_malloc (sizeof (XrdClickEvent));
-  click_event->window = window;
-  click_event->position = position;
-  click_event->button = button;
-  click_event->state = state;
-  g_signal_emit (self, signals[CLICK_EVENT], 0, click_event);
-}
-
-void
-_reset_press_state (XrdOverlayClient *self,
-                    OpenVROverlay    *overlay)
-{
-  XrdOverlayWindow *win = g_hash_table_lookup (self->overlays_to_windows,
-                                               overlay);
-
-  if (self && self->button_press_state)
-    {
-      /*g_print ("End hover, button mask %d...\n", self->button_press_state); */
-      for (int button = 1; button <= 8; button++)
-        {
-          gboolean pressed = self->button_press_state & 1 << button;
-          if (pressed)
-            {
-              g_print ("Released button %d\n", button);
-              _emit_click (self, win, &self->hover_position, button, FALSE);
-            }
-        }
-      self->button_press_state = 0;
-    }
-}
-
-void
 _hover_end_cb (OpenVROverlay              *overlay,
                OpenVRControllerIndexEvent *event,
                gpointer                   _self)
@@ -302,7 +262,7 @@ _hover_end_cb (OpenVROverlay              *overlay,
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
   xrd_overlay_pointer_tip_set_active (pointer_tip, active);
 
-  _reset_press_state (self, overlay);
+  xrd_input_synth_reset_press_state (self->input_synth);
 
   g_free (event);
 }
@@ -427,137 +387,6 @@ _action_show_keyboard_cb (OpenVRAction       *action,
     }
 }
 
-static void
-_action_left_click_cb (OpenVRAction        *action,
-                       OpenVRDigitalEvent  *event,
-                       XrdClientController *controller)
-{
-  (void) action;
-
-  XrdOverlayClient *self = controller->self;
-
-  if (self->hover_window && event->changed)
-    {
-      _emit_click (self, self->hover_window,
-                  &self->hover_position, 1, event->state);
-
-      if (event->state)
-        {
-          self->button_press_state |= 1 << 1;
-
-          HoverState *hover_state =
-              &self->manager->hover_state[controller->index];
-          if (hover_state->overlay != NULL)
-            {
-              XrdOverlayPointerTip *pointer_tip =
-                  self->pointer_tip[controller->index];
-              xrd_overlay_pointer_tip_animate_pulse (pointer_tip);
-            }
-        }
-      else
-        {
-          self->button_press_state &= ~(1 << 1);
-        }
-    }
-  g_free (event);
-}
-
-static void
-_action_right_click_cb (OpenVRAction       *action,
-                        OpenVRDigitalEvent *event,
-                        XrdOverlayClient   *self)
-{
-  (void) action;
-  if (self->hover_window && event->changed)
-    {
-      _emit_click (self, self->hover_window,
-              &self->hover_position, 3, event->state);
-      if (event->state)
-        self->button_press_state |= 1 << 3;
-      else
-        self->button_press_state &= ~(1 << 3);
-    }
-  g_free (event);
-}
-
-static void
-_do_scroll (XrdOverlayClient *self, int steps_x, int steps_y)
-{
-  for (int i = 0; i < abs(steps_y); i++)
-    {
-      int btn;
-      if (steps_y > 0)
-        btn = 4;
-      else
-        btn = 5;
-      _emit_click (self, self->hover_window, &self->hover_position, btn, TRUE);
-      _emit_click (self, self->hover_window, &self->hover_position, btn, FALSE);
-    }
-
-  for (int i = 0; i < abs(steps_x); i++)
-    {
-      int btn;
-      if (steps_x < 0)
-        btn = 6;
-      else
-        btn = 7;
-      _emit_click (self, self->hover_window, &self->hover_position, btn, TRUE);
-      _emit_click (self, self->hover_window, &self->hover_position, btn, FALSE);
-    }
-}
-
-/*
- * When the touchpad is touched, start adding up movement.
- * If movement is over threshold, create a scroll event and reset
- * scroll_accumulator.
- */
-static void
-_action_scroll_cb (OpenVRAction      *action,
-                   OpenVRAnalogEvent *event,
-                   XrdOverlayClient  *self)
-{
-  (void) action;
-  /* When z is not zero we get bogus data. We ignore this completely */
-  if (graphene_vec3_get_z (&event->state) != 0.0)
-    return;
-
-  graphene_vec3_add (&self->scroll_accumulator, &event->state,
-                     &self->scroll_accumulator);
-
-  float x_acc = graphene_vec3_get_x (&self->scroll_accumulator);
-  float y_acc = graphene_vec3_get_y (&self->scroll_accumulator);
-
-  /*
-   * Scroll as many times as the threshold has been exceeded.
-   * e.g. user scrolled 0.32 with threshold of 0.1 -> scroll 3 times.
-   */
-  int steps_x = x_acc / self->scroll_threshold;
-  int steps_y = y_acc / self->scroll_threshold;
-
-  /*
-   * We need to keep the rest in the accumulator to not lose part of the
-   * user's movement e.g. 0.32: -> 0.2 and -0.32 -> -0.2
-   */
-  float rest_x = x_acc - (float)steps_x * self->scroll_threshold;
-  float rest_y = y_acc - (float)steps_y * self->scroll_threshold;
-  graphene_vec3_init (&self->scroll_accumulator, rest_x, rest_y, 0);
-
-  _do_scroll (self, steps_x, steps_y);
-
-  g_free (event);
-}
-
-void
-_emit_move_cursor (XrdOverlayClient *self,
-                   XrdOverlayWindow *window,
-                   graphene_point_t *position)
-{
-  XrdMoveCursorEvent *event = g_malloc (sizeof (XrdClickEvent));
-  event->window = window;
-  event->position = position;
-  g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
-}
-
 void
 _overlay_hover_cb (OpenVROverlay    *overlay,
                    OpenVRHoverEvent *event,
@@ -592,13 +421,12 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
                                           &position_2d))
     return;
 
-  _emit_move_cursor (self, win, &position_2d);
+  xrd_input_synth_move_cursor (self->input_synth, win, &position_2d);
 
   if (self->hover_window != win)
-    graphene_vec3_init (&self->scroll_accumulator, 0, 0, 0);
+    xrd_input_synth_reset_scroll (self->input_synth);
 
   self->hover_window = win;
-  graphene_point_init_from_point (&self->hover_position, &position_2d);
 }
 
 void
@@ -656,7 +484,8 @@ _manager_no_hover_cb (XrdOverlayManager  *manager,
 
   g_free (event);
 
-  graphene_vec3_init (&self->scroll_accumulator, 0, 0, 0);
+  xrd_input_synth_reset_scroll (self->input_synth);
+
   self->hover_window = NULL;
 }
 
@@ -747,20 +576,12 @@ xrd_overlay_client_poll_events_cb (gpointer _self)
 
   if (xrd_overlay_manager_is_hovering (self->manager) &&
       !xrd_overlay_manager_is_grabbing (self->manager))
-    if (!openvr_action_set_poll (self->synth_actions))
+    if (!xrd_input_synth_poll_events (self->input_synth))
       return FALSE;
 
   xrd_overlay_manager_poll_overlay_events (self->manager);
 
   return TRUE;
-}
-
-static void
-_update_scroll_threshold (GSettings *settings, gchar *key, gpointer user_data)
-{
-  XrdOverlayClient *self = user_data;
-  self->scroll_threshold = g_settings_get_double (settings, key);
-  /* g_print ("Update scroll threshold %f\n", self->scroll_threshold); */
 }
 
 static void
@@ -782,21 +603,50 @@ _update_poll_rate (GSettings *settings, gchar *key, gpointer user_data)
       g_timeout_add (poll_rate, xrd_overlay_client_poll_events_cb, self);
 }
 
+
+static void
+_synth_click_cb (XrdInputSynth    *synth,
+                 XrdClickEvent    *event,
+                 XrdOverlayClient *self)
+{
+  (void) synth;
+  if (self->hover_window)
+    {
+      event->window = self->hover_window;
+      g_signal_emit (self, signals[CLICK_EVENT], 0, event);
+
+      if (event->button == 1)
+        {
+          HoverState *hover_state =
+              &self->manager->hover_state[event->controller_index];
+          if (hover_state->overlay != NULL)
+            {
+              XrdOverlayPointerTip *pointer_tip =
+                  self->pointer_tip[event->controller_index];
+              xrd_overlay_pointer_tip_animate_pulse (pointer_tip);
+            }
+        }
+    }
+}
+
+static void
+_synth_move_cursor_cb (XrdInputSynth      *synth,
+                       XrdMoveCursorEvent *event,
+                       XrdOverlayClient   *self)
+{
+  (void) synth;
+  g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
+}
+
 static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_threshold),
-                                  "scroll-threshold", self);
-
   xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_to_push),
                                   "scroll-to-push-ratio", self);
 
   self->hover_window = NULL;
-  self->button_press_state = 0;
   self->new_overlay_index = 0;
   self->poll_event_source_id = 0;
-
-  graphene_point_init (&self->hover_position, 0, 0);
 
   self->overlays_to_windows = g_hash_table_new_full (g_direct_hash,
                                                      g_direct_equal,
@@ -855,8 +705,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       return;
     }
 
-  self->wm_actions =
-    openvr_action_set_new_from_url ("/actions/wm");
+  self->wm_actions = openvr_action_set_new_from_url ("/actions/wm");
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_left",
@@ -897,35 +746,15 @@ xrd_overlay_client_init (XrdOverlayClient *self)
                              "/actions/wm/in/show_keyboard_right",
                              (GCallback) _action_show_keyboard_cb, self);
 
-  self->synth_actions =
-    openvr_action_set_new_from_url ("/actions/mouse_synth");
-
-  /*
-   * TODO: Implement active Desktop synth hand
-   */
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/left_click_left",
-                             (GCallback) _action_left_click_cb, &self->left);
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/right_click_left",
-                             (GCallback) _action_right_click_cb, &self->left);
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/mouse_synth/in/scroll_left",
-                             (GCallback) _action_scroll_cb, self);
-
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/left_click_right",
-                             (GCallback) _action_left_click_cb, &self->right);
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/right_click_right",
-                             (GCallback) _action_right_click_cb, &self->right);
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/mouse_synth/in/scroll_right",
-                             (GCallback) _action_scroll_cb, self);
-
   g_signal_connect (self->manager, "no-hover-event",
                     (GCallback) _manager_no_hover_cb, self);
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_poll_rate),
                                   "event-update-rate-ms", self);
+
+  self->input_synth = xrd_input_synth_new ();
+  g_signal_connect (self->input_synth, "click-event",
+                    (GCallback) _synth_click_cb, self);
+  g_signal_connect (self->input_synth, "move-cursor-event",
+                    (GCallback) _synth_move_cursor_cb, self);
 }

@@ -17,25 +17,13 @@
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-overlay-manager.h"
 #include "xrd-overlay-button.h"
-#include "xrd-overlay-window.h"
+#include "xrd-input-synth.h"
 
 G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_CLIENT xrd_overlay_client_get_type()
 G_DECLARE_FINAL_TYPE (XrdOverlayClient, xrd_overlay_client,
                       XRD, OVERLAY_CLIENT, GObject)
-
-typedef struct XrdClickEvent {
-  XrdOverlayWindow *window;
-  graphene_point_t *position;
-  int               button;
-  gboolean          state;
-} XrdClickEvent;
-
-typedef struct XrdMoveCursorEvent {
-  XrdOverlayWindow *window;
-  graphene_point_t *position;
-} XrdMoveCursorEvent;
 
 typedef struct XrdClientController
 {
@@ -63,14 +51,8 @@ struct _XrdOverlayClient
   OpenVROverlayUploader *uploader;
 
   OpenVRActionSet *wm_actions;
-  OpenVRActionSet *synth_actions;
 
   XrdOverlayWindow *hover_window;
-  /* hover_position is relative to hover_window */
-  graphene_point_t hover_position;
-
-  uint32_t button_press_state;
-  graphene_vec3_t scroll_accumulator;
 
   GHashTable *overlays_to_windows;
 
@@ -78,8 +60,9 @@ struct _XrdOverlayClient
 
   guint new_overlay_index;
 
-  double scroll_threshold;
   double scroll_to_push_ratio;
+
+  XrdInputSynth *input_synth;
 };
 
 XrdOverlayClient *xrd_overlay_client_new (void);
