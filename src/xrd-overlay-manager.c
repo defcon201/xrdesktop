@@ -40,10 +40,18 @@ xrd_overlay_manager_class_init (XrdOverlayManagerClass *klass)
   object_class->finalize = xrd_overlay_manager_finalize;
 }
 
+void
+_free_matrix_cb (gpointer m)
+{
+  graphene_matrix_free ((graphene_matrix_t*) m);
+}
+
 static void
 xrd_overlay_manager_init (XrdOverlayManager *self)
 {
-  self->reset_transforms = g_hash_table_new (g_direct_hash, g_direct_equal);
+  self->reset_transforms = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                                  NULL, _free_matrix_cb);
+
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
       self->hover_state[i].distance = 1.0f;
@@ -58,19 +66,10 @@ xrd_overlay_manager_new (void)
   return (XrdOverlayManager*) g_object_new (XRD_TYPE_OVERLAY_MANAGER, 0);
 }
 
-void
-_free_matrix_cb (gpointer m)
-{
-  graphene_matrix_free ((graphene_matrix_t*) m);
-}
-
 static void
 xrd_overlay_manager_finalize (GObject *gobject)
 {
   XrdOverlayManager *self = XRD_OVERLAY_MANAGER (gobject);
-
-  GList *matrices = g_hash_table_get_values (self->reset_transforms);
-  g_list_free_full (matrices, _free_matrix_cb);
 
   g_hash_table_unref (self->reset_transforms);
 
