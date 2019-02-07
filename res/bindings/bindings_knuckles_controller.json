@@ -44,6 +44,9 @@
                "inputs": {
                   "scroll": {
                      "output": "/actions/mouse_synth/in/scroll_left"
+                  },
+                  "position": {
+                     "output": "/actions/mouse_synth/in/scroll_left"
                   }
                }
             },
@@ -52,6 +55,9 @@
                "mode": "trackpad",
                "inputs": {
                   "scroll": {
+                     "output": "/actions/mouse_synth/in/scroll_right"
+                  },
+                  "position": {
                      "output": "/actions/mouse_synth/in/scroll_right"
                   }
                }
@@ -93,6 +99,9 @@
                "path": "/user/hand/right/input/trackpad",
                "mode": "trackpad",
                "inputs": {
+                  "position": {
+                     "output": "/actions/wm/in/push_pull_right"
+                  },
                   "scroll": {
                      "output": "/actions/wm/in/push_pull_right"
                   }
@@ -111,6 +120,9 @@
                "path": "/user/hand/left/input/trackpad",
                "mode": "trackpad",
                "inputs": {
+                  "position": {
+                     "output": "/actions/wm/in/push_pull_left"
+                  },
                   "scroll": {
                      "output": "/actions/wm/in/push_pull_left"
                   }
@@ -120,6 +132,9 @@
                "path": "/user/hand/left/input/thumbstick",
                "mode": "joystick",
                "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/show_keyboard_left"
+                  },
                   "position": {
                      "output": "/actions/wm/in/push_pull_scale_left"
                   }
@@ -129,26 +144,11 @@
                "path": "/user/hand/right/input/thumbstick",
                "mode": "joystick",
                "inputs": {
-                  "position": {
-                     "output": "/actions/wm/in/push_pull_scale_right"
-                  }
-               }
-            },
-            {
-               "path": "/user/hand/left/input/grip",
-               "mode": "button",
-               "inputs": {
-                  "click": {
-                     "output": "/actions/wm/in/show_keyboard_left"
-                  }
-               }
-            },
-            {
-               "path": "/user/hand/right/input/grip",
-               "mode": "button",
-               "inputs": {
                   "click": {
                      "output": "/actions/wm/in/show_keyboard_right"
+                  },
+                  "position": {
+                     "output": "/actions/wm/in/push_pull_scale_right"
                   }
                }
             }
