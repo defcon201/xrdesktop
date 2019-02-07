@@ -14,6 +14,8 @@
 
 G_DEFINE_TYPE (XrdOverlayManager, xrd_overlay_manager, G_TYPE_OBJECT)
 
+#define MINIMAL_SCALE_WIDTH 0.1
+
 enum {
   NO_HOVER_EVENT,
   LAST_SIGNAL
@@ -487,8 +489,6 @@ xrd_overlay_manager_drag_start (XrdOverlayManager *self,
  *
  * While dragging an overlay, scale the overlay @factor times per second
  */
-
-#define MINIMAL_SCALE_WIDTH 0.1
 
 void
 xrd_overlay_manager_scale (XrdOverlayManager *self,
