@@ -10,6 +10,7 @@
 #include <gmodule.h>
 
 #include "xrd-overlay-client.h"
+#include <gdk/gdk.h>
 
 #define GRID_WIDTH 6
 #define GRID_HEIGHT 5
@@ -109,6 +110,40 @@ _cleanup (Example *self)
   g_print ("bye\n");
 }
 
+static void
+_click_cb (XrdOverlayClient *client,
+           XrdClickEvent    *event,
+           Example          *self)
+{
+  (void) client;
+  (void) self;
+  g_print ("click: %f, %f\n",
+           event->position->x, event->position->y);
+}
+
+/*
+static void
+_move_cursor_cb (XrdOverlayClient   *client,
+                 XrdMoveCursorEvent *event,
+                 Example            *self)
+{
+  (void) client;
+  (void) self;
+  g_print ("move: %f, %f\n",
+           event->position->x, event->position->y);
+}
+*/
+
+static void
+_keyboard_press_cb (XrdOverlayClient *client,
+                    GdkEventKey      *event,
+                    Example          *self)
+{
+  (void) client;
+  (void) self;
+  g_print ("key: %d\n", event->keyval);
+}
+
 int
 main ()
 {
@@ -122,6 +157,13 @@ main ()
     return -1;
 
   g_unix_signal_add (SIGINT, _sigint_cb, &self);
+
+  g_signal_connect (self.client, "click-event",
+                    (GCallback) _click_cb, &self);
+  //g_signal_connect (self.client, "move-cursor-event",
+  //                  (GCallback) _move_cursor_cb, &self);
+  g_signal_connect (self.client, "keyboard-press-event",
+                    (GCallback) _keyboard_press_cb, &self);
 
   /* start glib main loop */
   g_main_loop_run (self.loop);
