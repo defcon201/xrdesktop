@@ -51,6 +51,8 @@ xrd_overlay_manager_init (XrdOverlayManager *self)
 {
   self->reset_transforms = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                                   NULL, _free_matrix_cb);
+  self->reset_widths = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                              NULL, g_free);
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
@@ -72,6 +74,7 @@ xrd_overlay_manager_finalize (GObject *gobject)
   XrdOverlayManager *self = XRD_OVERLAY_MANAGER (gobject);
 
   g_hash_table_unref (self->reset_transforms);
+  g_hash_table_unref (self->reset_widths);
 
   g_slist_free_full (self->destroy_overlays, g_object_unref);
 }
@@ -86,8 +89,12 @@ _interpolate_cb (gpointer _transition)
                                   &transition->to,
                                    transition->interpolate,
                                   &interpolated);
-
   openvr_overlay_set_transform_absolute (transition->overlay, &interpolated);
+
+  float interpolated_width =
+    transition->from_width * (1.0f - transition->interpolate) +
+    transition->to_width * transition->interpolate;
+  openvr_overlay_set_width_meters (transition->overlay, interpolated_width);
 
   transition->interpolate += 0.03f;
 
@@ -95,6 +102,8 @@ _interpolate_cb (gpointer _transition)
     {
       openvr_overlay_set_transform_absolute (transition->overlay,
                                              &transition->to);
+      openvr_overlay_set_width_meters (transition->overlay,
+                                       transition->to_width);
       g_object_unref (transition->overlay);
       g_free (transition);
       return FALSE;
@@ -117,6 +126,10 @@ xrd_overlay_manager_arrange_reset (XrdOverlayManager *self)
         g_hash_table_lookup (self->reset_transforms, overlay);
 
       openvr_overlay_get_transform_absolute (overlay, &transition->from);
+
+      float *width = g_hash_table_lookup (self->reset_widths, overlay);
+      transition->to_width = *width;
+      openvr_overlay_get_width_meters (overlay, &transition->from_width);
 
       if (!openvr_math_matrix_equals (&transition->from, transform))
         {
@@ -218,6 +231,9 @@ xrd_overlay_manager_save_reset_transform (XrdOverlayManager *self,
   graphene_matrix_t *transform =
     g_hash_table_lookup (self->reset_transforms, overlay);
   openvr_overlay_get_transform_absolute (overlay, transform);
+
+  float *width = g_hash_table_lookup (self->reset_widths, overlay);
+  openvr_overlay_get_width_meters (overlay, width);
 }
 
 void
@@ -241,6 +257,10 @@ xrd_overlay_manager_add_overlay (XrdOverlayManager *self,
   graphene_matrix_t *transform = graphene_matrix_alloc ();
   openvr_overlay_get_transform_absolute (overlay, transform);
   g_hash_table_insert (self->reset_transforms, overlay, transform);
+
+  float *width = (float*) g_malloc (sizeof (float));
+  openvr_overlay_get_width_meters (overlay, width);
+  g_hash_table_insert (self->reset_widths, overlay, width);
 
   g_object_ref (overlay);
 }
