@@ -149,10 +149,15 @@ xrd_overlay_manager_arrange_reset (XrdOverlayManager *self)
 }
 
 gboolean
-xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
-                                    uint32_t           grid_width,
-                                    uint32_t           grid_height)
+xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self)
 {
+  guint num_overlays = g_slist_length (self->grab_overlays);
+  uint32_t grid_height = (uint32_t) sqrt((float) num_overlays);
+  uint32_t grid_width = (uint32_t) ((float) num_overlays / (float) grid_height);
+
+  while (grid_width * grid_height < num_overlays)
+    grid_width++;
+
   float theta_start = M_PI / 2.0f;
   float theta_end = M_PI - M_PI / 8.0f;
   float theta_range = theta_end - theta_start;
@@ -200,8 +205,6 @@ xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
               return FALSE;
             }
 
-          i++;
-
           openvr_overlay_get_transform_absolute (overlay, &transition->from);
 
           openvr_overlay_get_width_meters (overlay, &transition->from_width);
@@ -223,6 +226,10 @@ xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
             {
               g_free (transition);
             }
+
+          i++;
+          if (i > num_overlays)
+            return TRUE;
         }
     }
 

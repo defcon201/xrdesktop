@@ -80,9 +80,7 @@ void
 xrd_overlay_manager_arrange_reset (XrdOverlayManager *self);
 
 gboolean
-xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self,
-                                    uint32_t           grid_width,
-                                    uint32_t           grid_height);
+xrd_overlay_manager_arrange_sphere (XrdOverlayManager *self);
 
 void
 xrd_overlay_manager_add_overlay (XrdOverlayManager *self,

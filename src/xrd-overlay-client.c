@@ -352,8 +352,7 @@ _button_sphere_press_cb (OpenVROverlay             *overlay,
   (void) event;
   (void) overlay;
   XrdOverlayClient *self = _self;
-  /* TODO: Don't hardcode grid size */
-  xrd_overlay_manager_arrange_sphere (self->manager, 6, 5);
+  xrd_overlay_manager_arrange_sphere (self->manager);
   g_free (event);
 }
 
