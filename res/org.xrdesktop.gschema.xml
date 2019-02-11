@@ -28,8 +28,25 @@
       <default>2.0</default>
       <summary>How much the push/pull gesture should be amplified</summary>
       <description>
-        While dragging a window, the touchpad or thumbstick can push/pull a window away or nearer.
+        While dragging a window, the touchpad's or thumbstick's y axis can push/pull a window away or nearer.
         This value determines how fast this happens.
+      </description>
+    </key>
+
+    <key name='scroll-to-scale-ratio' type='d'>
+      <default>0.75</default>
+      <summary>How much the scale gesture should be amplified</summary>
+      <description>
+        While dragging a window, the touchpad's or thumbstick's x axis can scale a window's size.
+        This value determines how fast this happens.
+      </description>
+    </key>
+
+    <key name='analog-threshold' type='d'>
+      <default>0.00001</default>
+      <summary>Analog input below this threshold is ignored</summary>
+      <description>
+        A thumbstick might not rest at perfectly (0,0). This setting specifies a deadzone in which values are ignored.
       </description>
     </key>
 

@@ -13,10 +13,6 @@
 #include "xrd-settings.h"
 #include <openvr-math.h>
 
-#define SCALE_FACTOR 0.75
-#define ANALOG_TRESHOLD 0.000001
-#define POLL_RATE_MS 20
-
 G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, G_TYPE_OBJECT)
 
 enum {
@@ -121,15 +117,15 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
       &self->manager->grab_state[controller->index];
 
   float x_state = graphene_vec3_get_x (&event->state);
-  if (grab_state->overlay && fabs (x_state) > ANALOG_TRESHOLD)
+  if (grab_state->overlay && fabs (x_state) > self->analog_threshold)
     {
-      float factor = x_state * SCALE_FACTOR;
+      float factor = x_state * self->scroll_to_scale_ratio;
       xrd_overlay_manager_scale (self->manager, grab_state, factor,
-                                 POLL_RATE_MS);
+                                 self->poll_rate_ms);
     }
 
   float y_state = graphene_vec3_get_y (&event->state);
-  if (grab_state->overlay && fabs (y_state) > ANALOG_TRESHOLD)
+  if (grab_state->overlay && fabs (y_state) > self->analog_threshold)
     {
       HoverState *hover_state =
         &self->manager->hover_state[controller->index];
@@ -137,7 +133,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
         self->scroll_to_push_ratio *
         hover_state->distance *
         graphene_vec3_get_y (&event->state) *
-        (POLL_RATE_MS / 1000.);
+        (self->poll_rate_ms / 1000.);
 
       XrdOverlayPointer *pointer_ray = self->pointer_ray[controller->index];
       xrd_overlay_pointer_set_length (pointer_ray, hover_state->distance);
@@ -585,10 +581,10 @@ xrd_overlay_client_poll_events_cb (gpointer _self)
 }
 
 static void
-_update_scroll_to_push (GSettings *settings, gchar *key, gpointer user_data)
+_update_double_val (GSettings *settings, gchar *key, gpointer user_data)
 {
-  XrdOverlayClient *self = user_data;
-  self->scroll_to_push_ratio = g_settings_get_double (settings, key);
+  double *val = user_data;
+  *val = g_settings_get_double (settings, key);
 }
 
 static void
@@ -597,12 +593,12 @@ _update_poll_rate (GSettings *settings, gchar *key, gpointer user_data)
   XrdOverlayClient *self = user_data;
   if (self->poll_event_source_id != 0)
     g_source_remove (self->poll_event_source_id);
-  int poll_rate = g_settings_get_int (settings, key);
+  self->poll_rate_ms = g_settings_get_int (settings, key);
 
-  self->poll_event_source_id =
-      g_timeout_add (poll_rate, xrd_overlay_client_poll_events_cb, self);
+  self->poll_event_source_id = g_timeout_add (self->poll_rate_ms,
+                                              xrd_overlay_client_poll_events_cb,
+                                              self);
 }
-
 
 static void
 _synth_click_cb (XrdInputSynth    *synth,
@@ -641,9 +637,15 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
 static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_to_push),
-                                  "scroll-to-push-ratio", self);
-
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
+                                  "scroll-to-push-ratio",
+                                  &self->scroll_to_push_ratio);
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
+                                  "scroll-to-scale-ratio",
+                                  &self->scroll_to_scale_ratio);
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
+                                  "analog-threshold", &self->analog_threshold);
+  
   self->hover_window = NULL;
   self->new_overlay_index = 0;
   self->poll_event_source_id = 0;
