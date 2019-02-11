@@ -619,7 +619,7 @@ _synth_click_cb (XrdInputSynth    *synth,
         {
           HoverState *hover_state =
               &self->manager->hover_state[event->controller_index];
-          if (hover_state->overlay != NULL)
+          if (hover_state->overlay != NULL && event->state)
             {
               XrdOverlayPointerTip *pointer_tip =
                   self->pointer_tip[event->controller_index];
