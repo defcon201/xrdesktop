@@ -419,10 +419,11 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
 
   xrd_input_synth_move_cursor (self->input_synth, win, &position_2d);
 
-  if (self->hover_window != win)
+  /* TODO: reset scroll only when synthing controller leaves overlay */
+  if (self->hover_window[event->controller_index] != win)
     xrd_input_synth_reset_scroll (self->input_synth);
 
-  self->hover_window = win;
+  self->hover_window[event->controller_index] = win;
 }
 
 void
@@ -482,7 +483,7 @@ _manager_no_hover_cb (XrdOverlayManager  *manager,
 
   xrd_input_synth_reset_scroll (self->input_synth);
 
-  self->hover_window = NULL;
+  self->hover_window[event->controller_index] = NULL;
 }
 
 XrdOverlayWindow *
@@ -606,9 +607,9 @@ _synth_click_cb (XrdInputSynth    *synth,
                  XrdOverlayClient *self)
 {
   (void) synth;
-  if (self->hover_window)
+  if (self->hover_window[event->controller_index])
     {
-      event->window = self->hover_window;
+      event->window = self->hover_window[event->controller_index];
       g_signal_emit (self, signals[CLICK_EVENT], 0, event);
 
       if (event->button == 1)
@@ -645,8 +646,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
                                   &self->scroll_to_scale_ratio);
   xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
                                   "analog-threshold", &self->analog_threshold);
-  
-  self->hover_window = NULL;
+
   self->new_overlay_index = 0;
   self->poll_event_source_id = 0;
 
@@ -681,6 +681,8 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       self->pointer_tip[i] = xrd_overlay_pointer_tip_new (i, self->uploader);
       if (self->pointer_tip[i] == NULL)
         return;
+
+      self->hover_window[i] = NULL;
 
       xrd_overlay_pointer_tip_init_vulkan (self->pointer_tip[i]);
       xrd_overlay_pointer_tip_set_active (self->pointer_tip[i], FALSE);

@@ -52,7 +52,7 @@ struct _XrdOverlayClient
 
   OpenVRActionSet *wm_actions;
 
-  XrdOverlayWindow *hover_window;
+  XrdOverlayWindow *hover_window[OPENVR_CONTROLLER_COUNT];
 
   GHashTable *overlays_to_windows;
 
