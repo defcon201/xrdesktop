@@ -205,7 +205,28 @@ _action_scroll_cb (OpenVRAction            *action,
       return;
     }
 
-  graphene_vec3_add (&self->scroll_accumulator, &event->state,
+  static graphene_vec3_t last_touch_pos;
+  gboolean initial_touch = graphene_vec3_get_x (&last_touch_pos) == 0.0 &&
+                           graphene_vec3_get_y (&last_touch_pos) == 0.0;
+  graphene_vec3_init_from_vec3 (&last_touch_pos, &event->state);
+
+  /* No touch, no need to waste processing power */
+  if (graphene_vec3_get_x (&event->state) == 0.0 &&
+      graphene_vec3_get_y (&event->state) == 0.0)
+    {
+      g_free(event);
+      return;
+    }
+
+  /* when starting to touch the touchpad, we get a delta from (0,0) to where
+   * the touchpad is touched. Ignore this bogus delta. */
+  if (initial_touch)
+    {
+      g_free (event);
+      return;
+    }
+
+  graphene_vec3_add (&self->scroll_accumulator, &event->delta,
                      &self->scroll_accumulator);
 
   float x_acc = graphene_vec3_get_x (&self->scroll_accumulator);
