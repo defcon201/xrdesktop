@@ -165,32 +165,28 @@ xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip *self)
 }
 
 static void
-_update_width_screenspace (GSettings *settings, gchar *key, gpointer user_data)
+_update_width (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayPointerTip *self = user_data;
-  self->screen_space_width = g_settings_get_double (settings, key);
-  xrd_overlay_pointer_tip_set_constant_width (self);
-}
-
-static void
-_update_width_meter (GSettings *settings, gchar *key, gpointer user_data)
-{
-  XrdOverlayPointerTip *self = user_data;
-  self->default_width = g_settings_get_double (settings, key);
-  openvr_overlay_set_width_meters
-      (OPENVR_OVERLAY (self), self->default_width);
-}
-
-static void
-_update_use_screenspace (GSettings *settings, gchar *key, gpointer user_data)
-{
-  XrdOverlayPointerTip *self = user_data;
-  self->use_screenspace_width = g_settings_get_boolean (settings, key);
-  if (self->use_screenspace_width)
+  self->width = g_settings_get_double (settings, key);
+  if (self->use_constant_apparent_width)
     xrd_overlay_pointer_tip_set_constant_width (self);
   else
     openvr_overlay_set_width_meters
-        (OPENVR_OVERLAY (self), self->default_width);
+        (OPENVR_OVERLAY (self), self->width);
+}
+
+static void
+_update_use_constant_apparent_width (GSettings *settings, gchar *key,
+                                     gpointer user_data)
+{
+  XrdOverlayPointerTip *self = user_data;
+  self->use_constant_apparent_width = g_settings_get_boolean (settings, key);
+  if (self->use_constant_apparent_width)
+    xrd_overlay_pointer_tip_set_constant_width (self);
+  else
+    openvr_overlay_set_width_meters
+        (OPENVR_OVERLAY (self), self->width);
 }
 
 static void
@@ -256,9 +252,6 @@ xrd_overlay_pointer_tip_new (int controller_index,
   xrd_settings_connect_and_apply (G_CALLBACK (_update_background_alpha),
                                   "pointer-tip-animation-alpha", self);
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_screenspace),
-                                  "pointer-tip-width-screenspace", self);
-
   char key[k_unVROverlayMaxKeyLength];
   snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%d",
             controller_index);
@@ -273,12 +266,14 @@ xrd_overlay_pointer_tip_new (int controller_index,
       return NULL;
     }
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_meter),
-                                  "pointer-tip-width-meter", self);
+  xrd_settings_connect_and_apply (G_CALLBACK
+                                  (_update_use_constant_apparent_width),
+                                  "pointer-tip-apparent-width-is-constant",
+                                  self);
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_use_screenspace),
-                                  "constant-pointer-tip-width", self);
-  
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_width),
+                                  "pointer-tip-width", self);
+
   /*
    * The crosshair should always be visible, except the pointer can
    * occlude it. The pointer has max sort order, so the crosshair gets max -1
@@ -374,70 +369,43 @@ _get_hmd_pose (graphene_matrix_t *pose)
   return FALSE;
 }
 
-/* note: Set overlay transform before calling this function */
+/* note: Move pointer tip to the desired location before calling. */
 void
 xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
 {
-  if (!self->use_screenspace_width)
+  if (!self->use_constant_apparent_width)
     return;
-  
-  graphene_matrix_t intersection_pose;
-  openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self),
-                                         &intersection_pose);
 
-  graphene_vec3_t intersection_point_vec;
-  openvr_math_matrix_get_translation (&intersection_pose,
-                                      &intersection_point_vec);
-  graphene_point3d_t intersection_point;
-  graphene_point3d_init_from_vec3 (&intersection_point, &intersection_point_vec);
+  graphene_matrix_t tip_pose;
+  openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &tip_pose);
 
-  /* The tip should have the same size relative to the view of the HMD.
-   * Therefore we first need the HMD pose. */
+  graphene_vec3_t tip_point_vec;
+  openvr_math_matrix_get_translation (&tip_pose, &tip_point_vec);
+  graphene_point3d_t tip_point;
+  graphene_point3d_init_from_vec3 (&tip_point, &tip_point_vec);
+
   graphene_matrix_t hmd_pose;
   gboolean has_pose = _get_hmd_pose (&hmd_pose);
   if (!has_pose)
     {
       g_print ("Error: NO HMD POSE\n");
-      openvr_overlay_set_width_meters (OPENVR_OVERLAY(self),
-                                       self->default_width);
+      openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), self->width);
       return;
     }
 
-  /* To find screen space sizes we need a projection matrix. We will use only
-   * the left eye, should be close enough. */
-  graphene_matrix_t projection_matrix =
-      openvr_system_get_projection_matrix (EVREye_Eye_Left, 0.1, 1000.);
+  graphene_vec3_t hmd_point_vec;
+  openvr_math_matrix_get_translation (&hmd_pose,
+                                      &hmd_point_vec);
+  graphene_point3d_t hmd_point;
+  graphene_point3d_init_from_vec3 (&hmd_point, &hmd_point_vec);
 
-  graphene_point3d_t intersection_screenspace;
-  float w = 1.0;
-  openvr_math_worldspace_to_screenspace (&intersection_point,
-                                         &hmd_pose,
-                                         &projection_matrix,
-                                         &intersection_screenspace,
-                                         &w);
+  float distance = graphene_point3d_distance (&tip_point, &hmd_point, NULL);
 
-  /* Transforming a point with offset of the desired screenspace distance back
-   * into worldspace, reusing the same w, yields an approximate point with the
-   * desired radius in worldspace. */
-  graphene_point3d_t intersection_right_screenspace = {
-    intersection_screenspace.x + self->screen_space_width / 2.,
-    intersection_screenspace.y,
-    intersection_screenspace.z
-  };
-
-  graphene_point3d_t intersection_right_worldspace;
-  openvr_math_screenspace_to_worldspace (&intersection_right_screenspace,
-                                         &hmd_pose,
-                                         &projection_matrix,
-                                         &intersection_right_worldspace,
-                                         &w);
-
-  graphene_vec3_t distance_vec;
-  graphene_point3d_distance (&intersection_point,
-                             &intersection_right_worldspace,
-                             &distance_vec);
-  float new_width = graphene_vec3_length (&distance_vec);
-
+  /* divide distance by 3 so the width and the apparent width are the same at
+   * a distance of 3 meters. This makes e.g. self->width = 0.3 look decent in
+   * both cases at typical usage distances. */
+  float new_width = self->width / 3.0 * distance;
+  
   openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), new_width);
 }
 

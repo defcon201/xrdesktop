@@ -78,29 +78,24 @@
       </description>
     </key>
 
-    <key name='constant-pointer-tip-width' type='b'>
+    <key name='pointer-tip-apparent-width-is-constant' type='b'>
       <default>true</default>
-      <summary>Whether the pointer tip should get smaller the farther it is away</summary>
+      <summary>Whether the pointer tip should have the same apparent size, independent from the distance to the user.</summary>
       <description>
         This option disables the expected perspective of the pointer tip getting
         smaller when it is farther away.
       </description>
     </key>
 
-    <key name='pointer-tip-width-screenspace' type='d'>
-      <default>0.05</default>
-      <summary>The width of the pointer tip in screen space</summary>
+    <key name='pointer-tip-width' type='d'>
+      <default>0.3</default>
+      <summary>Either the width or the apparent width of the pointer tip, depending on the pointer-tip-apparent-width-is-constant option.</summary>
       <description>
-        This option only applies when the constant-pointer-tip-width option is enabled.
-      </description>
-    </key>
-
-    <key name='pointer-tip-width-meter' type='d'>
-      <default>0.05</default>
-      <summary>The width of the pointer tip in world space (meter)</summary>
-      <description>
-        This option applies when the constant-pointer-tip-width option is disabled,
-        and when the constant-pointer-tip-width is enabled, but the HMD pose can not be determined.
+        When pointer-tip-apparent-width-is-constant is disabled, this option sets the width of the pointer tip.
+        When pointer-tip-apparent-width-is-constant is enabled, this option sets the apparent width such
+        that it always appears to have this width as if seen in 3 meter distance. The value of 3 meter was chosen because
+        at typical usage distances, it makes the pointer tip usable both with pointer-tip-apparent-width-is-constant
+        enabled and disabled.
       </description>
     </key>
 

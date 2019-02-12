@@ -28,10 +28,9 @@ struct _XrdOverlayPointerTip
   GulkanTexture *texture;
   gboolean active;
 
-  gboolean use_screenspace_width;
-  float screen_space_width;
-  /* default width in meters, as a fallback */
-  float default_width;
+
+  gboolean use_constant_apparent_width;
+  float width;
 
   /* 0, or the id of the currently running animation. */
   guint animation_callback_id;
