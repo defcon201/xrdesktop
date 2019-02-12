@@ -259,20 +259,13 @@ xrd_overlay_pointer_tip_new (int controller_index,
   xrd_settings_connect_and_apply (G_CALLBACK (_update_width_screenspace),
                                   "pointer-tip-width-screenspace", self);
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_meter),
-                                  "pointer-tip-width-meter", self);
-
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_use_screenspace),
-                                  "constant-pointer-tip-width", self);
-
   char key[k_unVROverlayMaxKeyLength];
   snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%d",
             controller_index);
 
   /* the texture has 2x the size of the pointer, so the overlay should be 2x
    * the desired size of the default pointer too. */
-  openvr_overlay_create_width (OPENVR_OVERLAY (self),
-                               key, key, self->default_width * 2);
+  openvr_overlay_create (OPENVR_OVERLAY (self), key, key);
 
   if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
     {
@@ -280,13 +273,17 @@ xrd_overlay_pointer_tip_new (int controller_index,
       return NULL;
     }
 
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_meter),
+                                  "pointer-tip-width-meter", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_use_screenspace),
+                                  "constant-pointer-tip-width", self);
+  
   /*
    * The crosshair should always be visible, except the pointer can
    * occlude it. The pointer has max sort order, so the crosshair gets max -1
    */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 1);
-
-
 
   return self;
 }
