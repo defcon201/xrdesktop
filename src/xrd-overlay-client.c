@@ -607,6 +607,7 @@ _synth_click_cb (XrdInputSynth    *synth,
                  XrdClickEvent    *event,
                  XrdOverlayClient *self)
 {
+  (void) synth;
   if (self->hover_window[event->controller_index])
     {
       event->window = self->hover_window[event->controller_index];
