@@ -44,7 +44,7 @@ struct _XrdInputSynth
 
   XrdInputSynthController left;
   XrdInputSynthController right;
-
+  
   /* hover_position is relative to hover_window */
   graphene_point_t hover_position;
 
@@ -52,6 +52,8 @@ struct _XrdInputSynth
   graphene_vec3_t scroll_accumulator;
 
   double scroll_threshold;
+
+  int synthing_controller_index;
 
   OpenVRActionSet *synth_actions;
 };
@@ -71,6 +73,14 @@ void
 xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              XrdOverlayWindow *window,
                              graphene_point_t *position);
+
+int
+xrd_input_synth_synthing_controller (XrdInputSynth *self);
+
+void
+xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
+                                        int controller_index);
+
 
 G_END_DECLS
 

@@ -64,14 +64,13 @@ void
 _emit_click (XrdInputSynth    *self,
              graphene_point_t *position,
              int               button,
-             int               controller_index,
              gboolean          state)
 {
   XrdClickEvent *click_event = g_malloc (sizeof (XrdClickEvent));
   click_event->position = position;
   click_event->button = button;
   click_event->state = state;
-  click_event->controller_index = controller_index;
+  click_event->controller_index = self->synthing_controller_index;
   g_signal_emit (self, signals[CLICK_EVENT], 0, click_event);
 }
 
@@ -87,7 +86,7 @@ xrd_input_synth_reset_press_state (XrdInputSynth *self)
           if (pressed)
             {
               g_print ("Released button %d\n", button);
-              _emit_click (self, &self->hover_position, button, 0, FALSE);
+              _emit_click (self, &self->hover_position, button, FALSE);
             }
         }
       self->button_press_state = 0;
@@ -95,18 +94,31 @@ xrd_input_synth_reset_press_state (XrdInputSynth *self)
 }
 
 static void
-_action_left_click_cb (OpenVRAction            *action,
-                       OpenVRDigitalEvent      *event,
-                       XrdInputSynthController *controller)
+_action_left_click_cb (OpenVRAction             *action,
+                       OpenVRDigitalEvent       *event,
+                       XrdInputSynthController  *controller)
 {
   (void) action;
-
   XrdInputSynth *self = controller->self;
+
+  /* when left clicking with a controller that is *not* used to do input
+   * synth, make this controller do input synth */
+  if (event->state && self->synthing_controller_index != controller->index)
+    {
+      g_free (event);
+      xrd_input_synth_hand_off_to_controller (self, controller->index);
+      return;
+    }
+
+  if (self->synthing_controller_index != controller->index)
+    {
+      g_free (event);
+      return;
+    }
 
   if (event->changed)
     {
-      _emit_click (self, &self->hover_position, 1,
-                   controller->index, event->state);
+      _emit_click (self, &self->hover_position, 1, event->state);
 
       if (event->state)
         self->button_press_state |= 1 << 1;
@@ -117,17 +129,22 @@ _action_left_click_cb (OpenVRAction            *action,
 }
 
 static void
-_action_right_click_cb (OpenVRAction           *action,
+_action_right_click_cb (OpenVRAction            *action,
                         OpenVRDigitalEvent      *event,
                         XrdInputSynthController *controller)
 {
   (void) action;
   XrdInputSynth *self = controller->self;
 
+  if (self->synthing_controller_index != controller->index)
+    {
+      g_free (event);
+      return;
+    }
+
   if (event->changed)
     {
-      _emit_click (self, &self->hover_position, 3,
-                   controller->index, event->state);
+      _emit_click (self, &self->hover_position, 3, event->state);
       if (event->state)
         self->button_press_state |= 1 << 3;
       else
@@ -146,8 +163,8 @@ _do_scroll (XrdInputSynth *self, int steps_x, int steps_y)
         btn = 4;
       else
         btn = 5;
-      _emit_click (self, &self->hover_position, btn, 0, TRUE);
-      _emit_click (self, &self->hover_position, btn, 0, FALSE);
+      _emit_click (self, &self->hover_position, btn, TRUE);
+      _emit_click (self, &self->hover_position, btn, FALSE);
     }
 
   for (int i = 0; i < abs(steps_x); i++)
@@ -157,8 +174,8 @@ _do_scroll (XrdInputSynth *self, int steps_x, int steps_y)
         btn = 6;
       else
         btn = 7;
-      _emit_click (self, &self->hover_position, btn, 0, TRUE);
-      _emit_click (self, &self->hover_position, btn, 0, FALSE);
+      _emit_click (self, &self->hover_position, btn, TRUE);
+      _emit_click (self, &self->hover_position, btn, FALSE);
     }
 }
 
@@ -168,14 +185,25 @@ _do_scroll (XrdInputSynth *self, int steps_x, int steps_y)
  * scroll_accumulator.
  */
 static void
-_action_scroll_cb (OpenVRAction      *action,
-                   OpenVRAnalogEvent *event,
-                   XrdInputSynth     *self)
+_action_scroll_cb (OpenVRAction            *action,
+                   OpenVRAnalogEvent       *event,
+                   XrdInputSynthController *controller)
 {
   (void) action;
+  XrdInputSynth *self = controller->self;
+
+  if (self->synthing_controller_index != controller->index)
+    {
+      g_free (event);
+      return;
+    }
+  
   /* When z is not zero we get bogus data. We ignore this completely */
   if (graphene_vec3_get_z (&event->state) != 0.0)
-    return;
+    {
+      g_free (event);
+      return;
+    }
 
   graphene_vec3_add (&self->scroll_accumulator, &event->state,
                      &self->scroll_accumulator);
@@ -208,6 +236,7 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              XrdOverlayWindow *window,
                              graphene_point_t *position)
 {
+  
   XrdMoveCursorEvent *event = g_malloc (sizeof (XrdClickEvent));
   event->window = window;
   event->position = position;
@@ -229,8 +258,7 @@ xrd_input_synth_init (XrdInputSynth *self)
   self->button_press_state = 0;
   graphene_point_init (&self->hover_position, 0, 0);
 
-  self->synth_actions =
-    openvr_action_set_new_from_url ("/actions/mouse_synth");
+  self->synth_actions = openvr_action_set_new_from_url ("/actions/mouse_synth");
 
   self->left.self = self;
   self->left.index = 0;
@@ -238,9 +266,6 @@ xrd_input_synth_init (XrdInputSynth *self)
   self->right.self = self;
   self->right.index = 1;
 
-  /*
-   * TODO: Implement active Desktop synth hand
-   */
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/mouse_synth/in/left_click_left",
                              (GCallback) _action_left_click_cb, &self->left);
@@ -249,7 +274,7 @@ xrd_input_synth_init (XrdInputSynth *self)
                              (GCallback) _action_right_click_cb, &self->left);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
                              "/actions/mouse_synth/in/scroll_left",
-                             (GCallback) _action_scroll_cb, self);
+                             (GCallback) _action_scroll_cb, &self->left);
 
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/mouse_synth/in/left_click_right",
@@ -259,10 +284,27 @@ xrd_input_synth_init (XrdInputSynth *self)
                              (GCallback) _action_right_click_cb, &self->right);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
                              "/actions/mouse_synth/in/scroll_right",
-                             (GCallback) _action_scroll_cb, self);
+                             (GCallback) _action_scroll_cb, &self->right);
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_threshold),
                                   "scroll-threshold", self);
+
+  self->synthing_controller_index = 1;
+}
+
+int
+xrd_input_synth_synthing_controller (XrdInputSynth *self)
+{
+  return self->synthing_controller_index;
+}
+
+void
+xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
+                                        int controller_index)
+{
+  xrd_input_synth_reset_scroll (self);
+  xrd_input_synth_reset_press_state (self);
+  self->synthing_controller_index = controller_index;
 }
 
 gboolean

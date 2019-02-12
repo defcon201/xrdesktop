@@ -408,22 +408,23 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
   XrdOverlayPointer *pointer = self->pointer_ray[event->controller_index];
   xrd_overlay_pointer_set_length (pointer, event->distance);
 
-  PixelSize size_pixels;
-  openvr_overlay_get_size_pixels (overlay, &size_pixels);
-  graphene_point_t position_2d;
-  if (!openvr_overlay_get_2d_intersection (overlay,
-                                          &event->point,
-                                          &size_pixels,
-                                          &position_2d))
-    return;
-
-  xrd_input_synth_move_cursor (self->input_synth, win, &position_2d);
-
-  /* TODO: reset scroll only when synthing controller leaves overlay */
-  if (self->hover_window[event->controller_index] != win)
-    xrd_input_synth_reset_scroll (self->input_synth);
-
   self->hover_window[event->controller_index] = win;
+
+  if (event->controller_index ==
+      xrd_input_synth_synthing_controller (self->input_synth))
+    {
+      PixelSize size_pixels;
+      openvr_overlay_get_size_pixels (overlay, &size_pixels);
+      graphene_point_t position_2d;
+      if (!openvr_overlay_get_2d_intersection (overlay, &event->point,
+                                               &size_pixels, &position_2d))
+        return;
+
+      xrd_input_synth_move_cursor (self->input_synth, win, &position_2d);
+
+      if (self->hover_window[event->controller_index] != win)
+        xrd_input_synth_reset_scroll (self->input_synth);
+    }
 }
 
 void
@@ -606,7 +607,6 @@ _synth_click_cb (XrdInputSynth    *synth,
                  XrdClickEvent    *event,
                  XrdOverlayClient *self)
 {
-  (void) synth;
   if (self->hover_window[event->controller_index])
     {
       event->window = self->hover_window[event->controller_index];
