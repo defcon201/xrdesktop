@@ -255,15 +255,21 @@ _action_scroll_cb (OpenVRAction            *action,
 void
 xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              XrdOverlayWindow *window,
-                             graphene_point_t *position)
+                             graphene_point3d_t *intersection)
 {
+  PixelSize size_pixels;
+  openvr_overlay_get_size_pixels (window->overlay, &size_pixels);
+  graphene_point_t position;
+  if (!openvr_overlay_get_2d_intersection (window->overlay, intersection,
+                                           &size_pixels, &position))
+    return;
   
   XrdMoveCursorEvent *event = g_malloc (sizeof (XrdClickEvent));
   event->window = window;
-  event->position = position;
+  event->position = &position;
   g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
 
-  graphene_point_init_from_point (&self->hover_position, position);
+  graphene_point_init_from_point (&self->hover_position, &position);
 }
 
 static void

@@ -74,6 +74,8 @@ xrd_overlay_client_finalize (GObject *gobject)
       g_object_unref (self->pointer_tip[i]);
     }
 
+  g_object_unref (self->cursor);
+
   g_object_unref (self->wm_actions);
 
   g_hash_table_unref (self->overlays_to_windows);
@@ -177,6 +179,8 @@ _overlay_grab_start_cb (OpenVROverlay              *overlay,
 
   xrd_overlay_manager_drag_start (self->manager, event->index);
 
+  xrd_overlay_desktop_cursor_hide (self->cursor);
+
   g_free (event);
 }
 
@@ -260,6 +264,8 @@ _hover_end_cb (OpenVROverlay              *overlay,
 
   xrd_input_synth_reset_press_state (self->input_synth);
 
+  xrd_overlay_desktop_cursor_hide (self->cursor);
+  
   g_free (event);
 }
 
@@ -413,18 +419,14 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
   if (event->controller_index ==
       xrd_input_synth_synthing_controller (self->input_synth))
     {
-      PixelSize size_pixels;
-      openvr_overlay_get_size_pixels (overlay, &size_pixels);
-      graphene_point_t position_2d;
-      if (!openvr_overlay_get_2d_intersection (overlay, &event->point,
-                                               &size_pixels, &position_2d))
-        return;
-
-      xrd_input_synth_move_cursor (self->input_synth, win, &position_2d);
+      xrd_input_synth_move_cursor (self->input_synth, win, &event->point);
+      xrd_overlay_desktop_cursor_update (self->cursor, win, &event->point);
 
       if (self->hover_window[event->controller_index] != win)
         xrd_input_synth_reset_scroll (self->input_synth);
     }
+
+  xrd_overlay_desktop_cursor_show (self->cursor);
 }
 
 void
@@ -438,6 +440,8 @@ _overlay_hover_start_cb (OpenVROverlay              *overlay,
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
   xrd_overlay_pointer_tip_set_active (pointer_tip, TRUE);
 
+  xrd_overlay_desktop_cursor_show (self->cursor);
+  
   g_free (event);
 }
 
@@ -710,6 +714,8 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       return;
     }
 
+  self->cursor = xrd_overlay_desktop_cursor_new (self->uploader);
+  
   self->wm_actions = openvr_action_set_new_from_url ("/actions/wm");
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
@@ -758,6 +764,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
                                   "event-update-rate-ms", self);
 
   self->input_synth = xrd_input_synth_new ();
+  
   g_signal_connect (self->input_synth, "click-event",
                     (GCallback) _synth_click_cb, self);
   g_signal_connect (self->input_synth, "move-cursor-event",

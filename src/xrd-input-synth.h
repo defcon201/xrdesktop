@@ -13,6 +13,7 @@
 #include <openvr-action-set.h>
 
 #include "xrd-overlay-window.h"
+#include "xrd-overlay-desktop-cursor.h"
 
 G_BEGIN_DECLS
 
@@ -58,7 +59,8 @@ struct _XrdInputSynth
   OpenVRActionSet *synth_actions;
 };
 
-XrdInputSynth *xrd_input_synth_new (void);
+XrdInputSynth *
+xrd_input_synth_new (void);
 
 gboolean
 xrd_input_synth_poll_events (XrdInputSynth *self);
@@ -72,7 +74,7 @@ xrd_input_synth_reset_press_state (XrdInputSynth *self);
 void
 xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              XrdOverlayWindow *window,
-                             graphene_point_t *position);
+                             graphene_point3d_t *intersection);
 
 int
 xrd_input_synth_synthing_controller (XrdInputSynth *self);
