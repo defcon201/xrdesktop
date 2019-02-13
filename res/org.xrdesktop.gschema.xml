@@ -99,6 +99,13 @@
       </description>
     </key>
 
+    <key name='cursor-width' type='d'>
+      <default>0.25</default>
+      <summary>The width of the cursor that is copied from the desktop, in meter.</summary>
+      <description>
+      </description>
+    </key>
+
     <key name='active-pointer-tip-color' type='(ddd)'>
       <default>(0.078,0.471,0.675)</default>
       <summary>The color of an active pointer tip e.g. pointing at an overlay</summary>

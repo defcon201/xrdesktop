@@ -8,6 +8,7 @@
 #include "xrd-overlay-desktop-cursor.h"
 
 #include "openvr-math.h"
+#include "xrd-settings.h"
 
 G_DEFINE_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, OPENVR_TYPE_OVERLAY)
 
@@ -28,6 +29,15 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
   (void) self;
 }
 
+static void
+_update_cursor_width (GSettings *settings, gchar *key, gpointer user_data)
+{
+  XrdOverlayDesktopCursor *self = user_data;
+  self->cursor_width_meter = g_settings_get_double (settings, key);
+  openvr_overlay_set_width_meters (OPENVR_OVERLAY (self),
+                                   self->cursor_width_meter);
+}
+
 XrdOverlayDesktopCursor *
 xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
 {
@@ -37,18 +47,17 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
   self->pixbuf = NULL;
   self->texture = NULL;
 
-  /* TODO: settings */
-  self->cursor_width_meter = 0.125;
-
-  openvr_overlay_create_width (OPENVR_OVERLAY (self),
-                               "org.xrdesktop.cursor", "XR Desktop Cursor",
-                               self->cursor_width_meter);
+  openvr_overlay_create (OPENVR_OVERLAY (self),
+                         "org.xrdesktop.cursor", "XR Desktop Cursor");
   if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
     {
       g_printerr ("Cursor overlay unavailable.\n");
       return NULL;
     }
 
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_cursor_width),
+                                  "cursor-width", self);
+  
   /* pointer ray is MAX, pointer tip is MAX - 1, so cursor is MAX - 2 */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 2);
 
