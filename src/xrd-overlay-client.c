@@ -19,6 +19,7 @@ enum {
   KEYBOARD_PRESS_EVENT,
   CLICK_EVENT,
   MOVE_CURSOR_EVENT,
+  REQUEST_QUIT_EVENT,
   LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
@@ -53,6 +54,12 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
                    G_SIGNAL_RUN_LAST,
                    0, NULL, NULL, NULL, G_TYPE_NONE,
                    1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
+
+  signals[REQUEST_QUIT_EVENT] =
+    g_signal_new ("request-quit-event",
+                   G_TYPE_FROM_CLASS (klass),
+                   G_SIGNAL_RUN_LAST,
+                   0, NULL, NULL, NULL, G_TYPE_NONE, 0, 0);
 }
 
 XrdOverlayClient *
@@ -81,7 +88,6 @@ xrd_overlay_client_finalize (GObject *gobject)
   g_hash_table_unref (self->overlays_to_windows);
 
   g_object_unref (self->manager);
-
 
   g_object_unref (self->context);
   self->context = NULL;
@@ -640,6 +646,16 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
   g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
 }
 
+static void _system_quit_cb (OpenVRContext *context,
+                             GdkEvent *event,
+                             XrdOverlayClient *self)
+{
+  (void) event;
+  /* g_print("Handling VR quit event\n"); */
+  openvr_context_acknowledge_quit (context);
+  g_signal_emit (self, signals[REQUEST_QUIT_EVENT], 0);
+}
+
 static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
@@ -670,6 +686,9 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       g_printerr ("Error: OpenVR context is invalid.\n");
       return;
     }
+
+  g_signal_connect(self->context, "quit-event",
+                   (GCallback)_system_quit_cb, self);
 
   self->uploader = openvr_overlay_uploader_new ();
   if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))

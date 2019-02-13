@@ -144,6 +144,16 @@ _keyboard_press_cb (XrdOverlayClient *client,
   g_print ("key: %d\n", event->keyval);
 }
 
+static void
+_request_quit_cb (XrdOverlayClient *client,
+                  Example          *self)
+{
+  (void) client;
+  (void) self;
+  g_print ("Got quit request from the runtime\n");
+  g_main_loop_quit (self->loop);
+}
+
 int
 main ()
 {
@@ -165,6 +175,9 @@ main ()
   g_signal_connect (self.client, "keyboard-press-event",
                     (GCallback) _keyboard_press_cb, &self);
 
+  g_signal_connect (self.client, "request-quit-event",
+                    (GCallback) _request_quit_cb, &self);
+  
   /* start glib main loop */
   g_main_loop_run (self.loop);
 
