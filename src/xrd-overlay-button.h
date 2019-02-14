@@ -9,17 +9,17 @@
 #define XRD_OVERLAY_BUTTON_H_
 
 #include <glib-object.h>
-#include "openvr-overlay.h"
+#include "xrd-overlay-window.h"
 
 G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_BUTTON xrd_overlay_button_get_type()
 G_DECLARE_FINAL_TYPE (XrdOverlayButton, xrd_overlay_button, XRD, OVERLAY_BUTTON,
-                      OpenVROverlay)
+                      XrdOverlayWindow)
 
 struct _XrdOverlayButton
 {
-  OpenVROverlay parent;
+  XrdOverlayWindow parent;
 };
 
 XrdOverlayButton *

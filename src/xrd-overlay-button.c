@@ -6,8 +6,9 @@
  */
 
 #include "xrd-overlay-button.h"
+#include "openvr-overlay.h"
 
-G_DEFINE_TYPE (XrdOverlayButton, xrd_overlay_button, OPENVR_TYPE_OVERLAY)
+G_DEFINE_TYPE (XrdOverlayButton, xrd_overlay_button, XRD_TYPE_OVERLAY_WINDOW)
 
 static void
 xrd_overlay_button_finalize (GObject *gobject);
@@ -93,29 +94,33 @@ xrd_overlay_button_new (gchar *id, gchar *text)
 {
   XrdOverlayButton *self = (XrdOverlayButton*) g_object_new (XRD_TYPE_OVERLAY_BUTTON, 0);
 
-  /* create openvr overlay */
-  openvr_overlay_create (OPENVR_OVERLAY (self), id, text);
+  XrdOverlayWindow *window = XRD_OVERLAY_WINDOW (self);
 
-  if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
+  window->overlay = openvr_overlay_new ();
+  /* create openvr overlay */
+  openvr_overlay_create (window->overlay, id, text);
+
+  if (!openvr_overlay_is_valid (window->overlay))
   {
     g_printerr ("Overlay unavailable.\n");
     return NULL;
   }
 
-  guint width = 200;
-  guint height = 200;
-  unsigned char image[4 * width * height];
-  cairo_surface_t* surface = _create_cairo_surface (image, width, height, text);
+  window->width = 200;
+  window->height = 200;
+  unsigned char image[4 * window->width * window->height];
+  cairo_surface_t* surface = _create_cairo_surface (image, window->width,
+                                                    window->height, text);
 
   if (surface == NULL) {
     g_printerr ("Could not create cairo surface.\n");
     return NULL;
   }
 
-  openvr_overlay_set_cairo_surface_raw (OPENVR_OVERLAY (self), surface);
+  openvr_overlay_set_cairo_surface_raw (window->overlay, surface);
   cairo_surface_destroy (surface);
 
-  if (!openvr_overlay_show (OPENVR_OVERLAY (self)))
+  if (!openvr_overlay_show (window->overlay))
     return NULL;
 
   return self;

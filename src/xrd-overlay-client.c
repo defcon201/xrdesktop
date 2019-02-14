@@ -291,7 +291,7 @@ _init_button (XrdOverlayClient   *self,
   if (*button == NULL)
     return FALSE;
 
-  OpenVROverlay *overlay = OPENVR_OVERLAY (*button);
+  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (*button)->overlay;
 
   openvr_overlay_set_transform_absolute (overlay, &transform);
 
