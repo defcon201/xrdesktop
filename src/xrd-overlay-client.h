@@ -15,7 +15,7 @@
 
 #include "xrd-overlay-pointer.h"
 #include "xrd-overlay-pointer-tip.h"
-#include "xrd-overlay-manager.h"
+#include "xrd-overlay-window-manager.h"
 #include "xrd-overlay-button.h"
 #include "xrd-input-synth.h"
 

@@ -8,7 +8,7 @@
 #include <gdk/gdk.h>
 #include <math.h>
 
-#include "xrd-overlay-manager.h"
+#include "xrd-overlay-window-manager.h"
 #include "openvr-overlay.h"
 #include "openvr-math.h"
 
