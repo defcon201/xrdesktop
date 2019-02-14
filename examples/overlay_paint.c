@@ -33,7 +33,7 @@ typedef struct Example
   OpenVROverlayUploader *uploader;
   GulkanTexture *texture;
 
-  XrdOverlayManager *manager;
+  XrdOverlayWindowManager *manager;
 
   OpenVRActionSet *wm_action_set;
 
@@ -272,8 +272,8 @@ _init_paint_overlay (Example *self)
   //                  (GCallback)_intersection_cb,
   //                  self);
   //
-  xrd_overlay_manager_add_overlay (self->manager, self->paint_overlay,
-                                      OPENVR_OVERLAY_HOVER);
+  xrd_overlay_window_manager_add_overlay (self->manager, self->paint_overlay,
+                                          OPENVR_OVERLAY_HOVER);
 
   openvr_overlay_set_mouse_scale (
     self->paint_overlay,
@@ -319,7 +319,7 @@ _right_hand_pose_cb (OpenVRAction    *action,
   Example *self = data->self;
 
   xrd_overlay_pointer_move (self->pointer_overlay, &event->pose);
-  xrd_overlay_manager_update_pose (self->manager, &event->pose, 1);
+  xrd_overlay_window_manager_update_pose (self->manager, &event->pose, 1);
 
   /* update intersection */
   //openvr_overlay_poll_3d_intersection (self->paint_overlay, &event->pose);
@@ -328,7 +328,7 @@ _right_hand_pose_cb (OpenVRAction    *action,
 }
 
 void
-_no_hover_cb (XrdOverlayManager       *manager,
+_no_hover_cb (XrdOverlayWindowManager    *manager,
               OpenVRControllerIndexEvent *event,
               gpointer                   _self)
 {
@@ -362,7 +362,7 @@ main ()
   Example self = {
     .loop = g_main_loop_new (NULL, FALSE),
     .wm_action_set = openvr_action_set_new_from_url ("/actions/wm"),
-    .manager = xrd_overlay_manager_new (),
+    .manager = xrd_overlay_window_manager_new (),
     .uploader = openvr_overlay_uploader_new (),
   };
 

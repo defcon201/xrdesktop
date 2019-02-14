@@ -40,7 +40,7 @@ struct _XrdOverlayClient
   XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
   XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
 
-  XrdOverlayManager *manager;
+  XrdOverlayWindowManager *manager;
 
   XrdClientController left;
   XrdClientController right;

@@ -105,8 +105,8 @@ _action_hand_pose_cb (OpenVRAction            *action,
 {
   (void) action;
   XrdOverlayClient *self = controller->self;
-  xrd_overlay_manager_update_pose (self->manager, &event->pose,
-                                   controller->index);
+  xrd_overlay_window_manager_update_pose (self->manager, &event->pose,
+                                          controller->index);
 
   XrdOverlayPointer *pointer = self->pointer_ray[controller->index];
   xrd_overlay_pointer_move (pointer, &event->pose);
@@ -128,8 +128,8 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   if (grab_state->overlay && fabs (x_state) > self->analog_threshold)
     {
       float factor = x_state * self->scroll_to_scale_ratio;
-      xrd_overlay_manager_scale (self->manager, grab_state, factor,
-                                 self->poll_rate_ms);
+      xrd_overlay_window_manager_scale (self->manager, grab_state, factor,
+                                        self->poll_rate_ms);
     }
 
   float y_state = graphene_vec3_get_y (&event->state);
@@ -160,9 +160,9 @@ _action_grab_cb (OpenVRAction        *action,
   if (event->changed)
     {
       if (event->state == 1)
-        xrd_overlay_manager_check_grab (self->manager, controller->index);
+        xrd_overlay_window_manager_check_grab (self->manager, controller->index);
       else
-        xrd_overlay_manager_check_release (self->manager, controller->index);
+        xrd_overlay_window_manager_check_release (self->manager, controller->index);
     }
 
   g_free (event);
@@ -177,13 +177,13 @@ _overlay_grab_start_cb (OpenVROverlay              *overlay,
   XrdOverlayClient *self = _self;
 
   /* don't grab if this overlay is already grabbed */
-  if (xrd_overlay_manager_is_grabbed (self->manager, overlay))
+  if (xrd_overlay_window_manager_is_grabbed (self->manager, overlay))
     {
       g_free (event);
       return;
     }
 
-  xrd_overlay_manager_drag_start (self->manager, event->index);
+  xrd_overlay_window_manager_drag_start (self->manager, event->index);
 
   xrd_overlay_desktop_cursor_hide (self->cursor);
 
@@ -258,7 +258,7 @@ _hover_end_cb (OpenVROverlay              *overlay,
   xrd_overlay_pointer_reset_length (pointer_ray);
 
   /* unmark if no controller is hovering over this overlay */
-  if (!xrd_overlay_manager_is_hovered (self->manager, overlay))
+  if (!xrd_overlay_window_manager_is_hovered (self->manager, overlay))
     _overlay_unmark (overlay);
 
   /* When leaving this overlay and immediately entering another, the tip should
@@ -295,7 +295,7 @@ _init_button (XrdOverlayClient   *self,
 
   openvr_overlay_set_transform_absolute (overlay, &transform);
 
-  xrd_overlay_manager_add_overlay (self->manager, overlay,
+  xrd_overlay_window_manager_add_overlay (self->manager, overlay,
                                    OPENVR_OVERLAY_HOVER);
 
   if (!openvr_overlay_set_width_meters (overlay, 0.5f))
@@ -317,7 +317,7 @@ _button_sphere_press_cb (OpenVROverlay             *overlay,
   (void) event;
   (void) overlay;
   XrdOverlayClient *self = _self;
-  xrd_overlay_manager_arrange_sphere (self->manager);
+  xrd_overlay_window_manager_arrange_sphere (self->manager);
   g_free (event);
 }
 
@@ -329,7 +329,7 @@ _button_reset_press_cb (OpenVROverlay              *overlay,
   (void) event;
   (void) overlay;
   XrdOverlayClient *self = _self;
-  xrd_overlay_manager_arrange_reset (self->manager);
+  xrd_overlay_window_manager_arrange_reset (self->manager);
   g_free (event);
 }
 
@@ -452,7 +452,7 @@ _overlay_hover_start_cb (OpenVROverlay              *overlay,
 }
 
 void
-_manager_no_hover_cb (XrdOverlayManager  *manager,
+_manager_no_hover_cb (XrdOverlayWindowManager  *manager,
                       OpenVRNoHoverEvent *event,
                       XrdOverlayClient   *self)
 {
@@ -537,7 +537,7 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 
   g_hash_table_insert (self->overlays_to_windows, overlay, window);
 
-  xrd_overlay_manager_add_overlay (self->manager, overlay,
+  xrd_overlay_window_manager_add_overlay (self->manager, overlay,
                                    OPENVR_OVERLAY_HOVER |
                                    OPENVR_OVERLAY_GRAB |
                                    OPENVR_OVERLAY_DESTROY_WITH_PARENT);
@@ -567,7 +567,7 @@ xrd_overlay_client_remove_window (XrdOverlayClient *self,
       return;
     }
 
-  xrd_overlay_manager_remove_overlay (self->manager, window->overlay);
+  xrd_overlay_window_manager_remove_overlay (self->manager, window->overlay);
 }
 
 gboolean
@@ -582,12 +582,12 @@ xrd_overlay_client_poll_events_cb (gpointer _self)
   if (!openvr_action_set_poll (self->wm_actions))
     return FALSE;
 
-  if (xrd_overlay_manager_is_hovering (self->manager) &&
-      !xrd_overlay_manager_is_grabbing (self->manager))
+  if (xrd_overlay_window_manager_is_hovering (self->manager) &&
+      !xrd_overlay_window_manager_is_grabbing (self->manager))
     if (!xrd_input_synth_poll_events (self->input_synth))
       return FALSE;
 
-  xrd_overlay_manager_poll_overlay_events (self->manager);
+  xrd_overlay_window_manager_poll_overlay_events (self->manager);
 
   return TRUE;
 }
@@ -694,7 +694,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
   if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))
     g_printerr ("Unable to initialize Vulkan!\n");
 
-  self->manager = xrd_overlay_manager_new ();
+  self->manager = xrd_overlay_window_manager_new ();
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
