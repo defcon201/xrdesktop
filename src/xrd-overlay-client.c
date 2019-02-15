@@ -169,15 +169,14 @@ _action_grab_cb (OpenVRAction        *action,
 }
 
 void
-_overlay_grab_start_cb (OpenVROverlay              *overlay,
-                        OpenVRControllerIndexEvent *event,
-                        gpointer                    _self)
+_window_grab_start_cb (XrdOverlayWindow           *window,
+                       OpenVRControllerIndexEvent *event,
+                       gpointer                    _self)
 {
-  (void) overlay;
   XrdOverlayClient *self = _self;
 
   /* don't grab if this overlay is already grabbed */
-  if (xrd_overlay_window_manager_is_grabbed (self->manager, overlay))
+  if (xrd_overlay_window_manager_is_grabbed (self->manager, window))
     {
       g_free (event);
       return;
@@ -191,11 +190,11 @@ _overlay_grab_start_cb (OpenVROverlay              *overlay,
 }
 
 void
-_overlay_grab_cb (OpenVROverlay   *overlay,
-                  OpenVRGrabEvent *event,
-                  gpointer        _self)
+_window_grab_cb (XrdOverlayWindow *window,
+                 OpenVRGrabEvent  *event,
+                 gpointer         _self)
 {
-  (void) overlay;
+  (void) window;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
 
   XrdOverlayPointerTip *pointer_tip =
@@ -224,11 +223,13 @@ _overlay_mark_orange (OpenVROverlay *overlay)
 }
 
 void
-_button_hover_cb (OpenVROverlay    *overlay,
+_button_hover_cb (XrdOverlayWindow *window,
                   OpenVRHoverEvent *event,
                   gpointer         _self)
 {
   XrdOverlayClient *self = _self;
+
+  OpenVROverlay *overlay = window->overlay;
 
   _overlay_mark_orange (overlay);
 
@@ -247,9 +248,9 @@ _button_hover_cb (OpenVROverlay    *overlay,
 }
 
 void
-_hover_end_cb (OpenVROverlay              *overlay,
-               OpenVRControllerIndexEvent *event,
-               gpointer                   _self)
+_window_hover_end_cb (XrdOverlayWindow           *window,
+                      OpenVRControllerIndexEvent *event,
+                      gpointer                   _self)
 {
   (void) event;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
@@ -258,8 +259,8 @@ _hover_end_cb (OpenVROverlay              *overlay,
   xrd_overlay_pointer_reset_length (pointer_ray);
 
   /* unmark if no controller is hovering over this overlay */
-  if (!xrd_overlay_window_manager_is_hovered (self->manager, overlay))
-    _overlay_unmark (overlay);
+  if (!xrd_overlay_window_manager_is_hovered (self->manager, window))
+    _overlay_unmark (window->overlay);
 
   /* When leaving this overlay and immediately entering another, the tip should
    * still be active because it is now hovering another overlay. */
@@ -291,43 +292,46 @@ _init_button (XrdOverlayClient   *self,
   if (*button == NULL)
     return FALSE;
 
-  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (*button)->overlay;
+  XrdOverlayWindow *window = XRD_OVERLAY_WINDOW (*button);
+
+  OpenVROverlay *overlay = window->overlay;
 
   openvr_overlay_set_transform_absolute (overlay, &transform);
 
-  xrd_overlay_window_manager_add_overlay (self->manager, overlay,
-                                   OPENVR_OVERLAY_HOVER);
+  xrd_overlay_window_manager_add_window (self->manager,
+                                         XRD_OVERLAY_WINDOW (*button),
+                                         OPENVR_OVERLAY_HOVER);
 
   if (!openvr_overlay_set_width_meters (overlay, 0.5f))
     return FALSE;
 
-  g_signal_connect (overlay, "grab-start-event", (GCallback) callback, self);
-  g_signal_connect (overlay, "hover-event", (GCallback) _button_hover_cb, self);
-  g_signal_connect (overlay, "hover-end-event",
-                    (GCallback) _hover_end_cb, self);
+  g_signal_connect (window, "grab-start-event", (GCallback) callback, self);
+  g_signal_connect (window, "hover-event", (GCallback) _button_hover_cb, self);
+  g_signal_connect (window, "hover-end-event",
+                    (GCallback) _window_hover_end_cb, self);
 
   return TRUE;
 }
 
 void
-_button_sphere_press_cb (OpenVROverlay             *overlay,
+_button_sphere_press_cb (XrdOverlayWindow           *window,
                          OpenVRControllerIndexEvent *event,
                          gpointer                  _self)
 {
   (void) event;
-  (void) overlay;
+  (void) window;
   XrdOverlayClient *self = _self;
   xrd_overlay_window_manager_arrange_sphere (self->manager);
   g_free (event);
 }
 
 void
-_button_reset_press_cb (OpenVROverlay              *overlay,
+_button_reset_press_cb (XrdOverlayWindow           *window,
                         OpenVRControllerIndexEvent *event,
                         gpointer                   _self)
 {
   (void) event;
-  (void) overlay;
+  (void) window;
   XrdOverlayClient *self = _self;
   xrd_overlay_window_manager_arrange_reset (self->manager);
   g_free (event);
@@ -396,18 +400,11 @@ _action_show_keyboard_cb (OpenVRAction       *action,
 }
 
 void
-_overlay_hover_cb (OpenVROverlay    *overlay,
-                   OpenVRHoverEvent *event,
-                   XrdOverlayClient *self)
+_window_hover_cb (XrdOverlayWindow *window,
+                  OpenVRHoverEvent *event,
+                  XrdOverlayClient *self)
 {
-  XrdOverlayWindow *win = g_hash_table_lookup (self->overlays_to_windows,
-                                               overlay);
-
-  if (!win)
-    {
-      g_printerr ("Error: Could not get XrdWindow for overlay %p\n", overlay);
-      return;
-    }
+  OpenVROverlay *overlay = window->overlay;
 
   /* update pointer length and intersection overlay */
   XrdOverlayPointerTip *pointer_tip =
@@ -420,15 +417,15 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
   XrdOverlayPointer *pointer = self->pointer_ray[event->controller_index];
   xrd_overlay_pointer_set_length (pointer, event->distance);
 
-  self->hover_window[event->controller_index] = win;
+  self->hover_window[event->controller_index] = window;
 
   if (event->controller_index ==
       xrd_input_synth_synthing_controller (self->input_synth))
     {
-      xrd_input_synth_move_cursor (self->input_synth, win, &event->point);
-      xrd_overlay_desktop_cursor_update (self->cursor, win, &event->point);
+      xrd_input_synth_move_cursor (self->input_synth, window, &event->point);
+      xrd_overlay_desktop_cursor_update (self->cursor, window, &event->point);
 
-      if (self->hover_window[event->controller_index] != win)
+      if (self->hover_window[event->controller_index] != window)
         xrd_input_synth_reset_scroll (self->input_synth);
     }
 
@@ -436,11 +433,11 @@ _overlay_hover_cb (OpenVROverlay    *overlay,
 }
 
 void
-_overlay_hover_start_cb (OpenVROverlay              *overlay,
-                         OpenVRControllerIndexEvent *event,
-                         XrdOverlayClient           *self)
+_window_hover_start_cb (XrdOverlayWindow           *window,
+                        OpenVRControllerIndexEvent *event,
+                        XrdOverlayClient           *self)
 {
-  (void) overlay;
+  (void) window;
   (void) event;
 
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
@@ -525,34 +522,31 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
    /* Mouse scale is required for the intersection test */
   openvr_overlay_set_mouse_scale (overlay, width, height);
 
-  XrdOverlayWindow *window = xrd_overlay_window_new ();
+  XrdOverlayWindow *window = xrd_overlay_window_new_from_overlay (overlay,
+                                                                  width,
+                                                                  height);
   window->native = native;
-  window->overlay = overlay;
-
-  /* This has to be 0 for first upload, to trigger resolution change. */
-  window->width = width;
-  window->height = width;
 
   openvr_overlay_show (overlay);
 
   g_hash_table_insert (self->overlays_to_windows, overlay, window);
 
-  xrd_overlay_window_manager_add_overlay (self->manager, overlay,
-                                   OPENVR_OVERLAY_HOVER |
-                                   OPENVR_OVERLAY_GRAB |
-                                   OPENVR_OVERLAY_DESTROY_WITH_PARENT);
-  g_signal_connect (overlay, "grab-start-event",
-                    (GCallback) _overlay_grab_start_cb, self);
-  g_signal_connect (overlay, "grab-event",
-                    (GCallback) _overlay_grab_cb, self);
-  // g_signal_connect (overlay, "release-event",
+  xrd_overlay_window_manager_add_window (self->manager, window,
+                                         OPENVR_OVERLAY_HOVER |
+                                         OPENVR_OVERLAY_GRAB |
+                                         OPENVR_OVERLAY_DESTROY_WITH_PARENT);
+  g_signal_connect (window, "grab-start-event",
+                    (GCallback) _window_grab_start_cb, self);
+  g_signal_connect (window, "grab-event",
+                    (GCallback) _window_grab_cb, self);
+  // g_signal_connect (window, "release-event",
   //                   (GCallback) _overlay_release_cb, self);
-  g_signal_connect (overlay, "hover-start-event",
-                    (GCallback) _overlay_hover_start_cb, self);
-  g_signal_connect (overlay, "hover-event",
-                    (GCallback) _overlay_hover_cb, self);
-  g_signal_connect (overlay, "hover-end-event",
-                    (GCallback) _hover_end_cb, self);
+  g_signal_connect (window, "hover-start-event",
+                    (GCallback) _window_hover_start_cb, self);
+  g_signal_connect (window, "hover-event",
+                    (GCallback) _window_hover_cb, self);
+  g_signal_connect (window, "hover-end-event",
+                    (GCallback) _window_hover_end_cb, self);
 
   return window;
 }
@@ -567,7 +561,7 @@ xrd_overlay_client_remove_window (XrdOverlayClient *self,
       return;
     }
 
-  xrd_overlay_window_manager_remove_overlay (self->manager, window->overlay);
+  xrd_overlay_window_manager_remove_window (self->manager, window);
 }
 
 gboolean

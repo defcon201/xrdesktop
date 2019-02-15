@@ -32,7 +32,19 @@ struct _XrdOverlayWindow
   gboolean       recreate;
 };
 
-XrdOverlayWindow *xrd_overlay_window_new (void);
+XrdOverlayWindow *
+xrd_overlay_window_new ();
+
+XrdOverlayWindow *
+xrd_overlay_window_new_from_overlay (OpenVROverlay *overlay,
+                                     int width,
+                                     int height);
+
+void
+xrd_overlay_window_init_overlay (XrdOverlayWindow *self,
+                                 OpenVROverlay *overlay,
+                                 int width,
+                                 int height);
 
 G_END_DECLS
 

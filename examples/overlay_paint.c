@@ -39,7 +39,7 @@ typedef struct Example
 
   XrdOverlayPointer *pointer_overlay;
   XrdOverlayPointerTip *intersection_overlay;
-  OpenVROverlay *paint_overlay;
+  XrdOverlayWindow *paint_window;
 
   GdkPixbuf *draw_pixbuf;
 
@@ -175,7 +175,8 @@ _draw_at_2d_position (Example          *self,
     return FALSE;
 
   openvr_overlay_uploader_submit_frame (self->uploader,
-                                       self->paint_overlay, self->texture);
+                                        self->paint_window->overlay,
+                                        self->texture);
 
   g_mutex_unlock (&paint_mutex);
 
@@ -231,17 +232,18 @@ _init_paint_overlay (Example *self)
   if (self->draw_pixbuf == NULL)
     return FALSE;
 
-  self->paint_overlay = openvr_overlay_new ();
-  openvr_overlay_create (self->paint_overlay, "pain", "Paint overlay");
-
-  if (!openvr_overlay_is_valid (self->paint_overlay))
+  OpenVROverlay *overlay = openvr_overlay_new ();
+  openvr_overlay_create (overlay, "pain", "Paint overlay");
+  if (!openvr_overlay_is_valid (overlay))
     {
       fprintf (stderr, "Overlay unavailable.\n");
       return -1;
     }
 
-  if (!openvr_overlay_set_width_meters (self->paint_overlay, 3.37f))
+  if (!openvr_overlay_set_width_meters (overlay, 3.37f))
     return FALSE;
+
+  self->paint_window = xrd_overlay_window_new_from_overlay (overlay, 0, 0);
 
   graphene_point3d_t position = {
     .x = -1,
@@ -251,9 +253,10 @@ _init_paint_overlay (Example *self)
 
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, &position);
-  openvr_overlay_set_transform_absolute (self->paint_overlay, &transform);
+  openvr_overlay_set_transform_absolute (self->paint_window->overlay,
+                                         &transform);
 
-  if (!openvr_overlay_show (self->paint_overlay))
+  if (!openvr_overlay_show (self->paint_window->overlay))
     return -1;
 
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
@@ -265,22 +268,23 @@ _init_paint_overlay (Example *self)
   gulkan_client_upload_pixbuf (client, self->texture, self->draw_pixbuf);
 
   openvr_overlay_uploader_submit_frame (self->uploader,
-                                       self->paint_overlay, self->texture);
+                                        self->paint_window->overlay,
+                                        self->texture);
 
   /* connect glib callbacks */
   //g_signal_connect (self->paint_overlay, "intersection-event",
   //                  (GCallback)_intersection_cb,
   //                  self);
   //
-  xrd_overlay_window_manager_add_overlay (self->manager, self->paint_overlay,
-                                          OPENVR_OVERLAY_HOVER);
+  xrd_overlay_window_manager_add_window (self->manager, self->paint_window,
+                                         OPENVR_OVERLAY_HOVER);
 
   openvr_overlay_set_mouse_scale (
-    self->paint_overlay,
+    self->paint_window->overlay,
     (float) gdk_pixbuf_get_width (self->draw_pixbuf),
     (float) gdk_pixbuf_get_height (self->draw_pixbuf));
 
-  g_signal_connect (self->paint_overlay, "hover-event",
+  g_signal_connect (self->paint_window->overlay, "hover-event",
                     (GCallback) _paint_hover_cb, self);
   //
   return TRUE;
@@ -293,7 +297,6 @@ _cleanup (Example *self)
 
   g_object_unref (self->intersection_overlay);
   g_object_unref (self->pointer_overlay);
-  g_object_unref (self->intersection_overlay);
   g_object_unref (self->texture);
 
   g_object_unref (self->wm_action_set);

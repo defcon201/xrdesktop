@@ -95,7 +95,7 @@ _init_windows (Example *self)
         openvr_overlay_set_translation (window->overlay, &point);
 
         xrd_overlay_window_manager_save_reset_transform (self->client->manager,
-                                                         window->overlay);
+                                                         window);
       }
 
   return TRUE;

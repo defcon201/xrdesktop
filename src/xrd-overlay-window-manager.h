@@ -10,7 +10,7 @@
 
 #include <glib-object.h>
 
-#include "openvr-overlay.h"
+#include "xrd-overlay-window.h"
 #include "openvr-action.h"
 
 G_BEGIN_DECLS
@@ -27,7 +27,7 @@ typedef struct OpenVRNoHoverEvent
 
 typedef struct TransformTransition
 {
-  OpenVROverlay *overlay;
+  XrdOverlayWindow *window;
   graphene_matrix_t from;
   graphene_matrix_t to;
   float from_width;
@@ -63,9 +63,9 @@ struct _XrdOverlayWindowManager
 {
   GObject parent;
 
-  GSList *grab_overlays;
-  GSList *hover_overlays;
-  GSList *destroy_overlays;
+  GSList *grab_windows;
+  GSList *hover_windows;
+  GSList *destroy_windows;
 
   HoverState hover_state[OPENVR_CONTROLLER_COUNT];
   GrabState grab_state[OPENVR_CONTROLLER_COUNT];
@@ -83,13 +83,13 @@ gboolean
 xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self);
 
 void
-xrd_overlay_window_manager_add_overlay (XrdOverlayWindowManager *self,
-                                        OpenVROverlay     *overlay,
-                                        OpenVROverlayFlags flags);
+xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
+                                       XrdOverlayWindow        *window,
+                                       OpenVROverlayFlags       flags);
 
 void
-xrd_overlay_window_manager_remove_overlay (XrdOverlayWindowManager *self,
-                                           OpenVROverlay     *overlay);
+xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,
+                                          XrdOverlayWindow        *window);
 
 void
 xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
@@ -116,7 +116,7 @@ xrd_overlay_window_manager_update_pose (XrdOverlayWindowManager *self,
 
 void
 xrd_overlay_window_manager_save_reset_transform (XrdOverlayWindowManager *self,
-                                                 OpenVROverlay     *overlay);
+                                                 XrdOverlayWindow *window);
 
 gboolean
 xrd_overlay_window_manager_is_hovering (XrdOverlayWindowManager *self);
@@ -126,11 +126,11 @@ xrd_overlay_window_manager_is_grabbing (XrdOverlayWindowManager *self);
 
 gboolean
 xrd_overlay_window_manager_is_grabbed (XrdOverlayWindowManager *self,
-                                       OpenVROverlay *overlay);
+                                       XrdOverlayWindow *window);
 
 gboolean
 xrd_overlay_window_manager_is_hovered (XrdOverlayWindowManager *self,
-                                       OpenVROverlay *overlay);
+                                       XrdOverlayWindow *window);
 
 void
 xrd_overlay_window_manager_poll_overlay_events (XrdOverlayWindowManager *self);
