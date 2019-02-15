@@ -37,7 +37,7 @@ typedef struct TransformTransition
 
 typedef struct HoverState
 {
-  OpenVROverlay    *overlay;
+  XrdOverlayWindow *window;
   graphene_matrix_t pose;
   float             distance;
   graphene_point_t  intersection_offset;
@@ -45,19 +45,19 @@ typedef struct HoverState
 
 typedef struct GrabState
 {
-  OpenVROverlay    *overlay;
-  graphene_quaternion_t overlay_rotation;
+  XrdOverlayWindow    *window;
+  graphene_quaternion_t window_rotation;
   /* the rotation induced by the overlay being moved on the controller arc */
-  graphene_quaternion_t overlay_transformed_rotation_neg;
+  graphene_quaternion_t window_transformed_rotation_neg;
   graphene_point3d_t offset_translation_point;
 } GrabState;
 
 typedef enum
 {
-  OPENVR_OVERLAY_HOVER               = 1 << 0,
-  OPENVR_OVERLAY_GRAB                = 1 << 1,
-  OPENVR_OVERLAY_DESTROY_WITH_PARENT = 1 << 2
-} OpenVROverlayFlags;
+  XRD_OVERLAY_WINDOW_HOVER               = 1 << 0,
+  XRD_OVERLAY_WINDOW_GRAB                = 1 << 1,
+  XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT = 1 << 2
+} XrdOverlayWindowFlags;
 
 struct _XrdOverlayWindowManager
 {
@@ -85,7 +85,7 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self);
 void
 xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
                                        XrdOverlayWindow        *window,
-                                       OpenVROverlayFlags       flags);
+                                       XrdOverlayWindowFlags    flags);
 
 void
 xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,

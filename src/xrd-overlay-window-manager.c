@@ -57,8 +57,8 @@ xrd_overlay_window_manager_init (XrdOverlayWindowManager *self)
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
       self->hover_state[i].distance = 1.0f;
-      self->hover_state[i].overlay = NULL;
-      self->grab_state[i].overlay = NULL;
+      self->hover_state[i].window = NULL;
+      self->grab_state[i].window = NULL;
     }
 }
 
@@ -84,28 +84,27 @@ _interpolate_cb (gpointer _transition)
 {
   TransformTransition *transition = (TransformTransition *) _transition;
 
-  OpenVROverlay *overlay = transition->window->overlay;
+  XrdOverlayWindow *window = transition->window;
 
   graphene_matrix_t interpolated;
   openvr_math_matrix_interpolate (&transition->from,
                                   &transition->to,
                                    transition->interpolate,
                                   &interpolated);
-  openvr_overlay_set_transform_absolute (overlay, &interpolated);
+  xrd_overlay_window_set_transformation_matrix (window, &interpolated);
 
   float interpolated_width =
     transition->from_width * (1.0f - transition->interpolate) +
     transition->to_width * transition->interpolate;
-  openvr_overlay_set_width_meters (overlay, interpolated_width);
+  xrd_overlay_window_set_xr_width (window, interpolated_width);
 
   transition->interpolate += 0.03f;
 
   if (transition->interpolate > 1)
     {
-      openvr_overlay_set_transform_absolute (overlay,
-                                             &transition->to);
-      openvr_overlay_set_width_meters (overlay,
-                                       transition->to_width);
+      xrd_overlay_window_set_transformation_matrix (window, &transition->to);
+      xrd_overlay_window_set_xr_width (window, transition->to_width);
+
       g_object_unref (transition->window);
       g_free (transition);
       return FALSE;
@@ -121,18 +120,17 @@ xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self)
   for (l = self->grab_windows; l != NULL; l = l->next)
     {
       XrdOverlayWindow *window = (XrdOverlayWindow *) l->data;
-      OpenVROverlay *overlay = window->overlay;
 
       TransformTransition *transition = g_malloc (sizeof *transition);
 
       graphene_matrix_t *transform =
-        g_hash_table_lookup (self->reset_transforms, overlay);
+        g_hash_table_lookup (self->reset_transforms, window);
 
-      openvr_overlay_get_transform_absolute (overlay, &transition->from);
+      xrd_overlay_window_get_transformation_matrix (window, &transition->from);
 
-      float *width = g_hash_table_lookup (self->reset_widths, overlay);
+      float *width = g_hash_table_lookup (self->reset_widths, window);
       transition->to_width = *width;
-      openvr_overlay_get_width_meters (overlay, &transition->from_width);
+      xrd_overlay_window_get_xr_width (window, &transition->from_width);
 
       if (!openvr_math_matrix_equals (&transition->from, transform))
         {
@@ -209,9 +207,9 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
               return FALSE;
             }
 
-          openvr_overlay_get_transform_absolute (overlay, &transition->from);
+          xrd_overlay_window_get_transformation_matrix (window, &transition->from);
 
-          openvr_overlay_get_width_meters (overlay, &transition->from_width);
+          xrd_overlay_window_get_xr_width (window, &transition->from_width);
 
           if (!openvr_math_matrix_equals (&transition->from, &transform))
             {
@@ -221,7 +219,7 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
 
               graphene_matrix_init_from_matrix (&transition->to, &transform);
 
-              float *width = g_hash_table_lookup (self->reset_widths, overlay);
+              float *width = g_hash_table_lookup (self->reset_widths, window);
               transition->to_width = *width;
 
               g_timeout_add (20, _interpolate_cb, transition);
@@ -244,44 +242,40 @@ void
 xrd_overlay_window_manager_save_reset_transform (XrdOverlayWindowManager *self,
                                                  XrdOverlayWindow *window)
 {
-  OpenVROverlay *overlay = window->overlay;
-
   graphene_matrix_t *transform =
-    g_hash_table_lookup (self->reset_transforms, overlay);
-  openvr_overlay_get_transform_absolute (overlay, transform);
+    g_hash_table_lookup (self->reset_transforms, window);
+  xrd_overlay_window_get_transformation_matrix (window, transform);
 
-  float *width = g_hash_table_lookup (self->reset_widths, overlay);
-  openvr_overlay_get_width_meters (overlay, width);
+  float *width = g_hash_table_lookup (self->reset_widths, window);
+  xrd_overlay_window_get_xr_width (window, width);
 }
 
 void
 xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
                                        XrdOverlayWindow *window,
-                                       OpenVROverlayFlags flags)
+                                       XrdOverlayWindowFlags flags)
 {
   /* Freed with manager */
-  if (flags & OPENVR_OVERLAY_DESTROY_WITH_PARENT)
+  if (flags & XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT)
     self->destroy_windows = g_slist_append (self->destroy_windows, window);
 
   /* Movable overlays */
-  if (flags & OPENVR_OVERLAY_GRAB)
+  if (flags & XRD_OVERLAY_WINDOW_GRAB)
     self->grab_windows = g_slist_append (self->grab_windows, window);
 
   /* All overlays that can be hovered, includes button overlays */
-  if (flags & OPENVR_OVERLAY_HOVER)
+  if (flags & XRD_OVERLAY_WINDOW_HOVER)
     self->hover_windows = g_slist_append (self->hover_windows, window);
 
 
-  OpenVROverlay *overlay = window->overlay;
-
   /* Register reset position */
   graphene_matrix_t *transform = graphene_matrix_alloc ();
-  openvr_overlay_get_transform_absolute (overlay, transform);
-  g_hash_table_insert (self->reset_transforms, overlay, transform);
+  xrd_overlay_window_get_transformation_matrix (window, transform);
+  g_hash_table_insert (self->reset_transforms, window, transform);
 
   float *width = (float*) g_malloc (sizeof (float));
-  openvr_overlay_get_width_meters (overlay, width);
-  g_hash_table_insert (self->reset_widths, overlay, width);
+  xrd_overlay_window_get_xr_width (window, width);
+  g_hash_table_insert (self->reset_widths, window, width);
 
   g_object_ref (window);
 }
@@ -292,7 +286,7 @@ xrd_overlay_window_manager_poll_overlay_events (XrdOverlayWindowManager *self)
   for (GSList *l = self->hover_windows; l != NULL; l = l->next)
     {
       XrdOverlayWindow *window = (XrdOverlayWindow *) l->data;
-      openvr_overlay_poll_event (window->overlay);
+      xrd_overlay_window_poll_event (window);
     }
 }
 
@@ -303,8 +297,7 @@ xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,
   self->destroy_windows = g_slist_remove (self->destroy_windows, window);
   self->grab_windows = g_slist_remove (self->grab_windows, window);
   self->hover_windows = g_slist_remove (self->hover_windows, window);
-  OpenVROverlay *overlay = window->overlay;
-  g_hash_table_remove (self->reset_transforms, overlay);
+  g_hash_table_remove (self->reset_transforms, window);
 
   g_object_unref (window);
 }
@@ -317,21 +310,20 @@ _test_hover (XrdOverlayWindowManager *self,
   OpenVRHoverEvent *hover_event = g_malloc (sizeof (OpenVRHoverEvent));
   hover_event->distance = FLT_MAX;
 
-  OpenVROverlay *closest = NULL;
+  XrdOverlayWindow *closest = NULL;
 
   for (GSList *l = self->hover_windows; l != NULL; l = l->next)
     {
       XrdOverlayWindow *window = (XrdOverlayWindow *) l->data;
-      OpenVROverlay *overlay = window->overlay;
 
       graphene_point3d_t intersection_point;
-      if (openvr_overlay_intersects (overlay, &intersection_point, pose))
+      if (xrd_overlay_window_intersects (window, pose, &intersection_point))
         {
           float distance =
             openvr_math_point_matrix_distance (&intersection_point, pose);
           if (distance < hover_event->distance)
             {
-              closest = overlay;
+              closest = window;
               hover_event->distance = distance;
               graphene_matrix_init_from_matrix (&hover_event->pose, pose);
               graphene_point3d_init_from_point (&hover_event->point,
@@ -347,35 +339,33 @@ _test_hover (XrdOverlayWindowManager *self,
       /* The recipient of the hover_end event should already see that this
        * overlay is not hovered anymore, so we need to set the hover state
        * before sending the event */
-      OpenVROverlay *last_hovered_overlay = hover_state->overlay;
+      XrdOverlayWindow *last_hovered_window = hover_state->window;
       hover_state->distance = hover_event->distance;
-      hover_state->overlay = closest;
+      hover_state->window = closest;
       graphene_matrix_init_from_matrix (&hover_state->pose, pose);
 
       /* We now hover over an overlay */
-      if (closest != last_hovered_overlay)
+      if (closest != last_hovered_window)
         {
           OpenVRControllerIndexEvent *hover_start_event =
               g_malloc (sizeof (OpenVRControllerIndexEvent));
           hover_start_event->index = controller_index;
-          openvr_overlay_emit_hover_start (closest, hover_start_event);
-
+          xrd_overlay_window_emit_hover_start (closest, hover_start_event);
         }
 
-      if (closest != last_hovered_overlay
-          && last_hovered_overlay != NULL)
+      if (closest != last_hovered_window
+          && last_hovered_window != NULL)
         {
           OpenVRControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (OpenVRControllerIndexEvent));
           hover_end_event->index = controller_index;
-          openvr_overlay_emit_hover_end (last_hovered_overlay, hover_end_event);
+          xrd_overlay_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
 
-      openvr_overlay_get_2d_offset (closest, &hover_event->point,
-                                    &hover_state->intersection_offset);
+      xrd_overlay_window_intersection_to_offset_center (closest, &hover_event->point, &hover_state->intersection_offset);
 
       hover_event->controller_index = controller_index;
-      openvr_overlay_emit_hover (closest, hover_event);
+      xrd_overlay_window_emit_hover (closest, hover_event);
     }
   else
     {
@@ -383,15 +373,15 @@ _test_hover (XrdOverlayWindowManager *self,
       g_free (hover_event);
 
       /* Emit hover end event only if we had hovered something earlier */
-      if (hover_state->overlay != NULL)
+      if (hover_state->window != NULL)
         {
-          OpenVROverlay *last_hovered_overlay = hover_state->overlay;
-          hover_state->overlay = NULL;
+          XrdOverlayWindow *last_hovered_window = hover_state->window;
+          hover_state->window = NULL;
           OpenVRControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (OpenVRControllerIndexEvent));
           hover_end_event->index = controller_index;
-          openvr_overlay_emit_hover_end (last_hovered_overlay,
-                                         hover_end_event);
+          xrd_overlay_window_emit_hover_end (last_hovered_window,
+                                             hover_end_event);
         }
 
       /* Emit no hover event every time when hovering nothing */
@@ -437,12 +427,12 @@ _drag_overlay (XrdOverlayWindowManager *self,
 
   /* then apply the rotation that the overlay had when it was grabbed */
   graphene_matrix_rotate_quaternion (&event->pose,
-                                     &grab_state->overlay_rotation);
+                                     &grab_state->window_rotation);
 
   /* reverse the rotation induced by the controller pose when it was grabbed */
   graphene_matrix_rotate_quaternion (
       &event->pose,
-      &grab_state->overlay_transformed_rotation_neg);
+      &grab_state->window_transformed_rotation_neg);
 
   /* then translate the overlay to the controller ray distance */
   graphene_matrix_translate (&event->pose, &distance_translation_point);
@@ -462,12 +452,11 @@ _drag_overlay (XrdOverlayWindowManager *self,
                             &event->pose,
                             &transformation_matrix);
 
-  /* Transform overlay */
-  openvr_overlay_set_transform_absolute (grab_state->overlay,
-                                        &transformation_matrix);
 
-  /* Emit tip transformation */
-  openvr_overlay_emit_grab (grab_state->overlay, event);
+  xrd_overlay_window_set_transformation_matrix (grab_state->window,
+                                                &transformation_matrix);
+
+  xrd_overlay_window_emit_grab (grab_state->window, event);
 }
 
 void
@@ -478,17 +467,17 @@ xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
   GrabState *grab_state = &self->grab_state[controller_index];
 
   /* Copy hover to grab state */
-  grab_state->overlay = hover_state->overlay;
+  grab_state->window = hover_state->window;
 
   graphene_quaternion_t controller_rotation;
   graphene_quaternion_init_from_matrix (&controller_rotation,
                                         &hover_state->pose);
 
-  graphene_matrix_t overlay_transform;
-  openvr_overlay_get_transform_absolute (grab_state->overlay,
-                                         &overlay_transform);
+  graphene_matrix_t window_transform;
+  xrd_overlay_window_get_transformation_matrix (grab_state->window,
+                                                &window_transform);
   graphene_quaternion_init_from_matrix (
-      &grab_state->overlay_rotation, &overlay_transform);
+      &grab_state->window_rotation, &window_transform);
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,
@@ -523,7 +512,7 @@ xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
                                         &target_transformation_matrix);
   graphene_quaternion_invert (
       &transformed_rotation,
-      &grab_state->overlay_transformed_rotation_neg);
+      &grab_state->window_transformed_rotation_neg);
 }
 
 /**
@@ -538,11 +527,12 @@ xrd_overlay_window_manager_scale (XrdOverlayWindowManager *self,
                                   float factor,
                                   float update_rate_ms)
 {
-  if (grab_state->overlay == NULL)
+  if (grab_state->window == NULL)
     return;
   (void) self;
   float width;
-  openvr_overlay_get_width_meters (grab_state->overlay, &width);
+
+  xrd_overlay_window_get_xr_width (grab_state->window, &width);
   float new_width = width + width * factor * (update_rate_ms / 1000.);
   /* Don't make the overlay so small it can not be grabbed anymore */
   if (new_width > MINIMAL_SCALE_WIDTH)
@@ -552,7 +542,7 @@ xrd_overlay_window_manager_scale (XrdOverlayWindowManager *self,
                               1 + factor * (update_rate_ms / 1000.),
                               &grab_state->offset_translation_point);
 
-      openvr_overlay_set_width_meters (grab_state->overlay, new_width);
+      xrd_overlay_window_set_xr_width (grab_state->window, new_width);
     }
 }
 
@@ -562,12 +552,12 @@ xrd_overlay_window_manager_check_grab (XrdOverlayWindowManager *self,
 {
   HoverState *hover_state = &self->hover_state[controller_index];
 
-  if (hover_state->overlay != NULL)
+  if (hover_state->window != NULL)
     {
       OpenVRControllerIndexEvent *grab_event =
           g_malloc (sizeof (OpenVRControllerIndexEvent));
       grab_event->index = controller_index;
-      openvr_overlay_emit_grab_start (hover_state->overlay, grab_event);
+      xrd_overlay_window_emit_grab_start (hover_state->window, grab_event);
     }
 }
 
@@ -577,14 +567,14 @@ xrd_overlay_window_manager_check_release (XrdOverlayWindowManager *self,
 {
   GrabState *grab_state = &self->grab_state[controller_index];
 
-  if (grab_state->overlay != NULL)
+  if (grab_state->window != NULL)
     {
       OpenVRControllerIndexEvent *release_event =
           g_malloc (sizeof (OpenVRControllerIndexEvent));
       release_event->index = controller_index;
-      openvr_overlay_emit_release (grab_state->overlay, release_event);
+      xrd_overlay_window_emit_release (grab_state->window, release_event);
     }
-  grab_state->overlay = NULL;
+  grab_state->window = NULL;
 }
 
 void
@@ -593,7 +583,7 @@ xrd_overlay_window_manager_update_pose (XrdOverlayWindowManager *self,
                                         int controller_index)
 {
   /* Drag test */
-  if (self->grab_state[controller_index].overlay != NULL)
+  if (self->grab_state[controller_index].window != NULL)
     _drag_overlay (self, pose, controller_index);
   else
     _test_hover (self, pose, controller_index);
@@ -603,7 +593,7 @@ gboolean
 xrd_overlay_window_manager_is_hovering (XrdOverlayWindowManager *self)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->hover_state[i].overlay != NULL)
+    if (self->hover_state[i].window != NULL)
       return TRUE;
   return FALSE;
 }
@@ -612,7 +602,7 @@ gboolean
 xrd_overlay_window_manager_is_grabbing (XrdOverlayWindowManager *self)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->grab_state[i].overlay != NULL)
+    if (self->grab_state[i].window != NULL)
       return TRUE;
   return FALSE;
 }
@@ -622,7 +612,7 @@ xrd_overlay_window_manager_is_grabbed (XrdOverlayWindowManager *self,
                                        XrdOverlayWindow *window)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->grab_state[i].overlay == window->overlay)
+    if (self->grab_state[i].window == window)
       return TRUE;
   return FALSE;
 }
@@ -632,7 +622,7 @@ xrd_overlay_window_manager_is_hovered (XrdOverlayWindowManager *self,
                                        XrdOverlayWindow *window)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->hover_state[i].overlay == window->overlay)
+    if (self->hover_state[i].window == window)
       return TRUE;
   return FALSE;
 }

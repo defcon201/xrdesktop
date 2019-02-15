@@ -277,7 +277,7 @@ _init_paint_overlay (Example *self)
   //                  self);
   //
   xrd_overlay_window_manager_add_window (self->manager, self->paint_window,
-                                         OPENVR_OVERLAY_HOVER);
+                                         XRD_OVERLAY_WINDOW_HOVER);
 
   openvr_overlay_set_mouse_scale (
     self->paint_window->overlay,

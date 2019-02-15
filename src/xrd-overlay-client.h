@@ -54,8 +54,6 @@ struct _XrdOverlayClient
 
   XrdOverlayWindow *hover_window[OPENVR_CONTROLLER_COUNT];
 
-  GHashTable *overlays_to_windows;
-
   int poll_rate_ms;
   guint poll_event_source_id;
 
