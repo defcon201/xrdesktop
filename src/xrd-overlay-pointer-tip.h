@@ -74,6 +74,17 @@ xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip  *self);
 void
 xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip  *self);
 
+void
+xrd_overlay_pointer_tip_set_transformation_matrix (XrdOverlayPointerTip *self,
+                                                   graphene_matrix_t *matrix);
+
+void
+xrd_overlay_pointer_tip_show (XrdOverlayPointerTip *self);
+
+void
+xrd_overlay_pointer_tip_hide (XrdOverlayPointerTip *self);
+
+
 G_END_DECLS
 
 #endif /* XRD_OVERLAY_POINTER_TIP_H_ */

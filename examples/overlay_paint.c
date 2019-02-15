@@ -184,7 +184,7 @@ _draw_at_2d_position (Example          *self,
 }
 
 static void
-_paint_hover_cb (OpenVROverlay    *overlay,
+_paint_hover_cb (XrdOverlayWindow *window,
                  OpenVRHoverEvent *event,
                  gpointer         _self)
 {
@@ -200,10 +200,10 @@ _paint_hover_cb (OpenVROverlay    *overlay,
   };
 
   graphene_point_t position_2d;
-  if (!openvr_overlay_get_2d_intersection (overlay,
-                                          &event->point,
-                                          &size_pixels,
-                                          &position_2d))
+  if (!xrd_overlay_window_intersection_to_window_coords (window,
+                                                         &event->point,
+                                                         &size_pixels,
+                                                         &position_2d))
     return;
 
   /* check bounds */
@@ -228,22 +228,17 @@ _paint_hover_cb (OpenVROverlay    *overlay,
 gboolean
 _init_paint_overlay (Example *self)
 {
-  self->draw_pixbuf = _create_draw_pixbuf (1080, 1920);
+  int width = 1080;
+  int height = 1920;
+  self->draw_pixbuf = _create_draw_pixbuf (width, height);
   if (self->draw_pixbuf == NULL)
     return FALSE;
 
-  OpenVROverlay *overlay = openvr_overlay_new ();
-  openvr_overlay_create (overlay, "pain", "Paint overlay");
-  if (!openvr_overlay_is_valid (overlay))
-    {
-      fprintf (stderr, "Overlay unavailable.\n");
-      return -1;
-    }
+  self->paint_window = xrd_overlay_window_new ("Paint", width, height, NULL,
+                                               NULL, 0);
 
-  if (!openvr_overlay_set_width_meters (overlay, 3.37f))
+  if (!xrd_overlay_window_set_xr_width (self->paint_window, 3.37f))
     return FALSE;
-
-  self->paint_window = xrd_overlay_window_new_from_overlay (overlay, 0, 0);
 
   graphene_point3d_t position = {
     .x = -1,
@@ -255,9 +250,6 @@ _init_paint_overlay (Example *self)
   graphene_matrix_init_translate (&transform, &position);
   openvr_overlay_set_transform_absolute (self->paint_window->overlay,
                                          &transform);
-
-  if (!openvr_overlay_show (self->paint_window->overlay))
-    return -1;
 
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
@@ -279,12 +271,7 @@ _init_paint_overlay (Example *self)
   xrd_overlay_window_manager_add_window (self->manager, self->paint_window,
                                          XRD_OVERLAY_WINDOW_HOVER);
 
-  openvr_overlay_set_mouse_scale (
-    self->paint_window->overlay,
-    (float) gdk_pixbuf_get_width (self->draw_pixbuf),
-    (float) gdk_pixbuf_get_height (self->draw_pixbuf));
-
-  g_signal_connect (self->paint_window->overlay, "hover-event",
+  g_signal_connect (self->paint_window, "hover-event",
                     (GCallback) _paint_hover_cb, self);
   //
   return TRUE;

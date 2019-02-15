@@ -29,6 +29,7 @@ struct _XrdOverlayWindow
   uint32_t       gl_texture;
   int            texture_width;
   int            texture_height;
+  GString        *window_title;
 
   float xr_width;
   float xr_height;
@@ -37,7 +38,9 @@ struct _XrdOverlayWindow
 };
 
 XrdOverlayWindow *
-xrd_overlay_window_new ();
+xrd_overlay_window_new (gchar *window_title, int width, int height,
+                        gpointer native, GulkanTexture *gulkan_texture,
+                        guint gl_texture);
 
 XrdOverlayWindow *
 xrd_overlay_window_new_from_overlay (OpenVROverlay *overlay,
@@ -107,6 +110,11 @@ xrd_overlay_window_emit_hover (XrdOverlayWindow    *self,
 void
 xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
                                      OpenVRControllerIndexEvent *event);
+
+/* TODO: this is a stopgap solution for so children can init a window.
+ * Pretty sure there's a more glib like solution. */
+void
+xrd_overlay_window_internal_init (XrdOverlayWindow *self);
 
 G_END_DECLS
 

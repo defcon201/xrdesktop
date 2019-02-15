@@ -90,21 +90,21 @@ _create_cairo_surface (unsigned char *image, uint32_t width,
 }
 
 XrdOverlayButton *
-xrd_overlay_button_new (gchar *id, gchar *text)
+xrd_overlay_button_new (gchar *text)
 {
   XrdOverlayButton *self = (XrdOverlayButton*) g_object_new (XRD_TYPE_OVERLAY_BUTTON, 0);
-  OpenVROverlay *overlay = openvr_overlay_new ();
-  /* create openvr overlay */
-  openvr_overlay_create (overlay, id, text);
 
-  if (!openvr_overlay_is_valid (overlay))
-  {
-    g_printerr ("Overlay unavailable.\n");
-    return NULL;
-  }
+  XrdOverlayWindow *window = XRD_OVERLAY_WINDOW (self);
 
   int width = 200;
   int height = 200;
+
+  window->texture_width = width;
+  window->texture_height = height;
+  window->window_title = g_string_new (text);
+
+  xrd_overlay_window_internal_init (window);
+
   unsigned char image[4 * width * height];
   cairo_surface_t* surface = _create_cairo_surface (image, width, height, text);
 
@@ -113,14 +113,8 @@ xrd_overlay_button_new (gchar *id, gchar *text)
     return NULL;
   }
 
-  openvr_overlay_set_cairo_surface_raw (overlay, surface);
+  openvr_overlay_set_cairo_surface_raw (window->overlay, surface);
   cairo_surface_destroy (surface);
-
-  if (!openvr_overlay_show (overlay))
-    return NULL;
-
-  xrd_overlay_window_init_overlay (XRD_OVERLAY_WINDOW (self), overlay,
-                                   width, height);
 
   return self;
 }
@@ -131,3 +125,24 @@ xrd_overlay_button_finalize (GObject *gobject)
   XrdOverlayButton *self = XRD_OVERLAY_BUTTON (gobject);
   (void) self;
 }
+
+void
+xrd_overlay_button_unmark (XrdOverlayButton *self)
+{
+  graphene_vec3_t unmarked_color;
+  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
+  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (self)->overlay;
+  openvr_overlay_set_color (overlay, &unmarked_color);
+}
+
+void
+xrd_overlay_button_mark_color (XrdOverlayButton *self,
+                               float r, float g, float b)
+{
+  graphene_vec3_t marked_color;
+  //graphene_vec3_init (&marked_color, .8f, .4f, .2f);
+  graphene_vec3_init (&marked_color, r, g, b);
+  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (self)->overlay;
+  openvr_overlay_set_color (overlay, &marked_color);
+}
+

@@ -23,8 +23,14 @@ struct _XrdOverlayButton
 };
 
 XrdOverlayButton *
-xrd_overlay_button_new (gchar *id, gchar *text);
+xrd_overlay_button_new (gchar *text);
 
+void
+xrd_overlay_button_unmark (XrdOverlayButton *self);
+
+void
+xrd_overlay_button_mark_color (XrdOverlayButton *self,
+                               float r, float g, float b);
 G_END_DECLS
 
 #endif /* XRD_OVERLAY_BUTTON_H_ */

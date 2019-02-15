@@ -57,8 +57,6 @@ struct _XrdOverlayClient
   int poll_rate_ms;
   guint poll_event_source_id;
 
-  guint new_overlay_index;
-
   double analog_threshold;
   
   double scroll_to_push_ratio;

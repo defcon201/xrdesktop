@@ -421,3 +421,22 @@ xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
 
   xrd_overlay_pointer_tip_set_constant_width (self);
 }
+
+void
+xrd_overlay_pointer_tip_set_transformation_matrix (XrdOverlayPointerTip *self,
+                                                   graphene_matrix_t *matrix)
+{
+  openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), matrix);
+}
+
+void
+xrd_overlay_pointer_tip_show (XrdOverlayPointerTip *self)
+{
+  openvr_overlay_show (OPENVR_OVERLAY (self));
+}
+
+void
+xrd_overlay_pointer_tip_hide (XrdOverlayPointerTip *self)
+{
+  openvr_overlay_hide (OPENVR_OVERLAY (self));
+}

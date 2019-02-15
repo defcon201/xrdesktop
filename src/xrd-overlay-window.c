@@ -7,6 +7,7 @@
 
 #include "xrd-overlay-window.h"
 #include <gdk/gdk.h>
+#include <glib/gprintf.h>
 
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, G_TYPE_OBJECT)
 
@@ -29,6 +30,8 @@ enum {
 };
 
 static guint window_signals[LAST_SIGNAL] = { 0 };
+
+static guint new_window_index = 0;
 
 static void
 xrd_overlay_window_finalize (GObject *gobject);
@@ -342,27 +345,29 @@ _connect_signals (XrdOverlayWindow *self)
 }
 
 void
-xrd_overlay_window_init_overlay (XrdOverlayWindow *self,
-                                 OpenVROverlay *overlay,
-                                 int width,
-                                 int height)
+xrd_overlay_window_internal_init (XrdOverlayWindow *self)
 {
-  if (self->overlay)
-    {
-      _disconnect_signals (self);
-      g_object_unref (overlay);
-    }
+  gchar overlay_id_str [25];
+  g_sprintf (overlay_id_str, "xrd-window-%d", new_window_index);
 
-  self->overlay = overlay;
+  self->overlay = openvr_overlay_new ();
+  openvr_overlay_create (self->overlay, overlay_id_str, self->window_title->str);
 
-  if (self->overlay)
-    {
-      _connect_signals (self);
-      g_object_ref (overlay);
-    }
+  if (!openvr_overlay_is_valid (self->overlay))
+  {
+    g_printerr ("Overlay unavailable.\n");
+    return;
+  }
 
-  self->texture_width = width;
-  self->texture_height = height;
+   /* Mouse scale is required for the intersection test */
+  openvr_overlay_set_mouse_scale (self->overlay, self->texture_width,
+                                  self->texture_height);
+
+  openvr_overlay_show (self->overlay);
+
+  _connect_signals (self);
+
+  new_window_index++;
 }
 
 static void
@@ -372,26 +377,22 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
 }
 
 XrdOverlayWindow *
-xrd_overlay_window_new ()
+xrd_overlay_window_new (gchar *window_title, int width, int height,
+                        gpointer native, GulkanTexture *gulkan_texture,
+                        guint gl_texture)
 {
   XrdOverlayWindow *self = (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
-  return self;
-}
 
-XrdOverlayWindow *
-xrd_overlay_window_new_from_overlay (OpenVROverlay *overlay,
-                                     int width,
-                                     int height)
-{
-  XrdOverlayWindow *self = xrd_overlay_window_new ();
-  xrd_overlay_window_init_overlay (self, overlay, width, height);
-  return self;
-}
+  self->overlay = NULL;
+  self->native = native,
+  self->texture = gulkan_texture;
+  self->gl_texture = gl_texture;
+  self->texture_width = width;
+  self->texture_height = height;
+  self->window_title = g_string_new (window_title);
 
-XrdOverlayWindow *
-xrd_overlay_window_new_from_data (void)
-{
-  return (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
+  xrd_overlay_window_internal_init (self);
+  return self;
 }
 
 static void

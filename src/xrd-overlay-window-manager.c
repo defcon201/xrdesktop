@@ -199,11 +199,10 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
 
           XrdOverlayWindow *window =
               (XrdOverlayWindow *) g_slist_nth_data (self->grab_windows, i);
-          OpenVROverlay *overlay = window->overlay;
 
-          if (overlay == NULL)
+          if (window == NULL)
             {
-              g_printerr ("Overlay %d does not exist!\n", i);
+              g_printerr ("Window %d does not exist!\n", i);
               return FALSE;
             }
 
@@ -516,9 +515,9 @@ xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
 }
 
 /**
- * openvr_overlay_scale:
+ * xrd_overlay_window_manager_scale:
  *
- * While dragging an overlay, scale the overlay @factor times per second
+ * While dragging a window, scale the window *factor* times per second
  */
 
 void
