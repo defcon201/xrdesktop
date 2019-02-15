@@ -204,18 +204,40 @@ xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
   return res;
 }
 
-gboolean
-xrd_overlay_window_set_xr_width (XrdOverlayWindow *self, float meters)
+static float
+_texture_size_to_xr_size (XrdOverlayWindow *self, int texture_size)
 {
-  gboolean res = openvr_overlay_set_width_meters (self->overlay, meters);
-  return res;
+  return (float)texture_size / self->ppm * self->scaling_factor;
 }
 
 gboolean
 xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters)
 {
-  gboolean res = openvr_overlay_get_width_meters (self->overlay, meters);
-  return res;
+  *meters = _texture_size_to_xr_size (self, self->texture_width);
+  return TRUE;
+}
+
+gboolean
+xrd_overlay_window_get_xr_height (XrdOverlayWindow *self, float *meters)
+{
+  *meters = _texture_size_to_xr_size (self, self->texture_height);
+  return TRUE;
+}
+
+gboolean
+xrd_overlay_window_get_scaling_factor (XrdOverlayWindow *self, float *factor)
+{
+  *factor = self->scaling_factor;
+  return TRUE;
+}
+
+gboolean
+xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
+{
+  self->scaling_factor = factor;
+  float xr_width = _texture_size_to_xr_size (self, self->texture_width);
+  openvr_overlay_set_width_meters (self->overlay, xr_width);
+  return TRUE;
 }
 
 void
@@ -347,11 +369,18 @@ _connect_signals (XrdOverlayWindow *self)
 void
 xrd_overlay_window_internal_init (XrdOverlayWindow *self)
 {
+  /* TODO: ppm setting */
+  self->ppm = 300.0;
+  self->scaling_factor = 1.0;
+
   gchar overlay_id_str [25];
   g_sprintf (overlay_id_str, "xrd-window-%d", new_window_index);
 
+  float xr_width = _texture_size_to_xr_size (self, self->texture_width);
+
   self->overlay = openvr_overlay_new ();
-  openvr_overlay_create (self->overlay, overlay_id_str, self->window_title->str);
+  openvr_overlay_create_width (self->overlay, overlay_id_str,
+                               self->window_title->str, xr_width);
 
   if (!openvr_overlay_is_valid (self->overlay))
   {

@@ -280,8 +280,7 @@ _init_button (XrdOverlayClient   *self,
                                          XRD_OVERLAY_WINDOW (*button),
                                          XRD_OVERLAY_WINDOW_HOVER);
 
-  if (!xrd_overlay_window_set_xr_width (window, 0.5f))
-    return FALSE;
+
 
   g_signal_connect (window, "grab-start-event", (GCallback) callback, self);
   g_signal_connect (window, "hover-event", (GCallback) _button_hover_cb, self);

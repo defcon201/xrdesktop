@@ -237,9 +237,6 @@ _init_paint_overlay (Example *self)
   self->paint_window = xrd_overlay_window_new ("Paint", width, height, NULL,
                                                NULL, 0);
 
-  if (!xrd_overlay_window_set_xr_width (self->paint_window, 3.37f))
-    return FALSE;
-
   graphene_point3d_t position = {
     .x = -1,
     .y = 1,

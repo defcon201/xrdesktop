@@ -31,8 +31,9 @@ struct _XrdOverlayWindow
   int            texture_height;
   GString        *window_title;
 
-  float xr_width;
-  float xr_height;
+  double ppm;
+  double scaling_factor;
+
   graphene_matrix_t vr_transform;
   gboolean       recreate;
 };
@@ -62,10 +63,16 @@ xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat);
 
 gboolean
-xrd_overlay_window_set_xr_width (XrdOverlayWindow *self, float meters);
+xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters);
 
 gboolean
-xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters);
+xrd_overlay_window_get_xr_height (XrdOverlayWindow *self, float *meters);
+
+gboolean
+xrd_overlay_window_get_scaling_factor (XrdOverlayWindow *self, float *factor);
+
+gboolean
+xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor);
 
 void
 xrd_overlay_window_poll_event (XrdOverlayWindow *self);

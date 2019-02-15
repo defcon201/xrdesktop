@@ -30,8 +30,8 @@ typedef struct TransformTransition
   XrdOverlayWindow *window;
   graphene_matrix_t from;
   graphene_matrix_t to;
-  float from_width;
-  float to_width;
+  float from_scaling;
+  float to_scaling;
   float interpolate;
 } TransformTransition;
 
@@ -71,7 +71,7 @@ struct _XrdOverlayWindowManager
   GrabState grab_state[OPENVR_CONTROLLER_COUNT];
 
   GHashTable *reset_transforms;
-  GHashTable *reset_widths;
+  GHashTable *reset_scalings;
 };
 
 XrdOverlayWindowManager *xrd_overlay_window_manager_new (void);

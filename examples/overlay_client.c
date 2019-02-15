@@ -14,7 +14,6 @@
 
 #define GRID_WIDTH 6
 #define GRID_HEIGHT 5
-#define WINDOW_WIDTH 0.5f
 
 typedef struct Example
 {
@@ -61,7 +60,17 @@ _init_windows (Example *self)
       return FALSE;
     }
 
-  float width = WINDOW_WIDTH;
+  GdkPixbuf *unref = pixbuf;
+  pixbuf =
+      gdk_pixbuf_scale_simple (pixbuf,
+                               (float)gdk_pixbuf_get_width (pixbuf) / 10.,
+                               (float)gdk_pixbuf_get_height (pixbuf) / 10.,
+                               GDK_INTERP_NEAREST);
+
+  g_object_unref (unref);
+
+  /* TODO: pixels / ppm setting * scaling factor */
+  float width = 0.5;
 
   float pixbuf_aspect = (float) gdk_pixbuf_get_width (pixbuf) /
                         (float) gdk_pixbuf_get_height (pixbuf);
@@ -86,7 +95,6 @@ _init_windows (Example *self)
         openvr_overlay_uploader_submit_frame (self->client->uploader,
                                               window->overlay, texture);
 
-        openvr_overlay_set_width_meters (window->overlay, width);
         graphene_point3d_t point = {
           .x = x,
           .y = y,

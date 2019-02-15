@@ -62,6 +62,8 @@ struct _XrdOverlayClient
   double scroll_to_push_ratio;
   double scroll_to_scale_ratio;
   
+  double pixel_per_meter;
+
   XrdInputSynth *input_synth;
 
   XrdOverlayDesktopCursor *cursor;

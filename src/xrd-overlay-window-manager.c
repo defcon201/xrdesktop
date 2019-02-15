@@ -14,7 +14,7 @@
 
 G_DEFINE_TYPE (XrdOverlayWindowManager, xrd_overlay_window_manager, G_TYPE_OBJECT)
 
-#define MINIMAL_SCALE_WIDTH 0.1
+#define MINIMAL_SCALE_FACTOR 0.01
 
 enum {
   NO_HOVER_EVENT,
@@ -51,8 +51,8 @@ xrd_overlay_window_manager_init (XrdOverlayWindowManager *self)
 {
   self->reset_transforms = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                                   NULL, _free_matrix_cb);
-  self->reset_widths = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                              NULL, g_free);
+  self->reset_scalings = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                                NULL, g_free);
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
@@ -74,7 +74,7 @@ xrd_overlay_window_manager_finalize (GObject *gobject)
   XrdOverlayWindowManager *self = XRD_OVERLAY_WINDOW_MANAGER (gobject);
 
   g_hash_table_unref (self->reset_transforms);
-  g_hash_table_unref (self->reset_widths);
+  g_hash_table_unref (self->reset_scalings);
 
   g_slist_free_full (self->destroy_windows, g_object_unref);
 }
@@ -93,17 +93,19 @@ _interpolate_cb (gpointer _transition)
                                   &interpolated);
   xrd_overlay_window_set_transformation_matrix (window, &interpolated);
 
-  float interpolated_width =
-    transition->from_width * (1.0f - transition->interpolate) +
-    transition->to_width * transition->interpolate;
-  xrd_overlay_window_set_xr_width (window, interpolated_width);
+  float interpolated_scaling =
+    transition->from_scaling * (1.0f - transition->interpolate) +
+    transition->to_scaling * transition->interpolate;
+
+  /* TODO interpolate scaling instead of width */
+  xrd_overlay_window_set_scaling_factor (window, interpolated_scaling);
 
   transition->interpolate += 0.03f;
 
   if (transition->interpolate > 1)
     {
       xrd_overlay_window_set_transformation_matrix (window, &transition->to);
-      xrd_overlay_window_set_xr_width (window, transition->to_width);
+      xrd_overlay_window_set_scaling_factor (window, transition->to_scaling);
 
       g_object_unref (transition->window);
       g_free (transition);
@@ -128,9 +130,9 @@ xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self)
 
       xrd_overlay_window_get_transformation_matrix (window, &transition->from);
 
-      float *width = g_hash_table_lookup (self->reset_widths, window);
-      transition->to_width = *width;
-      xrd_overlay_window_get_xr_width (window, &transition->from_width);
+      float *scaling = g_hash_table_lookup (self->reset_scalings, window);
+      transition->to_scaling = *scaling;
+      xrd_overlay_window_get_scaling_factor (window, &transition->from_scaling);
 
       if (!openvr_math_matrix_equals (&transition->from, transform))
         {
@@ -208,7 +210,7 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
 
           xrd_overlay_window_get_transformation_matrix (window, &transition->from);
 
-          xrd_overlay_window_get_xr_width (window, &transition->from_width);
+          xrd_overlay_window_get_scaling_factor (window, &transition->from_scaling);
 
           if (!openvr_math_matrix_equals (&transition->from, &transform))
             {
@@ -218,8 +220,8 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
 
               graphene_matrix_init_from_matrix (&transition->to, &transform);
 
-              float *width = g_hash_table_lookup (self->reset_widths, window);
-              transition->to_width = *width;
+              float *scaling = g_hash_table_lookup (self->reset_scalings, window);
+              transition->to_scaling = *scaling;
 
               g_timeout_add (20, _interpolate_cb, transition);
             }
@@ -245,8 +247,8 @@ xrd_overlay_window_manager_save_reset_transform (XrdOverlayWindowManager *self,
     g_hash_table_lookup (self->reset_transforms, window);
   xrd_overlay_window_get_transformation_matrix (window, transform);
 
-  float *width = g_hash_table_lookup (self->reset_widths, window);
-  xrd_overlay_window_get_xr_width (window, width);
+  float *scaling = g_hash_table_lookup (self->reset_scalings, window);
+  xrd_overlay_window_get_scaling_factor (window, scaling);
 }
 
 void
@@ -272,9 +274,9 @@ xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
   xrd_overlay_window_get_transformation_matrix (window, transform);
   g_hash_table_insert (self->reset_transforms, window, transform);
 
-  float *width = (float*) g_malloc (sizeof (float));
-  xrd_overlay_window_get_xr_width (window, width);
-  g_hash_table_insert (self->reset_widths, window, width);
+  float *scaling = (float*) g_malloc (sizeof (float));
+  xrd_overlay_window_get_scaling_factor (window, scaling);
+  g_hash_table_insert (self->reset_scalings, window, scaling);
 
   g_object_ref (window);
 }
@@ -529,19 +531,20 @@ xrd_overlay_window_manager_scale (XrdOverlayWindowManager *self,
   if (grab_state->window == NULL)
     return;
   (void) self;
-  float width;
 
-  xrd_overlay_window_get_xr_width (grab_state->window, &width);
-  float new_width = width + width * factor * (update_rate_ms / 1000.);
+  float current_factor;
+  xrd_overlay_window_get_scaling_factor (grab_state->window, &current_factor);
+
+  float new_factor = current_factor + current_factor * factor * (update_rate_ms / 1000.);
   /* Don't make the overlay so small it can not be grabbed anymore */
-  if (new_width > MINIMAL_SCALE_WIDTH)
+  if (new_factor > MINIMAL_SCALE_FACTOR)
     {
       /* Grab point is relative to overlay center so we can just scale it */
       graphene_point3d_scale (&grab_state->offset_translation_point,
                               1 + factor * (update_rate_ms / 1000.),
                               &grab_state->offset_translation_point);
 
-      xrd_overlay_window_set_xr_width (grab_state->window, new_width);
+      xrd_overlay_window_set_scaling_factor (grab_state->window, new_factor);
     }
 }
 
