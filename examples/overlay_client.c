@@ -48,12 +48,11 @@ load_gdk_pixbuf (const gchar* name)
   return pixbuf;
 }
 
-gboolean
-_init_windows (Example *self)
+static GulkanTexture *
+_make_texture (GulkanClient *gc, const gchar *resource, float scale,
+               float *texture_width, float *texture_height)
 {
-  GulkanClient *gc = GULKAN_CLIENT (self->client->uploader);
-
-  GdkPixbuf *pixbuf = load_gdk_pixbuf ("/res/hawk.jpg");
+  GdkPixbuf *pixbuf = load_gdk_pixbuf (resource);
   if (pixbuf == NULL)
     {
       g_printerr ("Could not load image.\n");
@@ -63,19 +62,11 @@ _init_windows (Example *self)
   GdkPixbuf *unref = pixbuf;
   pixbuf =
       gdk_pixbuf_scale_simple (pixbuf,
-                               (float)gdk_pixbuf_get_width (pixbuf) / 10.,
-                               (float)gdk_pixbuf_get_height (pixbuf) / 10.,
+                               (float)gdk_pixbuf_get_width (pixbuf) * scale,
+                               (float)gdk_pixbuf_get_height (pixbuf) * scale,
                                GDK_INTERP_NEAREST);
 
   g_object_unref (unref);
-
-  /* TODO: pixels / ppm setting * scaling factor */
-  float width = 0.5;
-
-  float pixbuf_aspect = (float) gdk_pixbuf_get_width (pixbuf) /
-                        (float) gdk_pixbuf_get_height (pixbuf);
-
-  float height = width / pixbuf_aspect;
 
   GulkanTexture *texture =
     gulkan_texture_new_from_pixbuf (gc->device, pixbuf,
@@ -83,27 +74,76 @@ _init_windows (Example *self)
 
   gulkan_client_upload_pixbuf (gc, texture, pixbuf);
 
+  *texture_width = gdk_pixbuf_get_width (pixbuf);
+  *texture_height = gdk_pixbuf_get_height (pixbuf);
+  g_object_unref (pixbuf);
+
+  return texture;
+}
+
+gboolean
+_init_windows (Example *self)
+{
+  GulkanClient *gc = GULKAN_CLIENT (self->client->uploader);
+  float texture_width, texture_height;
+  GulkanTexture *hawk_big = _make_texture (gc, "/res/hawk.jpg", 0.1,
+                                           &texture_width, &texture_height);
+
+  /* TODO: ppm setting */
+  double ppm = 300.0;
+  float width = (float)texture_width / ppm * 1.0;
+  float height = (float)texture_height / ppm * 1.0;
+
   for (float x = 0; x < GRID_WIDTH * width; x += width)
     for (float y = 0; y < GRID_HEIGHT * height; y += height)
       {
         XrdOverlayWindow *window =
           xrd_overlay_client_add_window (self->client, "A window.", NULL,
-                                         gdk_pixbuf_get_width (pixbuf),
-                                         gdk_pixbuf_get_height (pixbuf));
+                                         texture_width, texture_height);
         self->windows = g_slist_append (self->windows, window);
 
         openvr_overlay_uploader_submit_frame (self->client->uploader,
-                                              window->overlay, texture);
+                                              window->overlay, hawk_big);
 
         graphene_point3d_t point = {
           .x = x,
           .y = y,
           .z = -3
         };
-        openvr_overlay_set_translation (window->overlay, &point);
+        graphene_matrix_t transform;
+        graphene_matrix_init_translate (&transform, &point);
+        xrd_overlay_window_set_transformation_matrix (window, &transform);
 
         xrd_overlay_window_manager_save_reset_transform (self->client->manager,
                                                          window);
+
+        if (x == 0 && y == 0)
+          {
+            float texture_width, texture_height;
+            GulkanTexture *hawk_small = _make_texture (gc, "/res/cat.jpg", 0.03,
+                                                       &texture_width,
+                                                       &texture_height);
+            XrdOverlayWindow *child =
+              xrd_overlay_client_add_window (self->client, "A child.", NULL,
+                                             texture_width, texture_height);
+            self->windows = g_slist_append (self->windows, child);
+
+            openvr_overlay_uploader_submit_frame (self->client->uploader,
+                                                  child->overlay, hawk_small);
+            graphene_point_t offset = { .x = 50, .y = 50 };
+            xrd_overlay_window_add_child (window, child, &offset);
+
+            /*
+            graphene_point3d_t point = {
+              .x = x,
+              .y = y,
+              .z = -2.9
+            };
+            graphene_matrix_t transform;
+            graphene_matrix_init_translate (&transform, &point);
+            xrd_overlay_window_set_transformation_matrix (child, &transform);
+            */
+          }
       }
 
   return TRUE;

@@ -187,12 +187,59 @@ _hover_start_cb (OpenVROverlay *overlay,
   g_signal_emit (window, window_signals[HOVER_START_EVENT], 0, event);
 }
 
+// TODO: missing in upstream
+/**
+ * graphene_point_scale:
+ * @p: a #graphene_point_t
+ * @factor: the scaling factor
+ * @res: (out caller-allocates): return location for the scaled point
+ *
+ * Scales the coordinates of the given #graphene_point_t by
+ * the given @factor.
+ */
+void
+graphene_point_scale (const graphene_point_t *p,
+                      float                   factor,
+                      graphene_point_t       *res)
+{
+  graphene_point_init (res, p->x * factor, p->y * factor);
+}
+
+static void
+_scale_move_child (XrdOverlayWindow *self)
+{
+
+  xrd_overlay_window_set_scaling_factor (self->child_window,
+                                         self->scaling_factor);
+
+  graphene_point_t scaled_offset;
+  graphene_point_scale (&self->child_offset_center, self->scaling_factor / self->ppm,
+                        &scaled_offset);
+
+  graphene_point3d_t scaled_offset3d = {
+    .x = scaled_offset.x,
+    .y = scaled_offset.y,
+    .z = 0.01
+  };
+  graphene_matrix_t child_transform;
+  graphene_matrix_init_translate (&child_transform, &scaled_offset3d);
+
+  graphene_matrix_t parent_transform;
+  xrd_overlay_window_get_transformation_matrix (self, &parent_transform);
+
+  graphene_matrix_multiply (&child_transform, &parent_transform, &child_transform);
+
+  xrd_overlay_window_set_transformation_matrix (self->child_window, &child_transform);
+
+}
 
 gboolean
 xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat)
 {
   gboolean res = openvr_overlay_set_transform_absolute (self->overlay, mat);
+  if (self->child_window)
+    _scale_move_child (self);
   return res;
 }
 
@@ -204,23 +251,24 @@ xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
   return res;
 }
 
-static float
-_texture_size_to_xr_size (XrdOverlayWindow *self, int texture_size)
+/* according to current ppm and scaling factor */
+float
+xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel)
 {
-  return (float)texture_size / self->ppm * self->scaling_factor;
+  return (float)pixel / self->ppm * self->scaling_factor;
 }
 
 gboolean
 xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters)
 {
-  *meters = _texture_size_to_xr_size (self, self->texture_width);
+  *meters = xrd_overlay_window_pixel_to_xr_scale (self, self->texture_width);
   return TRUE;
 }
 
 gboolean
 xrd_overlay_window_get_xr_height (XrdOverlayWindow *self, float *meters)
 {
-  *meters = _texture_size_to_xr_size (self, self->texture_height);
+  *meters = xrd_overlay_window_pixel_to_xr_scale (self, self->texture_height);
   return TRUE;
 }
 
@@ -235,9 +283,26 @@ gboolean
 xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
 {
   self->scaling_factor = factor;
-  float xr_width = _texture_size_to_xr_size (self, self->texture_width);
+  float xr_width = xrd_overlay_window_pixel_to_xr_scale (self,
+                                                         self->texture_width);
   openvr_overlay_set_width_meters (self->overlay, xr_width);
+
+  if (self->child_window)
+    _scale_move_child (self);
+
   return TRUE;
+}
+
+void
+xrd_overlay_window_add_child (XrdOverlayWindow *self,
+                              XrdOverlayWindow *child,
+                              graphene_point_t *offset_center)
+{
+  self->child_window = child;
+  graphene_point_init_from_point (&self->child_offset_center, offset_center);
+
+  if (self->child_window)
+    _scale_move_child (self);
 }
 
 void
@@ -376,7 +441,8 @@ xrd_overlay_window_internal_init (XrdOverlayWindow *self)
   gchar overlay_id_str [25];
   g_sprintf (overlay_id_str, "xrd-window-%d", new_window_index);
 
-  float xr_width = _texture_size_to_xr_size (self, self->texture_width);
+  float xr_width = xrd_overlay_window_pixel_to_xr_scale (self,
+                                                         self->texture_width);
 
   self->overlay = openvr_overlay_new ();
   openvr_overlay_create_width (self->overlay, overlay_id_str,

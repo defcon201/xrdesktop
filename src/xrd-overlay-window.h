@@ -36,6 +36,11 @@ struct _XrdOverlayWindow
 
   graphene_matrix_t vr_transform;
   gboolean       recreate;
+
+  /* A window that is pinned on top of this window and follows this window's
+   * position and scaling */
+  XrdOverlayWindow *child_window;
+  graphene_point_t child_offset_center;
 };
 
 XrdOverlayWindow *
@@ -61,6 +66,9 @@ xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
 gboolean
 xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat);
+
+float
+xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel);
 
 gboolean
 xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters);
@@ -117,6 +125,12 @@ xrd_overlay_window_emit_hover (XrdOverlayWindow    *self,
 void
 xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
                                      OpenVRControllerIndexEvent *event);
+
+void
+xrd_overlay_window_add_child (XrdOverlayWindow *self,
+                              XrdOverlayWindow *child,
+                              graphene_point_t *offset_center);
+
 
 /* TODO: this is a stopgap solution for so children can init a window.
  * Pretty sure there's a more glib like solution. */
