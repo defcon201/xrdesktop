@@ -108,6 +108,13 @@ _action_hand_pose_cb (OpenVRAction            *action,
 
   XrdOverlayPointer *pointer = self->pointer_ray[controller->index];
   xrd_overlay_pointer_move (pointer, &event->pose);
+
+  /* show cursor while synth controller hovers window, but doesn't grab */
+  if (controller->index == self->input_synth->synthing_controller_index &&
+      self->hover_window[controller->index] != NULL &&
+      self->manager->grab_state[controller->index].window == NULL)
+    xrd_overlay_desktop_cursor_show (self->cursor);
+
   g_free (event);
 }
 
@@ -182,7 +189,8 @@ _window_grab_start_cb (XrdOverlayWindow           *window,
 
   xrd_overlay_window_manager_drag_start (self->manager, event->index);
 
-  xrd_overlay_desktop_cursor_hide (self->cursor);
+  if (event->index == self->input_synth->synthing_controller_index)
+    xrd_overlay_desktop_cursor_hide (self->cursor);
 
   g_free (event);
 }
@@ -229,23 +237,19 @@ _button_hover_cb (XrdOverlayButton *button,
 }
 
 void
-_window_hover_end_cb (XrdOverlayButton           *button,
+_window_hover_end_cb (XrdOverlayWindow           *window,
                       OpenVRControllerIndexEvent *event,
                       gpointer                   _self)
 {
   (void) event;
+  (void) window;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
 
   XrdOverlayPointer *pointer_ray = self->pointer_ray[event->index];
   xrd_overlay_pointer_reset_length (pointer_ray);
 
-  /* unmark if no controller is hovering over this overlay */
-  if (!xrd_overlay_window_manager_is_hovered (self->manager,
-                                              XRD_OVERLAY_WINDOW (button)))
-    xrd_overlay_button_unmark (button);
-
-  /* When leaving this overlay and immediately entering another, the tip should
-   * still be active because it is now hovering another overlay. */
+  /* When leaving this window but now hovering another, the tip should
+   * still be active because it is now hovering another window. */
   gboolean active = self->manager->hover_state[event->index].window != NULL;
 
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
@@ -253,9 +257,26 @@ _window_hover_end_cb (XrdOverlayButton           *button,
 
   xrd_input_synth_reset_press_state (self->input_synth);
 
-  xrd_overlay_desktop_cursor_hide (self->cursor);
-  
+  if (event->index == self->input_synth->synthing_controller_index)
+    xrd_overlay_desktop_cursor_hide (self->cursor);
+
   g_free (event);
+}
+
+void
+_button_hover_end_cb (XrdOverlayButton           *button,
+                      OpenVRControllerIndexEvent *event,
+                      gpointer                   _self)
+{
+  (void) event;
+  XrdOverlayClient *self = (XrdOverlayClient*) _self;
+
+  /* unmark if no controller is hovering over this overlay */
+  if (!xrd_overlay_window_manager_is_hovered (self->manager,
+                                              XRD_OVERLAY_WINDOW (button)))
+    xrd_overlay_button_unmark (button);
+
+  _window_hover_end_cb (XRD_OVERLAY_WINDOW (button), event, _self);
 }
 
 /* 3DUI buttons */
@@ -284,7 +305,7 @@ _init_button (XrdOverlayClient   *self,
   g_signal_connect (window, "grab-start-event", (GCallback) callback, self);
   g_signal_connect (window, "hover-event", (GCallback) _button_hover_cb, self);
   g_signal_connect (window, "hover-end-event",
-                    (GCallback) _window_hover_end_cb, self);
+                    (GCallback)_button_hover_end_cb, self);
 
   return TRUE;
 }
@@ -400,8 +421,6 @@ _window_hover_cb (XrdOverlayWindow *window,
       if (self->hover_window[event->controller_index] != window)
         xrd_input_synth_reset_scroll (self->input_synth);
     }
-
-  xrd_overlay_desktop_cursor_show (self->cursor);
 }
 
 void
@@ -415,8 +434,6 @@ _window_hover_start_cb (XrdOverlayWindow           *window,
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
   xrd_overlay_pointer_tip_set_active (pointer_tip, TRUE);
 
-  xrd_overlay_desktop_cursor_show (self->cursor);
-  
   g_free (event);
 }
 
