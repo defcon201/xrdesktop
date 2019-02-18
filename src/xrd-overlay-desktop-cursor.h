@@ -26,7 +26,12 @@ struct _XrdOverlayDesktopCursor
 
   OpenVROverlayUploader *uploader;
 
+  gboolean use_constant_apparent_width;
+  /* setting, either absolute size or the apparent size in 3 meter distance */
   float cursor_width_meter;
+
+  /* cached values set by apparent size and used in hotspot calculation */
+  float current_cursor_width_meter;
 
   int hotspot_x;
   int hotspot_y;
@@ -34,6 +39,8 @@ struct _XrdOverlayDesktopCursor
   GdkPixbuf *pixbuf;
   /* texture is cached to minimize texture allocations */
   GulkanTexture *texture;
+  int texture_width;
+  int texture_height;
 };
 
 XrdOverlayDesktopCursor *
@@ -55,6 +62,10 @@ xrd_overlay_desktop_cursor_show (XrdOverlayDesktopCursor *self);
 
 void
 xrd_overlay_desktop_cursor_hide (XrdOverlayDesktopCursor *self);
+
+void
+xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
+                                               graphene_point3d_t *cursor_point);
 
 G_END_DECLS
 

@@ -29,13 +29,39 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
   (void) self;
 }
 
+void
+_set_width (XrdOverlayDesktopCursor *self, float width)
+{
+  openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width);
+  self->current_cursor_width_meter = width;
+}
+
 static void
 _update_cursor_width (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayDesktopCursor *self = user_data;
   self->cursor_width_meter = g_settings_get_double (settings, key);
-  openvr_overlay_set_width_meters (OPENVR_OVERLAY (self),
-                                   self->cursor_width_meter);
+  _set_width (self, self->cursor_width_meter);
+}
+
+static void
+_update_use_constant_apparent_width (GSettings *settings, gchar *key,
+                                     gpointer user_data)
+{
+  XrdOverlayDesktopCursor *self = user_data;
+  self->use_constant_apparent_width = g_settings_get_boolean (settings, key);
+  if (self->use_constant_apparent_width)
+    {
+      graphene_matrix_t cursor_pose;
+      openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &cursor_pose);
+
+      graphene_vec3_t cursor_point_vec;
+      openvr_math_matrix_get_translation (&cursor_pose, &cursor_point_vec);
+      graphene_point3d_t cursor_point;
+      xrd_overlay_desktop_cursor_set_constant_width (self, &cursor_point);
+    }
+  else
+    _set_width (self, self->cursor_width_meter);
 }
 
 XrdOverlayDesktopCursor *
@@ -46,6 +72,8 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
   self->uploader = g_object_ref (uploader);
   self->pixbuf = NULL;
   self->texture = NULL;
+  self->texture_width = 0;
+  self->texture_height = 0;
 
   openvr_overlay_create (OPENVR_OVERLAY (self),
                          "org.xrdesktop.cursor", "XR Desktop Cursor");
@@ -58,6 +86,11 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
   xrd_settings_connect_and_apply (G_CALLBACK (_update_cursor_width),
                                   "cursor-width", self);
   
+  xrd_settings_connect_and_apply (G_CALLBACK
+                                  (_update_use_constant_apparent_width),
+                                  "pointer-tip-apparent-width-is-constant",
+                                  self);
+
   /* pointer ray is MAX, pointer tip is MAX - 1, so cursor is MAX - 2 */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 2);
 
@@ -78,9 +111,11 @@ xrd_overlay_desktop_cursor_upload_pixbuf (XrdOverlayDesktopCursor *self,
 {
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
-  if (!self->pixbuf ||
-      gdk_pixbuf_get_width (pixbuf) != gdk_pixbuf_get_width (self->pixbuf) ||
-      gdk_pixbuf_get_height (pixbuf) != gdk_pixbuf_get_height (self->pixbuf))
+  int new_texture_width = gdk_pixbuf_get_width (pixbuf);
+  int new_texture_height = gdk_pixbuf_get_height (pixbuf);
+
+  if (self->texture_width != new_texture_width ||
+      self->texture_height != new_texture_height)
     {
       if (self->texture)
         g_object_unref (self->texture);
@@ -90,6 +125,9 @@ xrd_overlay_desktop_cursor_upload_pixbuf (XrdOverlayDesktopCursor *self,
       if (self->pixbuf)
         g_object_unref (self->pixbuf);
       self->pixbuf = pixbuf;
+
+      self->texture_width = new_texture_width;
+      self->texture_height = new_texture_height;
     }
 
   gulkan_client_upload_pixbuf (client, self->texture, pixbuf);
@@ -108,6 +146,12 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
 {
   if (!self->pixbuf)
     return;
+
+  /* TODO: first we have to know the size of the cursor at the target  position
+   * so we can calculate the hotspot.
+   * Setting the size first flickers sometimes a bit.
+   * */
+  xrd_overlay_desktop_cursor_set_constant_width (self, intersection);
 
   /* Calculate the position of the cursor in the space of the window it is "on",
    * because the cursor is rotated in 3d to lie on the overlay's plane:
@@ -132,14 +176,14 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
 
   graphene_point3d_t cursor_radius;
   graphene_point3d_init (&cursor_radius,
-                         self->cursor_width_meter / 2.,
-                         - self->cursor_width_meter / 2., 0);
+                         self->current_cursor_width_meter / 2.,
+                         - self->current_cursor_width_meter / 2., 0);
   graphene_matrix_translate (&transform, &cursor_radius);
 
   float cursor_hotspot_meter_x = - self->hotspot_x /
-      ((float)gdk_pixbuf_get_width (self->pixbuf)) * self->cursor_width_meter;
+      ((float)self->texture_width) * self->current_cursor_width_meter;
   float cursor_hotspot_meter_y = + self->hotspot_y /
-      ((float)gdk_pixbuf_get_height (self->pixbuf)) * self->cursor_width_meter;
+      ((float)self->texture_height) * self->current_cursor_width_meter;
 
   graphene_point3d_t cursor_hotspot;
   graphene_point3d_init (&cursor_hotspot, cursor_hotspot_meter_x,
@@ -151,6 +195,65 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
   graphene_matrix_multiply(&transform, &overlay_transform, &transform);
 
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);
+}
+
+/* TODO: scene app needs device poses too. Put in openvr_system? */
+static gboolean
+_get_hmd_pose (graphene_matrix_t *pose)
+{
+  OpenVRContext *context = openvr_context_get_instance ();
+  VRControllerState_t state;
+  if (context->system->IsTrackedDeviceConnected(k_unTrackedDeviceIndex_Hmd) &&
+      context->system->GetTrackedDeviceClass (k_unTrackedDeviceIndex_Hmd) ==
+          ETrackedDeviceClass_TrackedDeviceClass_HMD &&
+      context->system->GetControllerState (k_unTrackedDeviceIndex_Hmd,
+                                           &state, sizeof(state)))
+    {
+      /* k_unTrackedDeviceIndex_Hmd should be 0 => posearray[0] */
+      TrackedDevicePose_t openvr_pose;
+      context->system->GetDeviceToAbsoluteTrackingPose (context->origin, 0,
+                                                        &openvr_pose, 1);
+      openvr_math_matrix34_to_graphene (&openvr_pose.mDeviceToAbsoluteTracking,
+                                        pose);
+
+      return openvr_pose.bDeviceIsConnected &&
+             openvr_pose.bPoseIsValid &&
+             openvr_pose.eTrackingResult ==
+                 ETrackingResult_TrackingResult_Running_OK;
+    }
+  return FALSE;
+}
+
+void
+xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
+                                               graphene_point3d_t *cursor_point)
+{
+  if (!self->use_constant_apparent_width)
+    return;
+
+  graphene_matrix_t hmd_pose;
+  gboolean has_pose = _get_hmd_pose (&hmd_pose);
+  if (!has_pose)
+    {
+      g_print ("Error: NO HMD POSE\n");
+      _set_width (self, self->cursor_width_meter);
+      return;
+    }
+
+  graphene_vec3_t hmd_point_vec;
+  openvr_math_matrix_get_translation (&hmd_pose,
+                                      &hmd_point_vec);
+  graphene_point3d_t hmd_point;
+  graphene_point3d_init_from_vec3 (&hmd_point, &hmd_point_vec);
+
+  float distance = graphene_point3d_distance (cursor_point, &hmd_point, NULL);
+
+  /* divide distance by 3 so the width and the apparent width are the same at
+   * a distance of 3 meters. This makes e.g. self->width = 0.3 look decent in
+   * both cases at typical usage distances. */
+  float new_width = self->cursor_width_meter / 3.0 * distance;
+
+  _set_width (self, new_width);
 }
 
 void

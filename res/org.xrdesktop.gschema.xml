@@ -101,8 +101,11 @@
 
     <key name='cursor-width' type='d'>
       <default>0.25</default>
-      <summary>The width of the cursor that is copied from the desktop, in meter.</summary>
+      <summary>The width of the cursor that is copied from the desktop, respects pointer-tip-apparent-width-is-constant.</summary>
       <description>
+        When pointer-tip-apparent-width-is-constant is disabled, this option sets the width of the cursor.
+        When pointer-tip-apparent-width-is-constant is enabled, this option sets the apparent width such
+        that it always appears to have this width as if seen in 3 meter distance.
       </description>
     </key>
 
