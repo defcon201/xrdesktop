@@ -387,50 +387,6 @@ xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
   g_signal_emit (self, window_signals[HOVER_START_EVENT], 0, event);
 }
 
-static void
-_disconnect_func (gpointer instance, gpointer func)
-{
-  g_signal_handlers_disconnect_matched (instance,
-                                        G_SIGNAL_MATCH_FUNC,
-                                        0,
-                                        0,
-                                        NULL,
-                                        func,
-                                        NULL);
-}
-
-static void
-_disconnect_signals (XrdOverlayWindow *self)
-{
-  if (!self->overlay)
-    return;
-  _disconnect_func (self->overlay, _grab_start_cb);
-  _disconnect_func (self->overlay, _grab_cb);
-  _disconnect_func (self->overlay, _release_cb);
-  _disconnect_func (self->overlay, _hover_start_cb);
-  _disconnect_func (self->overlay, _hover_cb);
-  _disconnect_func (self->overlay, _hover_end_cb);
-}
-
-static void
-_connect_signals (XrdOverlayWindow *self)
-{
-  if (!self->overlay)
-    return;
-  g_signal_connect (self->overlay, "grab-start-event",
-                    (GCallback) _grab_start_cb, self);
-  g_signal_connect (self->overlay, "grab-event",
-                    (GCallback) _grab_cb, self);
-  g_signal_connect (self->overlay, "release-event",
-                    (GCallback) _release_cb, self);
-  g_signal_connect (self->overlay, "hover-start-event",
-                    (GCallback) _hover_start_cb, self);
-  g_signal_connect (self->overlay, "hover-event",
-                    (GCallback) _hover_cb, self);
-  g_signal_connect (self->overlay, "hover-end-event",
-                    (GCallback) _hover_end_cb, self);
-}
-
 void
 xrd_overlay_window_internal_init (XrdOverlayWindow *self)
 {
@@ -459,8 +415,6 @@ xrd_overlay_window_internal_init (XrdOverlayWindow *self)
                                   self->texture_height);
 
   openvr_overlay_show (self->overlay);
-
-  _connect_signals (self);
 
   new_window_index++;
 }
@@ -494,8 +448,6 @@ static void
 xrd_overlay_window_finalize (GObject *gobject)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (gobject);
-
-  _disconnect_signals (self);
 
   if (self->overlay)
     g_object_unref (self->overlay);
