@@ -66,6 +66,10 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
   return self;
 }
 
+/** xrd_overlay_desktop_cursor_upload_pixbuf:
+ * Sets the current cursor to pixbuf.
+ * This XrdDesktopCursor takes ownership of the pixbuf and will free it when
+ * appropriate. */
 void
 xrd_overlay_desktop_cursor_upload_pixbuf (XrdOverlayDesktopCursor *self,
                                           GdkPixbuf *pixbuf,
