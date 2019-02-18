@@ -266,7 +266,7 @@ _init_paint_overlay (Example *self)
   //                  self);
   //
   xrd_overlay_window_manager_add_window (self->manager, self->paint_window,
-                                         XRD_OVERLAY_WINDOW_HOVER);
+                                         XRD_OVERLAY_WINDOW_HOVERABLE);
 
   g_signal_connect (self->paint_window, "hover-event",
                     (GCallback) _paint_hover_cb, self);

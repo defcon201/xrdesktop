@@ -99,7 +99,7 @@ _init_windows (Example *self)
       {
         XrdOverlayWindow *window =
           xrd_overlay_client_add_window (self->client, "A window.", NULL,
-                                         texture_width, texture_height);
+                                         texture_width, texture_height, FALSE);
         self->windows = g_slist_append (self->windows, window);
 
         openvr_overlay_uploader_submit_frame (self->client->uploader,
@@ -120,16 +120,16 @@ _init_windows (Example *self)
         if (x == 0 && y == 0)
           {
             float texture_width, texture_height;
-            GulkanTexture *hawk_small = _make_texture (gc, "/res/cat.jpg", 0.03,
+            GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg", 0.03,
                                                        &texture_width,
                                                        &texture_height);
             XrdOverlayWindow *child =
               xrd_overlay_client_add_window (self->client, "A child.", NULL,
-                                             texture_width, texture_height);
+                                             texture_width, texture_height, TRUE);
             self->windows = g_slist_append (self->windows, child);
 
             openvr_overlay_uploader_submit_frame (self->client->uploader,
-                                                  child->overlay, hawk_small);
+                                                  child->overlay, cat_small);
             graphene_point_t offset = { .x = 50, .y = 50 };
             xrd_overlay_window_add_child (window, child, &offset);
 

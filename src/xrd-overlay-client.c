@@ -224,6 +224,7 @@ _button_hover_cb (XrdOverlayButton *button,
 
   xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
   xrd_overlay_pointer_set_length (pointer, event->distance);
+
   g_free (event);
 }
 
@@ -278,9 +279,7 @@ _init_button (XrdOverlayClient   *self,
 
   xrd_overlay_window_manager_add_window (self->manager,
                                          XRD_OVERLAY_WINDOW (*button),
-                                         XRD_OVERLAY_WINDOW_HOVER);
-
-
+                                         XRD_OVERLAY_WINDOW_HOVERABLE);
 
   g_signal_connect (window, "grab-start-event", (GCallback) callback, self);
   g_signal_connect (window, "hover-event", (GCallback) _button_hover_cb, self);
@@ -471,21 +470,25 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
                                const char       *title,
                                gpointer          native,
                                uint32_t          width,
-                               uint32_t          height)
+                               uint32_t          height,
+                               gboolean          is_child)
 {
   gchar *window_title = g_strdup (title);
   if (!window_title)
     window_title = g_strdup ("Unnamed Window");
 
-
-
   XrdOverlayWindow *window = xrd_overlay_window_new (window_title, width,
                                                      height, native, NULL, 0);
 
-  xrd_overlay_window_manager_add_window (self->manager, window,
-                                         XRD_OVERLAY_WINDOW_HOVER |
-                                         XRD_OVERLAY_WINDOW_GRAB |
-                                         XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT);
+  XrdOverlayWindowFlags flags = XRD_OVERLAY_WINDOW_HOVERABLE |
+                                XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT;
+
+  /* User can't drag child windows, they are attached to the parent.
+   * The child window's position is managed by its parent, not the WM. */
+  if (!is_child)
+    flags |= XRD_OVERLAY_WINDOW_DRAGGABLE | XRD_OVERLAY_WINDOW_MANAGED;
+
+  xrd_overlay_window_manager_add_window (self->manager, window, flags);
   g_signal_connect (window, "grab-start-event",
                     (GCallback) _window_grab_start_cb, self);
   g_signal_connect (window, "grab-event",

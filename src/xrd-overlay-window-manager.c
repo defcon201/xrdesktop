@@ -49,6 +49,11 @@ _free_matrix_cb (gpointer m)
 static void
 xrd_overlay_window_manager_init (XrdOverlayWindowManager *self)
 {
+  self->draggable_windows = NULL;
+  self->managed_windows = NULL;
+  self->destroy_windows = NULL;
+  self->hoverable_windows = NULL;
+
   self->reset_transforms = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                                   NULL, _free_matrix_cb);
   self->reset_scalings = g_hash_table_new_full (g_direct_hash, g_direct_equal,
@@ -115,11 +120,24 @@ _interpolate_cb (gpointer _transition)
   return TRUE;
 }
 
+static gboolean
+_is_in_list (GSList *list,
+             XrdOverlayWindow *window)
+{
+  GSList *l;
+  for (l = list; l != NULL; l = l->next)
+    {
+      if (l->data == window)
+        return TRUE;
+    }
+  return FALSE;
+}
+
 void
 xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self)
 {
   GSList *l;
-  for (l = self->grab_windows; l != NULL; l = l->next)
+  for (l = self->managed_windows; l != NULL; l = l->next)
     {
       XrdOverlayWindow *window = (XrdOverlayWindow *) l->data;
 
@@ -154,7 +172,7 @@ xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self)
 gboolean
 xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
 {
-  guint num_overlays = g_slist_length (self->grab_windows);
+  guint num_overlays = g_slist_length (self->managed_windows);
   uint32_t grid_height = (uint32_t) sqrt((float) num_overlays);
   uint32_t grid_width = (uint32_t) ((float) num_overlays / (float) grid_height);
 
@@ -200,7 +218,7 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
                                         graphene_vec3_y_axis ());
 
           XrdOverlayWindow *window =
-              (XrdOverlayWindow *) g_slist_nth_data (self->grab_windows, i);
+              (XrdOverlayWindow *) g_slist_nth_data (self->managed_windows, i);
 
           if (window == NULL)
             {
@@ -260,13 +278,17 @@ xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
   if (flags & XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT)
     self->destroy_windows = g_slist_append (self->destroy_windows, window);
 
-  /* Movable overlays */
-  if (flags & XRD_OVERLAY_WINDOW_GRAB)
-    self->grab_windows = g_slist_append (self->grab_windows, window);
+  /* Movable overlays (user can move them) */
+  if (flags & XRD_OVERLAY_WINDOW_DRAGGABLE)
+    self->draggable_windows = g_slist_append (self->draggable_windows, window);
 
-  /* All overlays that can be hovered, includes button overlays */
-  if (flags & XRD_OVERLAY_WINDOW_HOVER)
-    self->hover_windows = g_slist_append (self->hover_windows, window);
+  /* Managed overlays (window manager can move them) */
+  if (flags & XRD_OVERLAY_WINDOW_MANAGED)
+    self->managed_windows = g_slist_append (self->managed_windows, window);
+
+  /* All windows that can be hovered, includes button windows */
+  if (flags & XRD_OVERLAY_WINDOW_HOVERABLE)
+    self->hoverable_windows = g_slist_append (self->hoverable_windows, window);
 
 
   /* Register reset position */
@@ -284,7 +306,7 @@ xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
 void
 xrd_overlay_window_manager_poll_overlay_events (XrdOverlayWindowManager *self)
 {
-  for (GSList *l = self->hover_windows; l != NULL; l = l->next)
+  for (GSList *l = self->hoverable_windows; l != NULL; l = l->next)
     {
       XrdOverlayWindow *window = (XrdOverlayWindow *) l->data;
       xrd_overlay_window_poll_event (window);
@@ -296,8 +318,9 @@ xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,
                                           XrdOverlayWindow *window)
 {
   self->destroy_windows = g_slist_remove (self->destroy_windows, window);
-  self->grab_windows = g_slist_remove (self->grab_windows, window);
-  self->hover_windows = g_slist_remove (self->hover_windows, window);
+  self->draggable_windows = g_slist_remove (self->draggable_windows, window);
+  self->managed_windows = g_slist_remove (self->managed_windows, window);
+  self->hoverable_windows = g_slist_remove (self->hoverable_windows, window);
   g_hash_table_remove (self->reset_transforms, window);
 
   g_object_unref (window);
@@ -313,7 +336,7 @@ _test_hover (XrdOverlayWindowManager *self,
 
   XrdOverlayWindow *closest = NULL;
 
-  for (GSList *l = self->hover_windows; l != NULL; l = l->next)
+  for (GSList *l = self->hoverable_windows; l != NULL; l = l->next)
     {
       XrdOverlayWindow *window = (XrdOverlayWindow *) l->data;
 
@@ -467,6 +490,9 @@ xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
   HoverState *hover_state = &self->hover_state[controller_index];
   GrabState *grab_state = &self->grab_state[controller_index];
 
+  if (!_is_in_list (self->draggable_windows, hover_state->window))
+    return;
+
   /* Copy hover to grab state */
   grab_state->window = hover_state->window;
 
@@ -554,13 +580,13 @@ xrd_overlay_window_manager_check_grab (XrdOverlayWindowManager *self,
 {
   HoverState *hover_state = &self->hover_state[controller_index];
 
-  if (hover_state->window != NULL)
-    {
-      OpenVRControllerIndexEvent *grab_event =
-          g_malloc (sizeof (OpenVRControllerIndexEvent));
-      grab_event->index = controller_index;
-      xrd_overlay_window_emit_grab_start (hover_state->window, grab_event);
-    }
+  if (hover_state->window == NULL)
+    return;
+
+   OpenVRControllerIndexEvent *grab_event =
+      g_malloc (sizeof (OpenVRControllerIndexEvent));
+  grab_event->index = controller_index;
+  xrd_overlay_window_emit_grab_start (hover_state->window, grab_event);
 }
 
 void
@@ -569,13 +595,13 @@ xrd_overlay_window_manager_check_release (XrdOverlayWindowManager *self,
 {
   GrabState *grab_state = &self->grab_state[controller_index];
 
-  if (grab_state->window != NULL)
-    {
-      OpenVRControllerIndexEvent *release_event =
-          g_malloc (sizeof (OpenVRControllerIndexEvent));
-      release_event->index = controller_index;
-      xrd_overlay_window_emit_release (grab_state->window, release_event);
-    }
+  if (grab_state->window == NULL)
+    return;
+
+  OpenVRControllerIndexEvent *release_event =
+      g_malloc (sizeof (OpenVRControllerIndexEvent));
+  release_event->index = controller_index;
+  xrd_overlay_window_emit_release (grab_state->window, release_event);
   grab_state->window = NULL;
 }
 

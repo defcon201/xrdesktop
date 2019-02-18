@@ -54,17 +54,19 @@ typedef struct GrabState
 
 typedef enum
 {
-  XRD_OVERLAY_WINDOW_HOVER               = 1 << 0,
-  XRD_OVERLAY_WINDOW_GRAB                = 1 << 1,
-  XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT = 1 << 2
+  XRD_OVERLAY_WINDOW_HOVERABLE           = 1 << 0,
+  XRD_OVERLAY_WINDOW_DRAGGABLE           = 1 << 1,
+  XRD_OVERLAY_WINDOW_MANAGED             = 1 << 2,
+  XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT = 1 << 3
 } XrdOverlayWindowFlags;
 
 struct _XrdOverlayWindowManager
 {
   GObject parent;
 
-  GSList *grab_windows;
-  GSList *hover_windows;
+  GSList *draggable_windows;
+  GSList *managed_windows;
+  GSList *hoverable_windows;
   GSList *destroy_windows;
 
   HoverState hover_state[OPENVR_CONTROLLER_COUNT];
