@@ -3,6 +3,7 @@
   <gresource prefix="/res">
     <file>cat.jpg</file>
     <file>hawk.jpg</file>
+    <file>cursor.png</file>
     <file>bindings/example_model_actions.json</file>
     <file>bindings/example_model_bindings_vive_controller.json</file>
   </gresource>

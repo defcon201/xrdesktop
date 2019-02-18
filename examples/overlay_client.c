@@ -146,6 +146,14 @@ _init_windows (Example *self)
           }
       }
 
+  GdkPixbuf *cursor_pixbuf = load_gdk_pixbuf ("/res/cursor.png");
+  if (cursor_pixbuf == NULL)
+    {
+      g_printerr ("Could not load image.\n");
+      return FALSE;
+    }
+  xrd_overlay_desktop_cursor_upload_pixbuf (self->client->cursor,
+                                            cursor_pixbuf, 3, 3);
   return TRUE;
 }
 
