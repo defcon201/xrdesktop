@@ -73,8 +73,8 @@
       <description>
         This option has no effect on the visible size of the pointer tip.
         Higher resolutions only result in improved quality.
-        Note: Texture resolution will be double this value so animations can
-        be up to 2x the pointer size without having to allocate a bigger texture.
+        Note: Texture resolution will be largert than this value for being able to render animations
+        without having to allocate larger textures.
       </description>
     </key>
 
@@ -88,7 +88,7 @@
     </key>
 
     <key name='pointer-tip-width' type='d'>
-      <default>0.3</default>
+      <default>0.05</default>
       <summary>Either the width or the apparent width of the pointer tip, depending on the pointer-tip-apparent-width-is-constant option.</summary>
       <description>
         When pointer-tip-apparent-width-is-constant is disabled, this option sets the width of the pointer tip.

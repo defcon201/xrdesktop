@@ -30,7 +30,7 @@ struct _XrdOverlayPointerTip
 
 
   gboolean use_constant_apparent_width;
-  float width;
+  float overlay_width;
 
   /* 0, or the id of the currently running animation. */
   guint animation_callback_id;
@@ -48,8 +48,13 @@ struct _XrdOverlayPointerTip
   double active_g;
   double active_b;
   double background_alpha;
-  int texture_width;
-  int texture_height;
+
+  int tip_width;
+  int tip_height;
+
+  /* How much bigger the texture should be than the tip itsef.
+   * Used for animations. */
+  int texture_size_factor;
 };
 
 XrdOverlayPointerTip *

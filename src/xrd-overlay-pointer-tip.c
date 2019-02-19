@@ -30,6 +30,8 @@ xrd_overlay_pointer_tip_init (XrdOverlayPointerTip *self)
   self->texture = NULL;
   self->animation_callback_id = 0;
   self->animation_data = NULL;
+  /* TODO: setting? */
+  self->texture_size_factor = 3;
 }
 
 typedef struct Animation
@@ -52,10 +54,13 @@ draw_gradient_circle (XrdOverlayPointerTip *self,
                       double a_out,
                       float  scale)
 {
-  double center_x = self->texture_width;
-  double center_y = self->texture_height;
+  int tex_width = self->tip_width * self->texture_size_factor;
+  int tex_height = self->tip_height * self->texture_size_factor;
 
-  double radius = (self->texture_width / 2.) * scale;
+  double center_x = tex_width / 2;
+  double center_y = tex_height / 2;
+
+  double radius = (self->tip_width / 2.) * scale;
 
   cairo_pattern_t *pat = cairo_pattern_create_radial (center_x, center_y,
                                                       0.75 * radius,
@@ -78,16 +83,18 @@ GdkPixbuf*
 _render_tip_pixbuf (XrdOverlayPointerTip *self,
                     double r, double g, double b, float background_scale)
 {
+  int tex_width = self->tip_width * self->texture_size_factor;
+  int tex_height = self->tip_height * self->texture_size_factor;
+
   cairo_surface_t *surface =
-      cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-                                  self->texture_width * 2,
-                                  self->texture_height * 2);
+      cairo_image_surface_create (CAIRO_FORMAT_ARGB32, tex_width, tex_height);
 
   cairo_t *cr = cairo_create (surface);
   cairo_set_source_rgba (cr, 0, 0, 0, 0);
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_paint (cr);
-  draw_gradient_circle (self, cr, 1.0, 1.0, 1.0, 0.1, 0.1, background_scale);
+  draw_gradient_circle (self, cr, 1.0, 1.0, 1.0, self->background_alpha,
+                        0.0, background_scale);
 
   cairo_set_operator (cr, CAIRO_OPERATOR_MULTIPLY);
   draw_gradient_circle (self, cr, r, g, b, 1.0, 0.0, 1.0);
@@ -97,8 +104,7 @@ _render_tip_pixbuf (XrdOverlayPointerTip *self,
   /* Since we cannot set a different format for raw upload,
    * we need to use GdkPixbuf to suit OpenVRs needs */
   GdkPixbuf *pixbuf = gdk_pixbuf_get_from_surface (surface, 0, 0,
-                                                   self->texture_width * 2,
-                                                   self->texture_height * 2);
+                                                   tex_width, tex_height);
 
   cairo_surface_destroy (surface);
 
@@ -125,11 +131,14 @@ _animate_cb (gpointer _animation)
   XrdOverlayPointerTip *self = animation->self;
 
   GulkanClient *client = GULKAN_CLIENT (animation->uploader);
-  GdkPixbuf* active_pixbuf =_render_current_tip (self,
-                                                 2 - 2 * animation->progress);
-  gulkan_client_upload_pixbuf (client,
-                               animation->self->texture,
-                               active_pixbuf);
+
+  float background_scale = self->texture_size_factor *
+                             (1 - animation->progress);
+
+  GdkPixbuf* active_pixbuf =_render_current_tip (self, background_scale);
+
+  gulkan_client_upload_pixbuf (client, animation->self->texture, active_pixbuf);
+
   g_object_unref (active_pixbuf);
 
   openvr_overlay_uploader_submit_frame (animation->uploader,
@@ -168,12 +177,15 @@ static void
 _update_width (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayPointerTip *self = user_data;
-  self->width = g_settings_get_double (settings, key);
+
+  self->overlay_width = g_settings_get_double (settings, key);
+  self->overlay_width *= self->texture_size_factor;
+
   if (self->use_constant_apparent_width)
     xrd_overlay_pointer_tip_set_constant_width (self);
   else
     openvr_overlay_set_width_meters
-        (OPENVR_OVERLAY (self), self->width);
+        (OPENVR_OVERLAY (self), self->overlay_width);
 }
 
 static void
@@ -186,7 +198,7 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
     xrd_overlay_pointer_tip_set_constant_width (self);
   else
     openvr_overlay_set_width_meters
-        (OPENVR_OVERLAY (self), self->width);
+        (OPENVR_OVERLAY (self), self->overlay_width);
 }
 
 static void
@@ -213,7 +225,7 @@ _update_texture_res (GSettings *settings, gchar *key, gpointer user_data)
   XrdOverlayPointerTip *self = user_data;
   GVariant *texture_res = g_settings_get_value (settings, key);
   g_variant_get (texture_res, "(ii)",
-                 &self->texture_width, &self->texture_height);
+                 &self->tip_width, &self->tip_height);
 
   if (self->texture)
     g_object_unref (self->texture);
@@ -389,7 +401,8 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
   if (!has_pose)
     {
       g_print ("Error: NO HMD POSE\n");
-      openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), self->width);
+      openvr_overlay_set_width_meters (OPENVR_OVERLAY(self),
+                                       self->overlay_width);
       return;
     }
 
@@ -404,7 +417,7 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
   /* divide distance by 3 so the width and the apparent width are the same at
    * a distance of 3 meters. This makes e.g. self->width = 0.3 look decent in
    * both cases at typical usage distances. */
-  float new_width = self->width / 3.0 * distance;
+  float new_width = self->overlay_width / 3.0 * distance;
   
   openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), new_width);
 }
