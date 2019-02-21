@@ -251,6 +251,26 @@ xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
   return res;
 }
 
+void
+xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
+                                   OpenVROverlayUploader *uploader,
+                                   GulkanTexture *texture)
+{
+  if (self->texture_width != texture->width ||
+      self->texture_height != texture->height)
+    {
+      float new_xr_width =
+        xrd_overlay_window_pixel_to_xr_scale (self, texture->width);
+
+      openvr_overlay_set_width_meters (self->overlay, new_xr_width);
+
+      self->texture_width = texture->width;
+      self->texture_height = texture->height;
+    }
+
+  openvr_overlay_uploader_submit_frame(uploader, self->overlay, texture);
+}
+
 /* according to current ppm and scaling factor */
 float
 xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel)
@@ -283,8 +303,10 @@ gboolean
 xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
 {
   self->scaling_factor = factor;
-  float xr_width = xrd_overlay_window_pixel_to_xr_scale (self,
-                                                         self->texture_width);
+
+  float xr_width =
+      xrd_overlay_window_pixel_to_xr_scale (self, self->texture_width);
+
   openvr_overlay_set_width_meters (self->overlay, xr_width);
 
   if (self->child_window)
@@ -427,15 +449,12 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
 
 XrdOverlayWindow *
 xrd_overlay_window_new (gchar *window_title, int width, int height,
-                        gpointer native, GulkanTexture *gulkan_texture,
-                        guint gl_texture)
+                        gpointer native)
 {
   XrdOverlayWindow *self = (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
 
   self->overlay = NULL;
   self->native = native,
-  self->texture = gulkan_texture;
-  self->gl_texture = gl_texture;
   self->texture_width = width;
   self->texture_height = height;
   self->window_title = g_string_new (window_title);
@@ -451,8 +470,6 @@ xrd_overlay_window_finalize (GObject *gobject)
 
   if (self->overlay)
     g_object_unref (self->overlay);
-  if (self->texture)
-    g_object_unref (self->texture);
 
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }

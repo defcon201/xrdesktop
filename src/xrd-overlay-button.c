@@ -104,8 +104,6 @@ xrd_overlay_button_new (gchar *text)
   window->window_title = g_string_new (text);
 
   window->native = NULL,
-  window->texture = NULL;
-  window->gl_texture = 0;
 
   xrd_overlay_window_internal_init (window);
 

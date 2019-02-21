@@ -11,6 +11,7 @@
 #include <glib-object.h>
 
 #include <openvr-overlay.h>
+#include <openvr-overlay-uploader.h>
 #include <gulkan-texture.h>
 
 G_BEGIN_DECLS
@@ -25,10 +26,8 @@ struct _XrdOverlayWindow
 
   gpointer      *native;
   OpenVROverlay *overlay;
-  GulkanTexture *texture;
-  uint32_t       gl_texture;
-  int            texture_width;
-  int            texture_height;
+  uint32_t       texture_width;
+  uint32_t       texture_height;
   GString        *window_title;
 
   double ppm;
@@ -45,8 +44,7 @@ struct _XrdOverlayWindow
 
 XrdOverlayWindow *
 xrd_overlay_window_new (gchar *window_title, int width, int height,
-                        gpointer native, GulkanTexture *gulkan_texture,
-                        guint gl_texture);
+                        gpointer native);
 
 XrdOverlayWindow *
 xrd_overlay_window_new_from_overlay (OpenVROverlay *overlay,
@@ -66,6 +64,12 @@ xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
 gboolean
 xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat);
+
+/* TODO: More generic class than OpenVROverlayUploader */
+void
+xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
+                                   OpenVROverlayUploader *uploader,
+                                   GulkanTexture *texture);
 
 float
 xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel);

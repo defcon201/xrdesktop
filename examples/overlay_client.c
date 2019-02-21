@@ -102,8 +102,8 @@ _init_windows (Example *self)
                                          texture_width, texture_height, FALSE);
         self->windows = g_slist_append (self->windows, window);
 
-        openvr_overlay_uploader_submit_frame (self->client->uploader,
-                                              window->overlay, hawk_big);
+        xrd_overlay_window_submit_texture (window, self->client->uploader,
+                                           hawk_big);
 
         graphene_point3d_t point = {
           .x = x,
@@ -128,9 +128,10 @@ _init_windows (Example *self)
                                              texture_width, texture_height, TRUE);
             self->windows = g_slist_append (self->windows, child);
 
-            openvr_overlay_uploader_submit_frame (self->client->uploader,
-                                                  child->overlay, cat_small);
-            graphene_point_t offset = { .x = 50, .y = 50 };
+            xrd_overlay_window_submit_texture (child, self->client->uploader,
+                                               cat_small);
+
+            graphene_point_t offset = { .x = 25, .y = 25 };
             xrd_overlay_window_add_child (window, child, &offset);
 
             /*
