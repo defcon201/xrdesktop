@@ -54,6 +54,8 @@ struct _XrdOverlayClient
 
   XrdOverlayWindow *hover_window[OPENVR_CONTROLLER_COUNT];
   XrdOverlayWindow *keyboard_window;
+  guint keyboard_press_signal;
+  guint keyboard_close_signal;
 
   int poll_rate_ms;
   guint poll_event_source_id;

@@ -371,8 +371,13 @@ static void
 _keyboard_close_cb (OpenVRContext    *context,
                     XrdOverlayClient *self)
 {
-  (void) context;
   self->keyboard_window = NULL;
+
+  g_signal_handler_disconnect(context, self->keyboard_press_signal);
+  g_signal_handler_disconnect(context, self->keyboard_close_signal);
+  self->keyboard_press_signal = 0;
+  self->keyboard_close_signal = 0;
+
   g_print ("Keyboard closed\n");
 }
 
@@ -392,10 +397,12 @@ _action_show_keyboard_cb (OpenVRAction       *action,
       int controller = self->input_synth->synthing_controller_index;
       self->keyboard_window = self->manager->hover_state[controller].window;
 
-      g_signal_connect (context, "keyboard-press-event",
-                        (GCallback) _keyboard_press_cb, self);
-      g_signal_connect (context, "keyboard-close-event",
-                        (GCallback) _keyboard_close_cb, self);
+      self->keyboard_press_signal =
+          g_signal_connect (context, "keyboard-press-event",
+                            (GCallback) _keyboard_press_cb, self);
+      self->keyboard_close_signal =
+          g_signal_connect (context, "keyboard-close-event",
+                            (GCallback) _keyboard_close_cb, self);
     }
 }
 
@@ -656,6 +663,8 @@ xrd_overlay_client_init (XrdOverlayClient *self)
   self->manager = xrd_overlay_window_manager_new ();
 
   self->keyboard_window = NULL;
+  self->keyboard_press_signal = 0;
+  self->keyboard_close_signal = 0;
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
