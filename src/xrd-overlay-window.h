@@ -39,6 +39,8 @@ struct _XrdOverlayWindow
   /* A window that is pinned on top of this window and follows this window's
    * position and scaling */
   XrdOverlayWindow *child_window;
+  XrdOverlayWindow *parent_window;
+
   graphene_point_t child_offset_center;
 };
 

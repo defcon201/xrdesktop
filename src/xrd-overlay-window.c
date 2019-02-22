@@ -323,8 +323,11 @@ xrd_overlay_window_add_child (XrdOverlayWindow *self,
   self->child_window = child;
   graphene_point_init_from_point (&self->child_offset_center, offset_center);
 
-  if (self->child_window)
-    _scale_move_child (self);
+  if (child)
+    {
+      _scale_move_child (self);
+      child->parent_window = self;
+    }
 }
 
 void
@@ -415,6 +418,8 @@ xrd_overlay_window_internal_init (XrdOverlayWindow *self)
   /* TODO: ppm setting */
   self->ppm = 300.0;
   self->scaling_factor = 1.0;
+  self->child_window = NULL;
+  self->parent_window = NULL;
 
   gchar overlay_id_str [25];
   g_sprintf (overlay_id_str, "xrd-window-%d", new_window_index);
@@ -470,6 +475,10 @@ xrd_overlay_window_finalize (GObject *gobject)
 
   if (self->overlay)
     g_object_unref (self->overlay);
+
+  /* TODO: find a better solution */
+  if (self->parent_window)
+    self->parent_window->child_window = NULL;
 
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }
