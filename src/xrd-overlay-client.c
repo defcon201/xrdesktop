@@ -359,20 +359,20 @@ _init_buttons (XrdOverlayClient *self)
 }
 
 static void
-_keyboard_press_cb (OpenVROverlay    *overlay,
+_keyboard_press_cb (OpenVRContext    *context,
                     GdkEventKey      *event,
                     XrdOverlayClient *self)
 {
-  (void) overlay;
+  (void) context;
   g_signal_emit (self, signals[KEYBOARD_PRESS_EVENT], 0, event);
 }
 
 static void
-_keyboard_close_cb (OpenVROverlay    *overlay,
+_keyboard_close_cb (OpenVRContext    *context,
                     XrdOverlayClient *self)
 {
-  (void) overlay;
-  (void) self;
+  (void) context;
+  self->keyboard_window = NULL;
   g_print ("Keyboard closed\n");
 }
 
@@ -386,6 +386,11 @@ _action_show_keyboard_cb (OpenVRAction       *action,
     {
       OpenVRContext *context = openvr_context_get_instance ();
       openvr_context_show_system_keyboard (context);
+
+      /* TODO: Perhaps there is a better way to get the window that should
+               receive keyboard input */
+      int controller = self->input_synth->synthing_controller_index;
+      self->keyboard_window = self->manager->hover_state[controller].window;
 
       g_signal_connect (context, "keyboard-press-event",
                         (GCallback) _keyboard_press_cb, self);
@@ -649,6 +654,8 @@ xrd_overlay_client_init (XrdOverlayClient *self)
     g_printerr ("Unable to initialize Vulkan!\n");
 
   self->manager = xrd_overlay_window_manager_new ();
+
+  self->keyboard_window = NULL;
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
