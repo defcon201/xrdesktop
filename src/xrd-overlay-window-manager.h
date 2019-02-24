@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_OVERLAY_WINDOW_MANAGER_H_
-#define XRD_OVERLAY_WINDOW_MANAGER_H_
+#ifndef XRD_WINDOW_MANAGER_H_
+#define XRD_WINDOW_MANAGER_H_
 
 #include <glib-object.h>
 
@@ -15,9 +15,9 @@
 
 G_BEGIN_DECLS
 
-#define XRD_TYPE_OVERLAY_WINDOW_MANAGER xrd_overlay_window_manager_get_type()
-G_DECLARE_FINAL_TYPE (XrdOverlayWindowManager, xrd_overlay_window_manager, XRD,
-                      OVERLAY_WINDOW_MANAGER, GObject)
+#define XRD_TYPE_WINDOW_MANAGER xrd_window_manager_get_type()
+G_DECLARE_FINAL_TYPE (XrdWindowManager, xrd_window_manager, XRD,
+                      WINDOW_MANAGER, GObject)
 
 typedef struct OpenVRNoHoverEvent
 {
@@ -60,7 +60,7 @@ typedef enum
   XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT = 1 << 3
 } XrdOverlayWindowFlags;
 
-struct _XrdOverlayWindowManager
+struct _XrdWindowManager
 {
   GObject parent;
 
@@ -76,67 +76,67 @@ struct _XrdOverlayWindowManager
   GHashTable *reset_scalings;
 };
 
-XrdOverlayWindowManager *xrd_overlay_window_manager_new (void);
+XrdWindowManager *xrd_window_manager_new (void);
 
 void
-xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self);
+xrd_window_manager_arrange_reset (XrdWindowManager *self);
 
 gboolean
-xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self);
+xrd_window_manager_arrange_sphere (XrdWindowManager *self);
 
 void
-xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
-                                       XrdOverlayWindow        *window,
-                                       XrdOverlayWindowFlags    flags);
+xrd_window_manager_add_window (XrdWindowManager *self,
+                               XrdOverlayWindow        *window,
+                               XrdOverlayWindowFlags    flags);
 
 void
-xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,
-                                          XrdOverlayWindow        *window);
+xrd_window_manager_remove_window (XrdWindowManager *self,
+                                  XrdOverlayWindow        *window);
 
 void
-xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
-                                       int controller_index);
+xrd_window_manager_drag_start (XrdWindowManager *self,
+                               int controller_index);
 
 void
-xrd_overlay_window_manager_scale (XrdOverlayWindowManager *self,
-                                  GrabState *grab_state,
-                                  float factor,
-                                  float update_rate_ms);
+xrd_window_manager_scale (XrdWindowManager *self,
+                          GrabState *grab_state,
+                          float factor,
+                          float update_rate_ms);
 
 void
-xrd_overlay_window_manager_check_grab (XrdOverlayWindowManager *self,
-                                       int controller_index);
+xrd_window_manager_check_grab (XrdWindowManager *self,
+                               int controller_index);
 
 void
-xrd_overlay_window_manager_check_release (XrdOverlayWindowManager *self,
-                                          int controller_index);
+xrd_window_manager_check_release (XrdWindowManager *self,
+                                 int controller_index);
 
 void
-xrd_overlay_window_manager_update_pose (XrdOverlayWindowManager *self,
-                                        graphene_matrix_t *pose,
-                                        int controller_index);
+xrd_window_manager_update_pose (XrdWindowManager *self,
+                                graphene_matrix_t *pose,
+                                int controller_index);
 
 void
-xrd_overlay_window_manager_save_reset_transform (XrdOverlayWindowManager *self,
-                                                 XrdOverlayWindow *window);
+xrd_window_manager_save_reset_transform (XrdWindowManager *self,
+                                         XrdOverlayWindow *window);
 
 gboolean
-xrd_overlay_window_manager_is_hovering (XrdOverlayWindowManager *self);
+xrd_window_manager_is_hovering (XrdWindowManager *self);
 
 gboolean
-xrd_overlay_window_manager_is_grabbing (XrdOverlayWindowManager *self);
+xrd_window_manager_is_grabbing (XrdWindowManager *self);
 
 gboolean
-xrd_overlay_window_manager_is_grabbed (XrdOverlayWindowManager *self,
-                                       XrdOverlayWindow *window);
+xrd_window_manager_is_grabbed (XrdWindowManager *self,
+                               XrdOverlayWindow *window);
 
 gboolean
-xrd_overlay_window_manager_is_hovered (XrdOverlayWindowManager *self,
-                                       XrdOverlayWindow *window);
+xrd_window_manager_is_hovered (XrdWindowManager *self,
+                               XrdOverlayWindow *window);
 
 void
-xrd_overlay_window_manager_poll_overlay_events (XrdOverlayWindowManager *self);
+xrd_window_manager_poll_overlay_events (XrdWindowManager *self);
 
 G_END_DECLS
 
-#endif /* XRD_OVERLAY_WINDOW_MANAGER_H_ */
+#endif /* XRD_WINDOW_MANAGER_H_ */

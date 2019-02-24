@@ -12,7 +12,7 @@
 #include "openvr-overlay.h"
 #include "openvr-math.h"
 
-G_DEFINE_TYPE (XrdOverlayWindowManager, xrd_overlay_window_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
 
 #define MINIMAL_SCALE_FACTOR 0.01
 
@@ -20,15 +20,15 @@ enum {
   NO_HOVER_EVENT,
   LAST_SIGNAL
 };
-static guint overlay_manager_signals[LAST_SIGNAL] = { 0 };
+static guint manager_signals[LAST_SIGNAL] = { 0 };
 
 static void
-xrd_overlay_window_manager_finalize (GObject *gobject);
+xrd_window_manager_finalize (GObject *gobject);
 
 static void
-xrd_overlay_window_manager_class_init (XrdOverlayWindowManagerClass *klass)
+xrd_window_manager_class_init (XrdWindowManagerClass *klass)
 {
-  overlay_manager_signals[NO_HOVER_EVENT] =
+  manager_signals[NO_HOVER_EVENT] =
     g_signal_new ("no-hover-event",
                    G_TYPE_FROM_CLASS (klass),
                    G_SIGNAL_RUN_FIRST,
@@ -37,7 +37,7 @@ xrd_overlay_window_manager_class_init (XrdOverlayWindowManagerClass *klass)
 
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->finalize = xrd_overlay_window_manager_finalize;
+  object_class->finalize = xrd_window_manager_finalize;
 }
 
 void
@@ -47,7 +47,7 @@ _free_matrix_cb (gpointer m)
 }
 
 static void
-xrd_overlay_window_manager_init (XrdOverlayWindowManager *self)
+xrd_window_manager_init (XrdWindowManager *self)
 {
   self->draggable_windows = NULL;
   self->managed_windows = NULL;
@@ -67,16 +67,16 @@ xrd_overlay_window_manager_init (XrdOverlayWindowManager *self)
     }
 }
 
-XrdOverlayWindowManager *
-xrd_overlay_window_manager_new (void)
+XrdWindowManager *
+xrd_window_manager_new (void)
 {
-  return (XrdOverlayWindowManager*) g_object_new (XRD_TYPE_OVERLAY_WINDOW_MANAGER, 0);
+  return (XrdWindowManager*) g_object_new (XRD_TYPE_WINDOW_MANAGER, 0);
 }
 
 static void
-xrd_overlay_window_manager_finalize (GObject *gobject)
+xrd_window_manager_finalize (GObject *gobject)
 {
-  XrdOverlayWindowManager *self = XRD_OVERLAY_WINDOW_MANAGER (gobject);
+  XrdWindowManager *self = XRD_WINDOW_MANAGER (gobject);
 
   g_hash_table_unref (self->reset_transforms);
   g_hash_table_unref (self->reset_scalings);
@@ -134,7 +134,7 @@ _is_in_list (GSList *list,
 }
 
 void
-xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self)
+xrd_window_manager_arrange_reset (XrdWindowManager *self)
 {
   GSList *l;
   for (l = self->managed_windows; l != NULL; l = l->next)
@@ -170,7 +170,7 @@ xrd_overlay_window_manager_arrange_reset (XrdOverlayWindowManager *self)
 }
 
 gboolean
-xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
+xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 {
   guint num_overlays = g_slist_length (self->managed_windows);
   uint32_t grid_height = (uint32_t) sqrt((float) num_overlays);
@@ -258,7 +258,7 @@ xrd_overlay_window_manager_arrange_sphere (XrdOverlayWindowManager *self)
 }
 
 void
-xrd_overlay_window_manager_save_reset_transform (XrdOverlayWindowManager *self,
+xrd_window_manager_save_reset_transform (XrdWindowManager *self,
                                                  XrdOverlayWindow *window)
 {
   graphene_matrix_t *transform =
@@ -270,7 +270,7 @@ xrd_overlay_window_manager_save_reset_transform (XrdOverlayWindowManager *self,
 }
 
 void
-xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
+xrd_window_manager_add_window (XrdWindowManager *self,
                                        XrdOverlayWindow *window,
                                        XrdOverlayWindowFlags flags)
 {
@@ -304,7 +304,7 @@ xrd_overlay_window_manager_add_window (XrdOverlayWindowManager *self,
 }
 
 void
-xrd_overlay_window_manager_poll_overlay_events (XrdOverlayWindowManager *self)
+xrd_window_manager_poll_overlay_events (XrdWindowManager *self)
 {
   for (GSList *l = self->hoverable_windows; l != NULL; l = l->next)
     {
@@ -314,7 +314,7 @@ xrd_overlay_window_manager_poll_overlay_events (XrdOverlayWindowManager *self)
 }
 
 void
-xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,
+xrd_window_manager_remove_window (XrdWindowManager *self,
                                           XrdOverlayWindow *window)
 {
   self->destroy_windows = g_slist_remove (self->destroy_windows, window);
@@ -327,7 +327,7 @@ xrd_overlay_window_manager_remove_window (XrdOverlayWindowManager *self,
 }
 
 void
-_test_hover (XrdOverlayWindowManager *self,
+_test_hover (XrdWindowManager *self,
              graphene_matrix_t *pose,
              int                controller_index)
 {
@@ -413,13 +413,13 @@ _test_hover (XrdOverlayWindowManager *self,
         g_malloc (sizeof (OpenVRNoHoverEvent));
       no_hover_event->controller_index = controller_index;
       graphene_matrix_init_from_matrix (&no_hover_event->pose, pose);
-      g_signal_emit (self, overlay_manager_signals[NO_HOVER_EVENT], 0,
+      g_signal_emit (self, manager_signals[NO_HOVER_EVENT], 0,
                      no_hover_event);
     }
 }
 
 void
-_drag_overlay (XrdOverlayWindowManager *self,
+_drag_overlay (XrdWindowManager *self,
                graphene_matrix_t *pose,
                int                controller_index)
 {
@@ -484,7 +484,7 @@ _drag_overlay (XrdOverlayWindowManager *self,
 }
 
 void
-xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
+xrd_window_manager_drag_start (XrdWindowManager *self,
                                        int                     controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
@@ -543,13 +543,13 @@ xrd_overlay_window_manager_drag_start (XrdOverlayWindowManager *self,
 }
 
 /**
- * xrd_overlay_window_manager_scale:
+ * xrd_window_manager_scale:
  *
  * While dragging a window, scale the window *factor* times per second
  */
 
 void
-xrd_overlay_window_manager_scale (XrdOverlayWindowManager *self,
+xrd_window_manager_scale (XrdWindowManager *self,
                                   GrabState *grab_state,
                                   float factor,
                                   float update_rate_ms)
@@ -575,7 +575,7 @@ xrd_overlay_window_manager_scale (XrdOverlayWindowManager *self,
 }
 
 void
-xrd_overlay_window_manager_check_grab (XrdOverlayWindowManager *self,
+xrd_window_manager_check_grab (XrdWindowManager *self,
                                        int                     controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
@@ -590,7 +590,7 @@ xrd_overlay_window_manager_check_grab (XrdOverlayWindowManager *self,
 }
 
 void
-xrd_overlay_window_manager_check_release (XrdOverlayWindowManager *self,
+xrd_window_manager_check_release (XrdWindowManager *self,
                                           int controller_index)
 {
   GrabState *grab_state = &self->grab_state[controller_index];
@@ -606,7 +606,7 @@ xrd_overlay_window_manager_check_release (XrdOverlayWindowManager *self,
 }
 
 void
-xrd_overlay_window_manager_update_pose (XrdOverlayWindowManager *self,
+xrd_window_manager_update_pose (XrdWindowManager *self,
                                         graphene_matrix_t       *pose,
                                         int controller_index)
 {
@@ -618,7 +618,7 @@ xrd_overlay_window_manager_update_pose (XrdOverlayWindowManager *self,
 }
 
 gboolean
-xrd_overlay_window_manager_is_hovering (XrdOverlayWindowManager *self)
+xrd_window_manager_is_hovering (XrdWindowManager *self)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     if (self->hover_state[i].window != NULL)
@@ -627,7 +627,7 @@ xrd_overlay_window_manager_is_hovering (XrdOverlayWindowManager *self)
 }
 
 gboolean
-xrd_overlay_window_manager_is_grabbing (XrdOverlayWindowManager *self)
+xrd_window_manager_is_grabbing (XrdWindowManager *self)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     if (self->grab_state[i].window != NULL)
@@ -636,7 +636,7 @@ xrd_overlay_window_manager_is_grabbing (XrdOverlayWindowManager *self)
 }
 
 gboolean
-xrd_overlay_window_manager_is_grabbed (XrdOverlayWindowManager *self,
+xrd_window_manager_is_grabbed (XrdWindowManager *self,
                                        XrdOverlayWindow *window)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
@@ -646,7 +646,7 @@ xrd_overlay_window_manager_is_grabbed (XrdOverlayWindowManager *self,
 }
 
 gboolean
-xrd_overlay_window_manager_is_hovered (XrdOverlayWindowManager *self,
+xrd_window_manager_is_hovered (XrdWindowManager *self,
                                        XrdOverlayWindow *window)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)

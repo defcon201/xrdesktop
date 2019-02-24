@@ -114,7 +114,7 @@ _init_windows (Example *self)
         graphene_matrix_init_translate (&transform, &point);
         xrd_overlay_window_set_transformation_matrix (window, &transform);
 
-        xrd_overlay_window_manager_save_reset_transform (self->client->manager,
+        xrd_window_manager_save_reset_transform (self->client->manager,
                                                          window);
 
         if (x == 0 && y == 0)
