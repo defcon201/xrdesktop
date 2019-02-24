@@ -181,7 +181,7 @@ _window_grab_start_cb (XrdOverlayWindow           *window,
   XrdOverlayClient *self = _self;
 
   /* don't grab if this overlay is already grabbed */
-  if (xrd_window_manager_is_grabbed (self->manager, window))
+  if (xrd_window_manager_is_grabbed (self->manager, XRD_WINDOW (window)))
     {
       g_free (event);
       return;
@@ -272,8 +272,7 @@ _button_hover_end_cb (XrdOverlayButton           *button,
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
 
   /* unmark if no controller is hovering over this overlay */
-  if (!xrd_window_manager_is_hovered (self->manager,
-                                              XRD_OVERLAY_WINDOW (button)))
+  if (!xrd_window_manager_is_hovered (self->manager, XRD_WINDOW (button)))
     xrd_overlay_button_unmark (button);
 
   _window_hover_end_cb (XRD_OVERLAY_WINDOW (button), event, _self);
@@ -299,8 +298,8 @@ _init_button (XrdOverlayClient   *self,
   xrd_overlay_window_set_transformation_matrix (window, &transform);
 
   xrd_window_manager_add_window (self->manager,
-                                         XRD_OVERLAY_WINDOW (*button),
-                                         XRD_OVERLAY_WINDOW_HOVERABLE);
+                                 XRD_WINDOW (*button),
+                                 XRD_WINDOW_HOVERABLE);
 
   g_signal_connect (window, "grab-start-event", (GCallback) callback, self);
   g_signal_connect (window, "hover-event", (GCallback) _button_hover_cb, self);
@@ -395,7 +394,8 @@ _action_show_keyboard_cb (OpenVRAction       *action,
       /* TODO: Perhaps there is a better way to get the window that should
                receive keyboard input */
       int controller = self->input_synth->synthing_controller_index;
-      self->keyboard_window = self->manager->hover_state[controller].window;
+      self->keyboard_window =
+          XRD_OVERLAY_WINDOW (self->manager->hover_state[controller].window);
 
       self->keyboard_press_signal =
           g_signal_connect (context, "keyboard-press-event",
@@ -509,15 +509,14 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
   XrdOverlayWindow *window = xrd_overlay_window_new (window_title, width,
                                                      height, native);
 
-  XrdOverlayWindowFlags flags = XRD_OVERLAY_WINDOW_HOVERABLE |
-                                XRD_OVERLAY_WINDOW_DESTROY_WITH_PARENT;
+  XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
 
   /* User can't drag child windows, they are attached to the parent.
    * The child window's position is managed by its parent, not the WM. */
   if (!is_child)
-    flags |= XRD_OVERLAY_WINDOW_DRAGGABLE | XRD_OVERLAY_WINDOW_MANAGED;
+    flags |= XRD_WINDOW_DRAGGABLE | XRD_WINDOW_MANAGED;
 
-  xrd_window_manager_add_window (self->manager, window, flags);
+  xrd_window_manager_add_window (self->manager, XRD_WINDOW (window), flags);
   g_signal_connect (window, "grab-start-event",
                     (GCallback) _window_grab_start_cb, self);
   g_signal_connect (window, "grab-event",
@@ -538,7 +537,7 @@ void
 xrd_overlay_client_remove_window (XrdOverlayClient *self,
                                   XrdOverlayWindow *window)
 {
-  xrd_window_manager_remove_window (self->manager, window);
+  xrd_window_manager_remove_window (self->manager, XRD_WINDOW (window));
 }
 
 gboolean

@@ -13,16 +13,17 @@
 #include <openvr-overlay.h>
 #include <openvr-overlay-uploader.h>
 #include <gulkan-texture.h>
+#include "xrd-window.h"
 
 G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_WINDOW xrd_overlay_window_get_type()
 G_DECLARE_FINAL_TYPE (XrdOverlayWindow, xrd_overlay_window,
-                      XRD, OVERLAY_WINDOW, GObject)
+                      XRD, OVERLAY_WINDOW, XrdWindow)
 
 struct _XrdOverlayWindow
 {
-  GObject parent;
+  XrdWindow parent;
 
   gpointer      *native;
   OpenVROverlay *overlay;

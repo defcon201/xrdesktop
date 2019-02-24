@@ -115,7 +115,7 @@ _init_windows (Example *self)
         xrd_overlay_window_set_transformation_matrix (window, &transform);
 
         xrd_window_manager_save_reset_transform (self->client->manager,
-                                                         window);
+                                                 XRD_WINDOW (window));
 
         if (x == 0 && y == 0)
           {

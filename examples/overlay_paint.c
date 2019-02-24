@@ -28,6 +28,8 @@
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"
 
+#include "xrd-overlay-window.h"
+
 typedef struct Example
 {
   OpenVROverlayUploader *uploader;
@@ -264,8 +266,9 @@ _init_paint_overlay (Example *self)
   //                  (GCallback)_intersection_cb,
   //                  self);
   //
-  xrd_window_manager_add_window (self->manager, self->paint_window,
-                                         XRD_OVERLAY_WINDOW_HOVERABLE);
+  xrd_window_manager_add_window (self->manager,
+                                 XRD_WINDOW (self->paint_window),
+                                 XRD_WINDOW_HOVERABLE);
 
   g_signal_connect (self->paint_window, "hover-event",
                     (GCallback) _paint_hover_cb, self);

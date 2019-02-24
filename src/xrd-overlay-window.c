@@ -9,7 +9,7 @@
 #include <gdk/gdk.h>
 #include <glib/gprintf.h>
 
-G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, G_TYPE_OBJECT)
+G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
 
 enum {
   MOTION_NOTIFY_EVENT,
@@ -42,6 +42,50 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = xrd_overlay_window_finalize;
 
+
+  XrdWindowClass *xrd_window_class = XRD_WINDOW_CLASS (klass);
+  /* TODO: void* cast avoids warning about first argument type mismatch.
+   * Local funcs have XrdOverlayWindow *self, parent have XrdWindow *self. */
+  xrd_window_class->xrd_window_set_transformation_matrix =
+      (void*)xrd_overlay_window_set_transformation_matrix;
+  xrd_window_class->xrd_window_get_transformation_matrix =
+      (void*)xrd_overlay_window_get_transformation_matrix;
+  xrd_window_class->xrd_window_submit_texture =
+      (void*)xrd_overlay_window_submit_texture;
+  xrd_window_class->xrd_window_pixel_to_xr_scale =
+      (void*)xrd_overlay_window_pixel_to_xr_scale;
+  xrd_window_class->xrd_window_get_xr_width =
+      (void*)xrd_overlay_window_get_xr_width;
+  xrd_window_class->xrd_window_get_xr_height =
+      (void*)xrd_overlay_window_get_xr_height;
+  xrd_window_class->xrd_window_get_scaling_factor =
+      (void*)xrd_overlay_window_get_scaling_factor;
+  xrd_window_class->xrd_window_set_scaling_factor =
+      (void*)xrd_overlay_window_set_scaling_factor;
+  xrd_window_class->xrd_window_poll_event =
+      (void*)xrd_overlay_window_poll_event;
+  xrd_window_class->xrd_window_intersects =
+      (void*)xrd_overlay_window_intersects;
+  xrd_window_class->xrd_window_intersection_to_window_coords =
+      (void*)xrd_overlay_window_intersection_to_window_coords;
+  xrd_window_class->xrd_window_intersection_to_offset_center =
+      (void*)xrd_overlay_window_intersection_to_offset_center;
+  xrd_window_class->xrd_window_emit_grab_start =
+      (void*)xrd_overlay_window_emit_grab_start;
+  xrd_window_class->xrd_window_emit_grab =
+      (void*)xrd_overlay_window_emit_grab;
+  xrd_window_class->xrd_window_emit_release =
+      (void*)xrd_overlay_window_emit_release;
+  xrd_window_class->xrd_window_emit_hover_end =
+      (void*)xrd_overlay_window_emit_hover_end;
+  xrd_window_class->xrd_window_emit_hover =
+      (void*)xrd_overlay_window_emit_hover;
+  xrd_window_class->xrd_window_emit_hover_start =
+      (void*)xrd_overlay_window_emit_hover_start;
+  xrd_window_class->xrd_window_add_child =
+      (void*)xrd_overlay_window_add_child;
+  xrd_window_class->xrd_window_internal_init =
+      (void*)xrd_overlay_window_internal_init;
 
   window_signals[MOTION_NOTIFY_EVENT] =
     g_signal_new ("motion-notify-event",
