@@ -259,7 +259,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
 void
 xrd_window_manager_save_reset_transform (XrdWindowManager *self,
-                                                 XrdWindow *window)
+                                         XrdWindow *window)
 {
   graphene_matrix_t *transform =
     g_hash_table_lookup (self->reset_transforms, window);
@@ -271,8 +271,8 @@ xrd_window_manager_save_reset_transform (XrdWindowManager *self,
 
 void
 xrd_window_manager_add_window (XrdWindowManager *self,
-                                       XrdWindow *window,
-                                       XrdWindowFlags flags)
+                               XrdWindow *window,
+                               XrdWindowFlags flags)
 {
   /* Freed with manager */
   if (flags & XRD_WINDOW_DESTROY_WITH_PARENT)
@@ -564,9 +564,9 @@ _nearest_frustum_edge_pose (graphene_matrix_t *camera_pose,
  * TODO: is direct vector interpolation any worse? */
 void
 openvr_math_vec3_interpolate_direction (graphene_vec3_t *from,
-                                         graphene_vec3_t *to,
-                                         float factor,
-                                         graphene_vec3_t *res)
+                                        graphene_vec3_t *to,
+                                        float            factor,
+                                        graphene_vec3_t *res)
 {
   graphene_vec3_t cross;
   graphene_vec3_cross (from, to, &cross);
@@ -713,7 +713,7 @@ xrd_window_manager_poll_window_events (XrdWindowManager *self)
 
 void
 xrd_window_manager_remove_window (XrdWindowManager *self,
-                                          XrdWindow *window)
+                                  XrdWindow *window)
 {
   self->destroy_windows = g_slist_remove (self->destroy_windows, window);
   self->draggable_windows = g_slist_remove (self->draggable_windows, window);
@@ -726,7 +726,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
 }
 
 void
-_test_hover (XrdWindowManager *self,
+_test_hover (XrdWindowManager  *self,
              graphene_matrix_t *pose,
              int                controller_index)
 {
@@ -818,9 +818,9 @@ _test_hover (XrdWindowManager *self,
 }
 
 void
-_drag_overlay (XrdWindowManager *self,
-               graphene_matrix_t *pose,
-               int                controller_index)
+_drag_window (XrdWindowManager  *self,
+              graphene_matrix_t *pose,
+              int                controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
   GrabState *grab_state = &self->grab_state[controller_index];
@@ -854,8 +854,7 @@ _drag_overlay (XrdWindowManager *self,
 
   /* reverse the rotation induced by the controller pose when it was grabbed */
   graphene_matrix_rotate_quaternion (
-      &event->pose,
-      &grab_state->window_transformed_rotation_neg);
+      &event->pose, &grab_state->window_transformed_rotation_neg);
 
   /* then translate the overlay to the controller ray distance */
   graphene_matrix_translate (&event->pose, &distance_translation_point);
@@ -877,14 +876,14 @@ _drag_overlay (XrdWindowManager *self,
 
 
   xrd_window_set_transformation_matrix (grab_state->window,
-                                                &transformation_matrix);
+                                        &transformation_matrix);
 
   xrd_window_emit_grab (grab_state->window, event);
 }
 
 void
 xrd_window_manager_drag_start (XrdWindowManager *self,
-                                       int                     controller_index)
+                               int               controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
   GrabState *grab_state = &self->grab_state[controller_index];
@@ -900,8 +899,7 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
                                         &hover_state->pose);
 
   graphene_matrix_t window_transform;
-  xrd_window_get_transformation_matrix (grab_state->window,
-                                                &window_transform);
+  xrd_window_get_transformation_matrix (grab_state->window, &window_transform);
   graphene_quaternion_init_from_matrix (
       &grab_state->window_rotation, &window_transform);
 
@@ -949,9 +947,9 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
 
 void
 xrd_window_manager_scale (XrdWindowManager *self,
-                                  GrabState *grab_state,
-                                  float factor,
-                                  float update_rate_ms)
+                          GrabState        *grab_state,
+                          float             factor,
+                          float             update_rate_ms)
 {
   if (grab_state->window == NULL)
     return;
@@ -975,7 +973,7 @@ xrd_window_manager_scale (XrdWindowManager *self,
 
 void
 xrd_window_manager_check_grab (XrdWindowManager *self,
-                                       int                     controller_index)
+                               int               controller_index)
 {
   HoverState *hover_state = &self->hover_state[controller_index];
 
@@ -990,7 +988,7 @@ xrd_window_manager_check_grab (XrdWindowManager *self,
 
 void
 xrd_window_manager_check_release (XrdWindowManager *self,
-                                          int controller_index)
+                                  int               controller_index)
 {
   GrabState *grab_state = &self->grab_state[controller_index];
 
@@ -1005,13 +1003,13 @@ xrd_window_manager_check_release (XrdWindowManager *self,
 }
 
 void
-xrd_window_manager_update_pose (XrdWindowManager *self,
-                                        graphene_matrix_t       *pose,
-                                        int controller_index)
+xrd_window_manager_update_pose (XrdWindowManager  *self,
+                                graphene_matrix_t *pose,
+                                int                controller_index)
 {
   /* Drag test */
   if (self->grab_state[controller_index].window != NULL)
-    _drag_overlay (self, pose, controller_index);
+    _drag_window (self, pose, controller_index);
   else
     _test_hover (self, pose, controller_index);
 }
@@ -1036,7 +1034,7 @@ xrd_window_manager_is_grabbing (XrdWindowManager *self)
 
 gboolean
 xrd_window_manager_is_grabbed (XrdWindowManager *self,
-                                       XrdWindow *window)
+                               XrdWindow        *window)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     if (self->grab_state[i].window == window)
@@ -1046,7 +1044,7 @@ xrd_window_manager_is_grabbed (XrdWindowManager *self,
 
 gboolean
 xrd_window_manager_is_hovered (XrdWindowManager *self,
-                                       XrdWindow *window)
+                               XrdWindow        *window)
 {
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     if (self->hover_state[i].window == window)
