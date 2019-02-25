@@ -96,6 +96,15 @@
                }
             },
             {
+               "path": "/user/hand/right/input/grip",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/rotate_window_right"
+                  }
+               }
+            },
+            {
                "path": "/user/hand/right/input/trackpad",
                "mode": "trackpad",
                "inputs": {
@@ -113,6 +122,15 @@
                "inputs": {
                   "click": {
                      "output": "/actions/wm/in/grab_window_left"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/left/input/grip",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/rotate_window_left"
                   }
                }
             },
