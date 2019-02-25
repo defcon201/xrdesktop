@@ -99,7 +99,8 @@ _init_windows (Example *self)
       {
         XrdOverlayWindow *window =
           xrd_overlay_client_add_window (self->client, "A window.", NULL,
-                                         texture_width, texture_height, FALSE);
+                                         texture_width, texture_height,
+                                         FALSE, FALSE);
         self->windows = g_slist_append (self->windows, window);
 
         xrd_overlay_window_submit_texture (window, self->client->uploader,
@@ -125,7 +126,8 @@ _init_windows (Example *self)
                                                        &texture_height);
             XrdOverlayWindow *child =
               xrd_overlay_client_add_window (self->client, "A child.", NULL,
-                                             texture_width, texture_height, TRUE);
+                                             texture_width, texture_height,
+                                             TRUE, FALSE);
             self->windows = g_slist_append (self->windows, child);
 
             xrd_overlay_window_submit_texture (child, self->client->uploader,
@@ -146,6 +148,22 @@ _init_windows (Example *self)
             */
           }
       }
+
+  {
+    XrdOverlayWindow *tracked_window =
+        xrd_overlay_client_add_window (self->client, "Head Tracked window.",
+                                       NULL, texture_width, texture_height,
+                                       FALSE, TRUE);
+    self->windows = g_slist_append (self->windows, tracked_window);
+
+    xrd_overlay_window_submit_texture (tracked_window, self->client->uploader,
+                                         hawk_big);
+    graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
+    graphene_matrix_t transform;
+    graphene_matrix_init_translate (&transform, &point);
+    xrd_overlay_window_set_transformation_matrix (tracked_window, &transform);
+  }
+
 
   GdkPixbuf *cursor_pixbuf = load_gdk_pixbuf ("/res/cursor.png");
   if (cursor_pixbuf == NULL)

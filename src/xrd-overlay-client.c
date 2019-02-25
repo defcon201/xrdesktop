@@ -500,7 +500,8 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
                                gpointer          native,
                                uint32_t          width,
                                uint32_t          height,
-                               gboolean          is_child)
+                               gboolean          is_child,
+                               gboolean          follow_head)
 {
   gchar *window_title = g_strdup (title);
   if (!window_title)
@@ -513,8 +514,11 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 
   /* User can't drag child windows, they are attached to the parent.
    * The child window's position is managed by its parent, not the WM. */
-  if (!is_child)
+  if (!is_child && !follow_head)
     flags |= XRD_WINDOW_DRAGGABLE | XRD_WINDOW_MANAGED;
+
+  if (follow_head)
+      flags |= XRD_WINDOW_FOLLOW_HEAD;
 
   xrd_window_manager_add_window (self->manager, XRD_WINDOW (window), flags);
   g_signal_connect (window, "grab-start-event",
@@ -557,7 +561,7 @@ xrd_overlay_client_poll_events_cb (gpointer _self)
     if (!xrd_input_synth_poll_events (self->input_synth))
       return FALSE;
 
-  xrd_window_manager_poll_overlay_events (self->manager);
+  xrd_window_manager_poll_window_events (self->manager);
 
   return TRUE;
 }

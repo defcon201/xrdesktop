@@ -57,7 +57,8 @@ typedef enum
   XRD_WINDOW_HOVERABLE           = 1 << 0,
   XRD_WINDOW_DRAGGABLE           = 1 << 1,
   XRD_WINDOW_MANAGED             = 1 << 2,
-  XRD_WINDOW_DESTROY_WITH_PARENT = 1 << 3
+  XRD_WINDOW_FOLLOW_HEAD         = 1 << 3,
+  XRD_WINDOW_DESTROY_WITH_PARENT = 1 << 4
 } XrdWindowFlags;
 
 struct _XrdWindowManager
@@ -68,6 +69,7 @@ struct _XrdWindowManager
   GSList *managed_windows;
   GSList *hoverable_windows;
   GSList *destroy_windows;
+  GSList *following;
 
   HoverState hover_state[OPENVR_CONTROLLER_COUNT];
   GrabState grab_state[OPENVR_CONTROLLER_COUNT];
@@ -135,7 +137,7 @@ xrd_window_manager_is_hovered (XrdWindowManager *self,
                                XrdWindow *window);
 
 void
-xrd_window_manager_poll_overlay_events (XrdWindowManager *self);
+xrd_window_manager_poll_window_events (XrdWindowManager *self);
 
 G_END_DECLS
 

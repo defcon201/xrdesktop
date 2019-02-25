@@ -290,6 +290,8 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   if (flags & XRD_WINDOW_HOVERABLE)
     self->hoverable_windows = g_slist_append (self->hoverable_windows, window);
 
+  if (flags & XRD_WINDOW_FOLLOW_HEAD)
+    self->following = g_slist_append (self->following, window);
 
   /* Register reset position */
   graphene_matrix_t *transform = graphene_matrix_alloc ();
@@ -303,13 +305,409 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   g_object_ref (window);
 }
 
+
+gboolean
+openvr_system_get_hmd_pose (graphene_matrix_t *pose)
+{
+  OpenVRContext *context = openvr_context_get_instance ();
+  VRControllerState_t state;
+  if (context->system->IsTrackedDeviceConnected(k_unTrackedDeviceIndex_Hmd) &&
+      context->system->GetTrackedDeviceClass (k_unTrackedDeviceIndex_Hmd) ==
+          ETrackedDeviceClass_TrackedDeviceClass_HMD &&
+      context->system->GetControllerState (k_unTrackedDeviceIndex_Hmd,
+                                           &state, sizeof(state)))
+    {
+      /* k_unTrackedDeviceIndex_Hmd should be 0 => posearray[0] */
+      TrackedDevicePose_t openvr_pose;
+      context->system->GetDeviceToAbsoluteTrackingPose (context->origin, 0,
+                                                        &openvr_pose, 1);
+      openvr_math_matrix34_to_graphene (&openvr_pose.mDeviceToAbsoluteTracking,
+                                        pose);
+
+      return openvr_pose.bDeviceIsConnected &&
+             openvr_pose.bPoseIsValid &&
+             openvr_pose.eTrackingResult ==
+                 ETrackingResult_TrackingResult_Running_OK;
+    }
+  return FALSE;
+}
+
+/** openvr_math_compose_projection:
+ * adapted Valve OpenVR example code available at
+ * https://github.com/ValveSoftware/openvr/wiki/IVRSystem::GetProjectionRaw */
 void
-xrd_window_manager_poll_overlay_events (XrdWindowManager *self)
+openvr_math_compose_projection (float fLeft, float fRight, float fTop,
+                                float fBottom, float zNear, float zFar,
+                                graphene_matrix_t *projection)
+{
+  float idx = 1.0f / (fRight - fLeft);
+  float idy = 1.0f / (fBottom - fTop);
+  float idz = 1.0f / (zFar - zNear);
+  float sx = fRight + fLeft;
+  float sy = fBottom + fTop;
+
+  HmdMatrix44_t pmProj;
+  float (*p)[4] = pmProj.m;
+  p[0][0] = 2 * idx;
+  p[0][1] = 0;
+  p[0][2] = sx * idx;
+  p[0][3] = 0;
+
+  p[1][0] = 0;
+  p[1][1] = 2 * idy;
+  p[1][2] = sy * idy;
+  p[1][3] = 0;
+
+  p[2][0] = 0;
+  p[2][1] = 0;
+  p[2][2] = -zFar * idz;
+  p[2][3] = -zFar * zNear * idz;
+
+  p[3][0] = 0;
+  p[3][1] = 0;
+  p[3][2] = -1.0f;
+  p[3][3] = 0;
+
+  openvr_math_matrix44_to_graphene (&pmProj, projection);
+}
+
+/** scales the left & right angles with scale_h,
+ * and top & bottom angles with scale_v. */
+void
+openvr_math_get_scaled_frustum (graphene_frustum_t *frustum,
+                                float scale_h, float scale_v)
+{
+  OpenVRContext *context = openvr_context_get_instance ();
+  float left, right, top, bottom;
+  context->system->GetProjectionRaw (EVREye_Eye_Left,
+                                     &left, &right, &top, &bottom);
+
+  /* atan gives the degree angle, scale that, and then tan again. */
+  left = tan (atan (left) * scale_h);
+  right = tan (atan (right) * scale_h);
+  top = tan (atan (top) * scale_v);
+  bottom = tan (atan (bottom) * scale_v);
+
+  graphene_matrix_t projection_matrix;
+  openvr_math_compose_projection (left, right, top, bottom, 0.1, 100,
+                                  &projection_matrix);
+  graphene_frustum_init_from_matrix (frustum, &projection_matrix);
+}
+
+/** Finds the nearest intersection. Ignores further intersections.
+ * Operates in camera space. */
+gboolean
+_intersect_frustum (graphene_frustum_t *frustum,
+                    graphene_ray_t *ray,
+                    graphene_point3d_t *intersection)
+{
+  graphene_plane_t planes[6];
+  graphene_frustum_get_planes (frustum, planes);
+
+  float nearest_plane_dist = INFINITY;
+
+  /* plane 1-4 are left/righ/bottom/top, ignore 5-6 (near/far) */
+  for (int i = 0; i < 4; i++)
+    {
+      float distance = graphene_ray_get_distance_to_plane (ray, &planes[i]);
+      if (distance != INFINITY)
+        {
+          //g_print ("Dist: %f\n", distance);
+          if (distance < nearest_plane_dist)
+            {
+
+              /* planes extend back, we only want intersections with the part of
+               * the frustum that extends in view direction. */
+              graphene_point3d_t pt;
+              graphene_ray_get_position_at (ray, nearest_plane_dist, &pt);
+              if (pt.z > - 0.01)
+                continue;
+
+              nearest_plane_dist = distance;
+            }
+        }
+    }
+
+  if (nearest_plane_dist == INFINITY)
+    {
+      g_print ("No nearest plane\n");
+      return FALSE;
+    }
+
+  /* a little bit longer so the intersection is inside the frustum */
+  graphene_ray_get_position_at (ray, nearest_plane_dist + 0.0001, intersection);
+
+  return TRUE;
+}
+
+
+gboolean
+_clamp_point_to_frustum (graphene_frustum_t *frustum,
+                         graphene_point3d_t *point,
+                         graphene_point3d_t *clamped_point)
+{
+
+  gboolean in_frustum = graphene_frustum_contains_point (frustum, point);
+  if (in_frustum)
+      return FALSE;
+
+  /* Find out where on the frustum we need to put the point.
+   * We are in camera space, hmd is at (0, 0, 0) & looks at (0, 0, -z).
+   * Imagine a sphere around the hmd that goes through the overlay.
+   * This sphere intersects the view axis at (0, 0, -radius).
+   *
+   * A ray from the overlay location to this intersection point intersects the
+   * frustum plane at the "correct" view angle to place it just on the edge of
+   * the frustum.
+   * It only needs to be projected back to radius dist, keeping the view angle.
+   */
+
+  float radius =
+      graphene_point3d_distance (graphene_point3d_zero (), point, NULL);
+
+  graphene_point3d_t center_view_point = { .x = 0, .y = 0, .z = -radius };
+
+  graphene_vec3_t direction;
+  graphene_vec3_init (&direction,
+                      center_view_point.x - point->x,
+                      center_view_point.y - point->y,
+                      center_view_point.z - point->z);
+
+  graphene_ray_t overlay_center_view_ray;
+  graphene_ray_init (&overlay_center_view_ray, point, &direction);
+
+  graphene_point3d_t frustum_intersection;
+  _intersect_frustum (frustum, &overlay_center_view_ray, &frustum_intersection);
+
+  graphene_vec3_t frustum_intersection_vec;
+  graphene_vec3_init (&frustum_intersection_vec, frustum_intersection.x,
+                      frustum_intersection.y, frustum_intersection.z);
+
+  graphene_ray_t frustum_projection_ray;
+  graphene_ray_init (&frustum_projection_ray, graphene_point3d_zero (),
+                     &frustum_intersection_vec);
+
+  graphene_ray_get_position_at (&frustum_projection_ray, radius,
+                                clamped_point);
+
+  return TRUE;
+}
+
+
+#define PI   ((float) 3.1415926535)
+#define DEG_TO_RAD(x) ( (x) * 2.0 * PI / 360.0 )
+#define RAD_TO_DEG(x) ( (x) * 360.0 / ( 2.0 * PI ) )
+
+/** openvr_math_get_rotation_angles:
+ * calculates 2 angles akin to the spherical coordinate system:
+ * - inclination is upwards from the xz plane.
+ * - azimuth is clockwise around the y axis, starting at -z. */
+void
+openvr_math_get_rotation_angles (graphene_vec3_t *direction,
+                                 float *inclination,
+                                 float *azimuth)
+{
+  /* y axis = 90° up. angle diff to y axis when looking up = 0°: 90°-0°=90°
+   * Looking up, angle to y axis shrinks to 0° -> 90°-0°=90° inclination.
+   * Looking down, angle to y axis grows to -90° -> 90°--90°=-90° incl. */
+  graphene_vec3_t y_axis;
+  graphene_vec3_init_from_vec3 (&y_axis, graphene_vec3_y_axis ());
+  graphene_vec3_t cross;
+  graphene_vec3_cross (&y_axis, direction, &cross);
+  float mag = graphene_vec3_length (&cross);
+  float dot = graphene_vec3_dot (&y_axis, direction);
+  *inclination = 90 - RAD_TO_DEG (atan2 (mag, dot));
+
+  /* rotation around y axis, "left-right" */
+  *azimuth =
+      RAD_TO_DEG (atan2 (- graphene_vec3_get_x (direction),
+                         - graphene_vec3_get_z (direction)));
+}
+
+
+/** _nearest_frustum_edge_pose:
+ * calculates a pose with the point clamped to the edge of the frustum,
+ * Rotation is normal to the camera and parallel to the ground (xz plane). */
+void
+_nearest_frustum_edge_pose (graphene_matrix_t *camera_pose,
+                            graphene_frustum_t *frustum,
+                            graphene_point3d_t *point_cs,
+                            graphene_matrix_t *new_pose)
+{
+  graphene_point3d_t clamped_cs;
+  _clamp_point_to_frustum (frustum, point_cs, &clamped_cs);
+
+  graphene_point3d_t clamped;
+  graphene_matrix_transform_point3d (camera_pose, &clamped_cs, &clamped);
+
+  graphene_vec3_t clamped_direction_cs;
+  graphene_vec3_init (&clamped_direction_cs,
+                      clamped_cs.x, clamped_cs.y, clamped_cs.z);
+
+  graphene_vec3_t overlay_direction;
+  graphene_matrix_transform_vec3 (camera_pose, &clamped_direction_cs,
+                                  &overlay_direction);
+
+  float inclination, azimuth;
+  openvr_math_get_rotation_angles (&overlay_direction, &inclination, &azimuth);
+
+  /* After rotating around the y axis, it would be work to find out the axis
+   * for rotating upwards, so we rotate upwards from neutral position first. */
+  graphene_matrix_init_identity (new_pose);
+  graphene_matrix_rotate_x (new_pose, inclination);
+  graphene_matrix_rotate_y (new_pose, azimuth);
+  openvr_math_matrix_set_translation (new_pose, &clamped);
+}
+
+/** openvr_math_vec3_interpolate_direction:
+ * interpolate between two direction vectors by angle.
+ * TODO: is direct vector interpolation any worse? */
+void
+openvr_math_vec3_interpolate_direction (graphene_vec3_t *from,
+                                         graphene_vec3_t *to,
+                                         float factor,
+                                         graphene_vec3_t *res)
+{
+  graphene_vec3_t cross;
+  graphene_vec3_cross (from, to, &cross);
+  float mag = graphene_vec3_length (&cross);
+  float dot = graphene_vec3_dot (from, to);
+  float angle = atan2 (mag, dot);
+
+  /* about opposite sides. TODO: proper method. */
+  if (mag < 0.00001)
+    {
+      graphene_vec3_init (&cross, 1, 0, 0);
+      mag = 1;
+      angle = DEG_TO_RAD (180);
+    }
+
+  // g_print ("A: %f, %f\n", RAD_TO_DEG (angle), RAD_TO_DEG (angle * factor));
+
+  graphene_matrix_t rot;
+  graphene_matrix_init_rotate (&rot, RAD_TO_DEG (angle) * factor, &cross);
+
+  graphene_matrix_transform_vec3 (&rot, from, res);
+}
+
+gboolean
+_follow_head (XrdWindow *window)
+{
+  graphene_matrix_t hmd_pose;
+  openvr_system_get_hmd_pose (&hmd_pose);
+  graphene_matrix_t hmd_pose_inv;
+  graphene_matrix_inverse (&hmd_pose, &hmd_pose_inv);
+
+  /* _cs means camera (hmd) space, _ws means world space. */
+  graphene_matrix_t window_transform_ws;
+  xrd_window_get_transformation_matrix (window, &window_transform_ws);
+  graphene_matrix_t window_transform_cs;
+  graphene_matrix_multiply (&window_transform_ws, &hmd_pose_inv,
+                            &window_transform_cs);
+
+  graphene_vec3_t window_vec_cs;
+  openvr_math_matrix_get_translation (&window_transform_cs, &window_vec_cs);
+  graphene_point3d_t window_location_cs;
+  graphene_point3d_init_from_vec3 (&window_location_cs, &window_vec_cs);
+
+  /* First, if overlay is already near the frustum center, do nothing. */
+  graphene_frustum_t frustum_inner;
+  openvr_math_get_scaled_frustum (&frustum_inner, 0.35, 0.3);
+  gboolean in_inner =
+      graphene_frustum_contains_point (&frustum_inner, &window_location_cs);
+  if (in_inner)
+    {
+      //g_print ("Nothing to do!\n");
+      return TRUE;
+    }
+
+  /* If the overlay is not visible, clamp it to the frustum.
+   * Scale frustum down a little because the visible FOV isn't actually as big.
+   * TODO: maybe this needs to be tweaked for wide FOV HMDs? */
+  graphene_frustum_t frustum;
+  openvr_math_get_scaled_frustum (&frustum, 0.75, 0.6);
+  gboolean window_visible =
+      graphene_frustum_contains_point (&frustum, &window_location_cs);
+
+  if (!window_visible)
+    {
+      //g_print ("Clamping to field of view!\n");
+      graphene_matrix_t new_window_pose;
+      _nearest_frustum_edge_pose (&hmd_pose, &frustum, &window_location_cs,
+                                  &new_window_pose);
+
+      xrd_window_set_transformation_matrix (window, &new_window_pose);
+      return TRUE;
+    }
+
+  //g_print ("Moving!\n");
+
+  /* target position is where the overlay will come to rest
+   * (if it is not moved again) */
+  graphene_point3d_t target_window_location_cs;
+  _clamp_point_to_frustum (&frustum_inner, &window_location_cs,
+                           &target_window_location_cs);
+
+  graphene_vec3_t target_window_direction_cs;
+  graphene_point3d_to_vec3 (&target_window_location_cs,
+                            &target_window_direction_cs);
+
+  /* this frame the overlay will be moved *on a spherical curve around the hmd*
+   * in the direction of the target.
+   * First, find the new position of the overlay. */
+  const float factor = 0.075;
+  graphene_vec3_t new_direction_cs;
+  openvr_math_vec3_interpolate_direction (&window_vec_cs,
+                                          &target_window_direction_cs, factor,
+                                          &new_direction_cs);
+
+  graphene_ray_t ray;
+  graphene_ray_init (&ray, graphene_point3d_zero (), &new_direction_cs);
+
+  float d = graphene_vec3_length (&window_vec_cs);
+
+  graphene_point3d_t new_location_cs;
+  graphene_ray_get_position_at (&ray, d, &new_location_cs);
+
+
+  /* Now we know the new position and calculate the rotation of the overlay at
+   * this position. */
+  graphene_vec3_t new_direction_ws;
+  graphene_matrix_transform_vec3 (&hmd_pose, &new_direction_cs,
+                                  &new_direction_ws);
+
+  float inclination, azimuth;
+  openvr_math_get_rotation_angles (&new_direction_ws,
+                                   &inclination, &azimuth);
+
+  graphene_matrix_t new_pose_ws;
+  graphene_matrix_init_identity (&new_pose_ws);
+  graphene_matrix_rotate_x (&new_pose_ws, inclination);
+  graphene_matrix_rotate_y (&new_pose_ws, azimuth);
+
+  graphene_point3d_t new_location_ws;
+  graphene_matrix_transform_point3d (&hmd_pose, &new_location_cs,
+                                     &new_location_ws);
+  openvr_math_matrix_set_translation (&new_pose_ws, &new_location_ws);
+
+  xrd_window_set_transformation_matrix (window, &new_pose_ws);
+
+  return TRUE;
+}
+
+void
+xrd_window_manager_poll_window_events (XrdWindowManager *self)
 {
   for (GSList *l = self->hoverable_windows; l != NULL; l = l->next)
     {
       XrdWindow *window = (XrdWindow *) l->data;
       xrd_window_poll_event (window);
+    }
+
+  for (GSList *l = self->following; l != NULL; l = l->next)
+    {
+      XrdWindow *window = (XrdWindow *) l->data;
+      _follow_head (window);
     }
 }
 
@@ -321,6 +719,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
   self->draggable_windows = g_slist_remove (self->draggable_windows, window);
   self->managed_windows = g_slist_remove (self->managed_windows, window);
   self->hoverable_windows = g_slist_remove (self->hoverable_windows, window);
+  self->following = g_slist_remove (self->following, window);
   g_hash_table_remove (self->reset_transforms, window);
 
   g_object_unref (window);
