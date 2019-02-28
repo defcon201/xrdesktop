@@ -11,6 +11,7 @@
 #include "xrd-window-manager.h"
 #include "openvr-overlay.h"
 #include "openvr-math.h"
+#include "xrd-math.h"
 
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
 
@@ -152,7 +153,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
       transition->to_scaling = *scaling;
       xrd_window_get_scaling_factor (window, &transition->from_scaling);
 
-      if (!openvr_math_matrix_equals (&transition->from, transform))
+      if (!xrd_math_matrix_equals (&transition->from, transform))
         {
           transition->interpolate = 0;
           transition->window = window;
@@ -743,7 +744,7 @@ _test_hover (XrdWindowManager  *self,
       if (xrd_window_intersects (window, pose, &intersection_point))
         {
           float distance =
-            openvr_math_point_matrix_distance (&intersection_point, pose);
+            xrd_math_point_matrix_distance (&intersection_point, pose);
           if (distance < hover_event->distance)
             {
               closest = window;
