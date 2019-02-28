@@ -358,8 +358,9 @@ _button_reset_press_cb (XrdOverlayWindow           *window,
 gboolean
 _init_buttons (XrdOverlayClient *self)
 {
+  float button_x = 0.0f;
   graphene_point3d_t position_reset = {
-    .x =  0.0f,
+    .x =  button_x,
     .y =  0.0f,
     .z = -1.0f
   };
@@ -367,8 +368,13 @@ _init_buttons (XrdOverlayClient *self)
                      (GCallback) _button_reset_press_cb))
     return FALSE;
 
+  float reset_xr_width;
+  xrd_window_get_xr_width (XRD_WINDOW (self->button_reset), &reset_xr_width);
+
+  button_x += reset_xr_width;
+
   graphene_point3d_t position_sphere = {
-    .x =  0.5f,
+    .x =  button_x,
     .y =  0.0f,
     .z = -1.0f
   };
