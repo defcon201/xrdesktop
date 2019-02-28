@@ -78,8 +78,6 @@ XrdOverlayWindow *
 xrd_overlay_client_add_window (XrdOverlayClient *self,
                                const char       *title,
                                gpointer          native,
-                               uint32_t          width,
-                               uint32_t          height,
                                gboolean          is_child,
                                gboolean          follow_head);
 

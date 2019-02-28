@@ -310,6 +310,9 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
 
       self->texture_width = texture->width;
       self->texture_height = texture->height;
+      /* Mouse scale is required for the intersection test */
+      openvr_overlay_set_mouse_scale (self->overlay, self->texture_width,
+                                      self->texture_height);
     }
 
   openvr_overlay_uploader_submit_frame(uploader, self->overlay, texture);
@@ -481,10 +484,6 @@ xrd_overlay_window_internal_init (XrdOverlayWindow *self)
     return;
   }
 
-   /* Mouse scale is required for the intersection test */
-  openvr_overlay_set_mouse_scale (self->overlay, self->texture_width,
-                                  self->texture_height);
-
   openvr_overlay_show (self->overlay);
 
   new_window_index++;
@@ -496,16 +495,18 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
   (void) self;
 }
 
+/** xrd_overlay_window_new:
+ * Create a new XrdWindow. Note that the window will only have dimensions after
+ * a texture is uploaded. */
 XrdOverlayWindow *
-xrd_overlay_window_new (gchar *window_title, int width, int height,
-                        gpointer native)
+xrd_overlay_window_new (gchar *window_title, gpointer native)
 {
   XrdOverlayWindow *self = (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
 
   self->overlay = NULL;
   self->native = native,
-  self->texture_width = width;
-  self->texture_height = height;
+  self->texture_width = 0;
+  self->texture_height = 0;
   self->window_title = g_string_new (window_title);
 
   xrd_overlay_window_internal_init (self);
