@@ -49,7 +49,7 @@ load_gdk_pixbuf (const gchar* name)
 }
 
 static GulkanTexture *
-_make_texture (GulkanClient *gc, const gchar *resource, float scale,
+_make_texture (GulkanClient *gc, const gchar *resource,
                float *texture_width, float *texture_height)
 {
   GdkPixbuf *pixbuf = load_gdk_pixbuf (resource);
@@ -58,15 +58,6 @@ _make_texture (GulkanClient *gc, const gchar *resource, float scale,
       g_printerr ("Could not load image.\n");
       return FALSE;
     }
-
-  GdkPixbuf *unref = pixbuf;
-  pixbuf =
-      gdk_pixbuf_scale_simple (pixbuf,
-                               (float)gdk_pixbuf_get_width (pixbuf) * scale,
-                               (float)gdk_pixbuf_get_height (pixbuf) * scale,
-                               GDK_INTERP_NEAREST);
-
-  g_object_unref (unref);
 
   GulkanTexture *texture =
     gulkan_texture_new_from_pixbuf (gc->device, pixbuf,
@@ -86,11 +77,9 @@ _init_windows (Example *self)
 {
   GulkanClient *gc = GULKAN_CLIENT (self->client->uploader);
   float texture_width, texture_height;
-  GulkanTexture *hawk_big = _make_texture (gc, "/res/hawk.jpg", 0.1,
+  GulkanTexture *hawk_big = _make_texture (gc, "/res/hawk.jpg",
                                            &texture_width, &texture_height);
 
-  /* TODO: ppm setting */
-  double ppm = 300.0;
 
   float window_x = 0;
   float window_y = 0;
@@ -99,9 +88,11 @@ _init_windows (Example *self)
       float max_window_height = 0;
       for (int row = 0; row < GRID_HEIGHT; row++)
         {
+          // a window should have ~0.5 meter
+          float ppm = texture_width / 0.5;
           XrdOverlayWindow *window =
             xrd_overlay_client_add_window (self->client, "A window.", NULL,
-                                           FALSE, FALSE);
+                                           ppm, FALSE, FALSE);
           self->windows = g_slist_append (self->windows, window);
 
           xrd_overlay_window_submit_texture (window, self->client->uploader,
@@ -131,12 +122,13 @@ _init_windows (Example *self)
           if (col == 0 && row == 0)
             {
               float texture_width, texture_height;
-              GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg", 0.03,
+              GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg",
                                                          &texture_width,
                                                          &texture_height);
+              float ppm = texture_width / 0.25;
               XrdOverlayWindow *child =
                 xrd_overlay_client_add_window (self->client, "A child.", NULL,
-                                               TRUE, FALSE);
+                                               ppm, TRUE, FALSE);
               self->windows = g_slist_append (self->windows, child);
 
               xrd_overlay_window_submit_texture (child, self->client->uploader,
@@ -162,9 +154,10 @@ _init_windows (Example *self)
     }
 
   {
+    float ppm = texture_width / 0.5;
     XrdOverlayWindow *tracked_window =
         xrd_overlay_client_add_window (self->client, "Head Tracked window.",
-                                       NULL, FALSE, TRUE);
+                                       NULL, ppm,  FALSE, TRUE);
     self->windows = g_slist_append (self->windows, tracked_window);
 
     xrd_overlay_window_submit_texture (tracked_window, self->client->uploader,

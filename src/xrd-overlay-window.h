@@ -46,7 +46,7 @@ struct _XrdOverlayWindow
 };
 
 XrdOverlayWindow *
-xrd_overlay_window_new (gchar *window_title, gpointer native);
+xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native);
 
 XrdOverlayWindow *
 xrd_overlay_window_new_from_overlay (OpenVROverlay *overlay,

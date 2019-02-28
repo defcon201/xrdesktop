@@ -462,8 +462,6 @@ xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
 void
 xrd_overlay_window_internal_init (XrdOverlayWindow *self)
 {
-  /* TODO: ppm setting */
-  self->ppm = 300.0;
   self->scaling_factor = 1.0;
   self->child_window = NULL;
   self->parent_window = NULL;
@@ -499,7 +497,7 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
  * Create a new XrdWindow. Note that the window will only have dimensions after
  * a texture is uploaded. */
 XrdOverlayWindow *
-xrd_overlay_window_new (gchar *window_title, gpointer native)
+xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native)
 {
   XrdOverlayWindow *self = (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
 
@@ -508,6 +506,7 @@ xrd_overlay_window_new (gchar *window_title, gpointer native)
   self->texture_width = 0;
   self->texture_height = 0;
   self->window_title = g_string_new (window_title);
+  self->ppm = ppm;
 
   xrd_overlay_window_internal_init (self);
   return self;

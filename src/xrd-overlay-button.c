@@ -40,7 +40,7 @@ _create_cairo_surface (unsigned char *image, uint32_t width,
   cairo_t *cr = cairo_create (surface);
 
   cairo_rectangle (cr, 0, 0, width, height);
-  cairo_set_source_rgb (cr, 1, 1, 1);
+  cairo_set_source_rgba (cr, 1, 1, 1, 1);
   cairo_fill (cr);
 
   double r0;
@@ -49,7 +49,7 @@ _create_cairo_surface (unsigned char *image, uint32_t width,
   else
     r0 = (double) height / 3.0;
 
-  double radius = r0 * 3.0;
+  double radius = r0 * 4.0;
   double r1 = r0 * 5.0;
 
   double center_x = (double) width / 2.0;
@@ -73,14 +73,16 @@ _create_cairo_surface (unsigned char *image, uint32_t width,
       CAIRO_FONT_SLANT_NORMAL,
       CAIRO_FONT_WEIGHT_NORMAL);
 
-  cairo_set_font_size (cr, 52.0);
+  float font_size = 52.0;
+
+  cairo_set_font_size (cr, font_size);
 
   cairo_text_extents_t extents;
   cairo_text_extents (cr, text, &extents);
 
   cairo_move_to (cr,
                  center_x - extents.width / 2,
-                 center_y  - extents.height / 2);
+                 center_y  - extents.height / 2 + extents.height / 2);
   cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
   cairo_show_text (cr, text);
 
@@ -96,8 +98,10 @@ xrd_overlay_button_new (gchar *text)
 
   XrdOverlayWindow *window = XRD_OVERLAY_WINDOW (self);
 
-  int width = 200;
-  int height = 200;
+  int width = 220;
+  int height = 120;
+
+  window->ppm = 450;
 
   window->texture_width = width;
   window->texture_height = height;

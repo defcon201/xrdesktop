@@ -526,6 +526,7 @@ XrdOverlayWindow *
 xrd_overlay_client_add_window (XrdOverlayClient *self,
                                const char       *title,
                                gpointer          native,
+                               float             ppm,
                                gboolean          is_child,
                                gboolean          follow_head)
 {
@@ -533,7 +534,7 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
   if (!window_title)
     window_title = g_strdup ("Unnamed Window");
 
-  XrdOverlayWindow *window = xrd_overlay_window_new (window_title, native);
+  XrdOverlayWindow *window = xrd_overlay_window_new (window_title, ppm, native);
 
   XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
 

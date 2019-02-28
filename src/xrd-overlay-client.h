@@ -78,6 +78,7 @@ XrdOverlayWindow *
 xrd_overlay_client_add_window (XrdOverlayClient *self,
                                const char       *title,
                                gpointer          native,
+                               float             ppm,
                                gboolean          is_child,
                                gboolean          follow_head);
 
