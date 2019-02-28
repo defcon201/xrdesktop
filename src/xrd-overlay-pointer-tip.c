@@ -400,7 +400,6 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
   gboolean has_pose = _get_hmd_pose (&hmd_pose);
   if (!has_pose)
     {
-      g_print ("Error: NO HMD POSE\n");
       openvr_overlay_set_width_meters (OPENVR_OVERLAY(self),
                                        self->overlay_width);
       return;
