@@ -235,7 +235,6 @@ xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
   gboolean has_pose = _get_hmd_pose (&hmd_pose);
   if (!has_pose)
     {
-      g_print ("Error: NO HMD POSE\n");
       _set_width (self, self->cursor_width_meter);
       return;
     }
