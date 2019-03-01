@@ -130,7 +130,7 @@ _place_pixel (guchar    *pixels,
 
 gboolean
 _draw_at_2d_position (Example          *self,
-                      PixelSize        *size_pixels,
+                      XrdPixelSize     *size_pixels,
                       graphene_point_t *position_2d,
                       ColorRGBA        *color,
                       uint32_t          brush_radius)
@@ -196,7 +196,7 @@ _paint_hover_cb (XrdOverlayWindow *window,
                              &event->pose,
                              &event->point);
 
-  PixelSize size_pixels = {
+  XrdPixelSize size_pixels = {
     .width = (guint) gdk_pixbuf_get_width (self->draw_pixbuf),
     .height = (guint) gdk_pixbuf_get_height (self->draw_pixbuf)
   };

@@ -10,8 +10,6 @@
 
 #include <glib-object.h>
 
-#include <openvr-overlay.h>
-#include <openvr-overlay-uploader.h>
 #include <gulkan-texture.h>
 #include "xrd-window.h"
 
@@ -25,8 +23,8 @@ struct _XrdOverlayWindow
 {
   XrdWindow parent;
 
-  gpointer      *native;
-  OpenVROverlay *overlay;
+  gpointer      native;
+  gpointer      overlay;
   uint32_t       texture_width;
   uint32_t       texture_height;
   GString        *window_title;
@@ -49,13 +47,13 @@ XrdOverlayWindow *
 xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native);
 
 XrdOverlayWindow *
-xrd_overlay_window_new_from_overlay (OpenVROverlay *overlay,
+xrd_overlay_window_new_from_overlay (gpointer *overlay,
                                      int width,
                                      int height);
 
 void
 xrd_overlay_window_init_overlay (XrdOverlayWindow *self,
-                                 OpenVROverlay *overlay,
+                                 gpointer *overlay,
                                  int width,
                                  int height);
 
@@ -67,10 +65,9 @@ gboolean
 xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat);
 
-/* TODO: More generic class than OpenVROverlayUploader */
 void
 xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
-                                   OpenVROverlayUploader *uploader,
+                                   GulkanClient *client,
                                    GulkanTexture *texture);
 
 float
@@ -99,7 +96,7 @@ xrd_overlay_window_intersects (XrdOverlayWindow   *self,
 gboolean
 xrd_overlay_window_intersection_to_window_coords (XrdOverlayWindow   *self,
                                                   graphene_point3d_t *intersection_point,
-                                                  PixelSize          *size_pixels,
+                                                  XrdPixelSize       *size_pixels,
                                                   graphene_point_t   *window_coords);
 
 gboolean
@@ -110,27 +107,27 @@ xrd_overlay_window_intersection_to_offset_center (XrdOverlayWindow *self,
 
 void
 xrd_overlay_window_emit_grab_start (XrdOverlayWindow *self,
-                                    OpenVRControllerIndexEvent *event);
+                                    XrdControllerIndexEvent *event);
 
 void
 xrd_overlay_window_emit_grab (XrdOverlayWindow *self,
-                              OpenVRGrabEvent *event);
+                              XrdGrabEvent *event);
 
 void
 xrd_overlay_window_emit_release (XrdOverlayWindow *self,
-                                 OpenVRControllerIndexEvent *event);
+                                 XrdControllerIndexEvent *event);
 
 void
 xrd_overlay_window_emit_hover_end (XrdOverlayWindow *self,
-                                   OpenVRControllerIndexEvent *event);
+                                   XrdControllerIndexEvent *event);
 
 void
 xrd_overlay_window_emit_hover (XrdOverlayWindow    *self,
-                               OpenVRHoverEvent *event);
+                               XrdHoverEvent *event);
 
 void
 xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
-                                     OpenVRControllerIndexEvent *event);
+                                     XrdControllerIndexEvent *event);
 
 void
 xrd_overlay_window_add_child (XrdOverlayWindow *self,

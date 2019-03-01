@@ -196,9 +196,9 @@ _action_rotate_cb (OpenVRAction        *action,
 }
 
 void
-_window_grab_start_cb (XrdOverlayWindow           *window,
-                       OpenVRControllerIndexEvent *event,
-                       gpointer                    _self)
+_window_grab_start_cb (XrdOverlayWindow        *window,
+                       XrdControllerIndexEvent *event,
+                       gpointer                 _self)
 {
   XrdOverlayClient *self = _self;
 
@@ -219,8 +219,8 @@ _window_grab_start_cb (XrdOverlayWindow           *window,
 
 void
 _window_grab_cb (XrdOverlayWindow *window,
-                 OpenVRGrabEvent  *event,
-                 gpointer         _self)
+                 XrdGrabEvent     *event,
+                 gpointer          _self)
 {
   (void) window;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
@@ -235,8 +235,8 @@ _window_grab_cb (XrdOverlayWindow *window,
 
 void
 _button_hover_cb (XrdOverlayButton *button,
-                  OpenVRHoverEvent *event,
-                  gpointer         _self)
+                  XrdHoverEvent    *event,
+                  gpointer          _self)
 {
   XrdOverlayClient *self = _self;
 
@@ -259,9 +259,9 @@ _button_hover_cb (XrdOverlayButton *button,
 }
 
 void
-_window_hover_end_cb (XrdOverlayWindow           *window,
-                      OpenVRControllerIndexEvent *event,
-                      gpointer                   _self)
+_window_hover_end_cb (XrdOverlayWindow        *window,
+                      XrdControllerIndexEvent *event,
+                      gpointer                 _self)
 {
   (void) event;
   (void) window;
@@ -286,9 +286,9 @@ _window_hover_end_cb (XrdOverlayWindow           *window,
 }
 
 void
-_button_hover_end_cb (XrdOverlayButton           *button,
-                      OpenVRControllerIndexEvent *event,
-                      gpointer                   _self)
+_button_hover_end_cb (XrdOverlayButton        *button,
+                      XrdControllerIndexEvent *event,
+                      gpointer                 _self)
 {
   (void) event;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
@@ -332,9 +332,9 @@ _init_button (XrdOverlayClient   *self,
 }
 
 void
-_button_sphere_press_cb (XrdOverlayWindow           *window,
-                         OpenVRControllerIndexEvent *event,
-                         gpointer                  _self)
+_button_sphere_press_cb (XrdOverlayWindow        *window,
+                         XrdControllerIndexEvent *event,
+                         gpointer                 _self)
 {
   (void) event;
   (void) window;
@@ -344,9 +344,9 @@ _button_sphere_press_cb (XrdOverlayWindow           *window,
 }
 
 void
-_button_reset_press_cb (XrdOverlayWindow           *window,
-                        OpenVRControllerIndexEvent *event,
-                        gpointer                   _self)
+_button_reset_press_cb (XrdOverlayWindow        *window,
+                        XrdControllerIndexEvent *event,
+                        gpointer                 _self)
 {
   (void) event;
   (void) window;
@@ -436,7 +436,7 @@ _action_show_keyboard_cb (OpenVRAction       *action,
 
 void
 _window_hover_cb (XrdOverlayWindow *window,
-                  OpenVRHoverEvent *event,
+                  XrdHoverEvent    *event,
                   XrdOverlayClient *self)
 {
   /* update pointer length and intersection overlay */
@@ -464,9 +464,9 @@ _window_hover_cb (XrdOverlayWindow *window,
 }
 
 void
-_window_hover_start_cb (XrdOverlayWindow           *window,
-                        OpenVRControllerIndexEvent *event,
-                        XrdOverlayClient           *self)
+_window_hover_start_cb (XrdOverlayWindow        *window,
+                        XrdControllerIndexEvent *event,
+                        XrdOverlayClient        *self)
 {
   (void) window;
   (void) event;
@@ -478,9 +478,9 @@ _window_hover_start_cb (XrdOverlayWindow           *window,
 }
 
 void
-_manager_no_hover_cb (XrdWindowManager   *manager,
-                      OpenVRNoHoverEvent *event,
-                      XrdOverlayClient   *self)
+_manager_no_hover_cb (XrdWindowManager *manager,
+                      XrdNoHoverEvent  *event,
+                      XrdOverlayClient *self)
 {
   (void) manager;
 

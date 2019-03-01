@@ -12,6 +12,7 @@
 #include "openvr-overlay.h"
 #include "openvr-math.h"
 #include "xrd-math.h"
+#include <openvr-context.h>
 
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
 
@@ -731,7 +732,7 @@ _test_hover (XrdWindowManager  *self,
              graphene_matrix_t *pose,
              int                controller_index)
 {
-  OpenVRHoverEvent *hover_event = g_malloc (sizeof (OpenVRHoverEvent));
+  XrdHoverEvent *hover_event = g_malloc (sizeof (XrdHoverEvent));
   hover_event->distance = FLT_MAX;
 
   XrdWindow *closest = NULL;
@@ -771,8 +772,8 @@ _test_hover (XrdWindowManager  *self,
       /* We now hover over an overlay */
       if (closest != last_hovered_window)
         {
-          OpenVRControllerIndexEvent *hover_start_event =
-              g_malloc (sizeof (OpenVRControllerIndexEvent));
+          XrdControllerIndexEvent *hover_start_event =
+              g_malloc (sizeof (XrdControllerIndexEvent));
           hover_start_event->index = controller_index;
           xrd_window_emit_hover_start (closest, hover_start_event);
         }
@@ -780,8 +781,8 @@ _test_hover (XrdWindowManager  *self,
       if (closest != last_hovered_window
           && last_hovered_window != NULL)
         {
-          OpenVRControllerIndexEvent *hover_end_event =
-              g_malloc (sizeof (OpenVRControllerIndexEvent));
+          XrdControllerIndexEvent *hover_end_event =
+              g_malloc (sizeof (XrdControllerIndexEvent));
           hover_end_event->index = controller_index;
           xrd_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
@@ -801,16 +802,15 @@ _test_hover (XrdWindowManager  *self,
         {
           XrdWindow *last_hovered_window = hover_state->window;
           hover_state->window = NULL;
-          OpenVRControllerIndexEvent *hover_end_event =
-              g_malloc (sizeof (OpenVRControllerIndexEvent));
+          XrdControllerIndexEvent *hover_end_event =
+              g_malloc (sizeof (XrdControllerIndexEvent));
           hover_end_event->index = controller_index;
           xrd_window_emit_hover_end (last_hovered_window,
                                              hover_end_event);
         }
 
       /* Emit no hover event every time when hovering nothing */
-      OpenVRNoHoverEvent *no_hover_event =
-        g_malloc (sizeof (OpenVRNoHoverEvent));
+      XrdNoHoverEvent *no_hover_event = g_malloc (sizeof (XrdNoHoverEvent));
       no_hover_event->controller_index = controller_index;
       graphene_matrix_init_from_matrix (&no_hover_event->pose, pose);
       g_signal_emit (self, manager_signals[NO_HOVER_EVENT], 0,
@@ -845,7 +845,7 @@ _drag_window (XrdWindowManager  *self,
   graphene_matrix_translate (&transformation_matrix,
                              &grab_state->offset_translation_point);
 
-  OpenVRGrabEvent *event = g_malloc (sizeof (OpenVRGrabEvent));
+  XrdGrabEvent *event = g_malloc (sizeof (XrdGrabEvent));
   event->controller_index = controller_index;
   graphene_matrix_init_identity (&event->pose);
 
@@ -981,8 +981,8 @@ xrd_window_manager_check_grab (XrdWindowManager *self,
   if (hover_state->window == NULL)
     return;
 
-   OpenVRControllerIndexEvent *grab_event =
-      g_malloc (sizeof (OpenVRControllerIndexEvent));
+   XrdControllerIndexEvent *grab_event =
+      g_malloc (sizeof (XrdControllerIndexEvent));
   grab_event->index = controller_index;
   xrd_window_emit_grab_start (hover_state->window, grab_event);
 }
@@ -996,8 +996,8 @@ xrd_window_manager_check_release (XrdWindowManager *self,
   if (grab_state->window == NULL)
     return;
 
-  OpenVRControllerIndexEvent *release_event =
-      g_malloc (sizeof (OpenVRControllerIndexEvent));
+  XrdControllerIndexEvent *release_event =
+      g_malloc (sizeof (XrdControllerIndexEvent));
   release_event->index = controller_index;
   xrd_window_emit_release (grab_state->window, release_event);
   grab_state->window = NULL;

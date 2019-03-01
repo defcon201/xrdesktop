@@ -41,13 +41,13 @@ xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
 /* TODO: More generic class than OpenVROverlayUploader */
 void
 xrd_window_submit_texture (XrdWindow *self,
-                           OpenVROverlayUploader *uploader,
+                           GulkanClient *client,
                            GulkanTexture *texture)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_submit_texture == NULL)
       return;
-  return klass->xrd_window_submit_texture (self, uploader, texture);
+  return klass->xrd_window_submit_texture (self, client, texture);
 }
 
 float
@@ -122,7 +122,7 @@ xrd_window_intersects (XrdWindow   *self,
 gboolean
 xrd_window_intersection_to_window_coords (XrdWindow   *self,
                                           graphene_point3d_t *intersection_point,
-                                          PixelSize          *size_pixels,
+                                          XrdPixelSize       *size_pixels,
                                           graphene_point_t   *window_coords)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
@@ -150,7 +150,7 @@ xrd_window_intersection_to_offset_center (XrdWindow *self,
 
 void
 xrd_window_emit_grab_start (XrdWindow *self,
-                            OpenVRControllerIndexEvent *event)
+                            XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_emit_grab_start == NULL)
@@ -161,7 +161,7 @@ xrd_window_emit_grab_start (XrdWindow *self,
 
 void
 xrd_window_emit_grab (XrdWindow *self,
-                      OpenVRGrabEvent *event)
+                      XrdGrabEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_emit_grab == NULL)
@@ -171,7 +171,7 @@ xrd_window_emit_grab (XrdWindow *self,
 
 void
 xrd_window_emit_release (XrdWindow *self,
-                         OpenVRControllerIndexEvent *event)
+                         XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_emit_release == NULL)
@@ -181,7 +181,7 @@ xrd_window_emit_release (XrdWindow *self,
 
 void
 xrd_window_emit_hover_end (XrdWindow *self,
-                           OpenVRControllerIndexEvent *event)
+                           XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_emit_hover_end == NULL)
@@ -192,7 +192,7 @@ xrd_window_emit_hover_end (XrdWindow *self,
 
 void
 xrd_window_emit_hover (XrdWindow    *self,
-                       OpenVRHoverEvent *event)
+                       XrdHoverEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_emit_hover == NULL)
@@ -202,7 +202,7 @@ xrd_window_emit_hover (XrdWindow    *self,
 
 void
 xrd_window_emit_hover_start (XrdWindow *self,
-                             OpenVRControllerIndexEvent *event)
+                             XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
   if (klass->xrd_window_emit_hover_start == NULL)

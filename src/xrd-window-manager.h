@@ -19,11 +19,11 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdWindowManager, xrd_window_manager, XRD,
                       WINDOW_MANAGER, GObject)
 
-typedef struct OpenVRNoHoverEvent
+typedef struct XrdNoHoverEvent
 {
   graphene_matrix_t pose;
   int controller_index;
-} OpenVRNoHoverEvent;
+} XrdNoHoverEvent;
 
 typedef struct TransformTransition
 {

@@ -95,8 +95,7 @@ _init_windows (Example *self)
                                            ppm, FALSE, FALSE);
           self->windows = g_slist_append (self->windows, window);
 
-          xrd_overlay_window_submit_texture (window, self->client->uploader,
-                                             hawk_big);
+          xrd_overlay_window_submit_texture (window, gc, hawk_big);
 
           float window_width;
           xrd_window_get_xr_width (XRD_WINDOW (window), &window_width);
@@ -131,7 +130,7 @@ _init_windows (Example *self)
                                                ppm, TRUE, FALSE);
               self->windows = g_slist_append (self->windows, child);
 
-              xrd_overlay_window_submit_texture (child, self->client->uploader,
+              xrd_overlay_window_submit_texture (child, gc,
                                                  cat_small);
 
               graphene_point_t offset = { .x = 25, .y = 25 };
@@ -160,8 +159,7 @@ _init_windows (Example *self)
                                        NULL, ppm,  FALSE, TRUE);
     self->windows = g_slist_append (self->windows, tracked_window);
 
-    xrd_overlay_window_submit_texture (tracked_window, self->client->uploader,
-                                         hawk_big);
+    xrd_overlay_window_submit_texture (tracked_window, gc, hawk_big);
     graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
     graphene_matrix_t transform;
     graphene_matrix_init_translate (&transform, &point);

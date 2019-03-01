@@ -10,8 +10,35 @@
 
 #include <glib-object.h>
 
-#include <openvr-overlay-uploader.h>
+#include <graphene.h>
+#include <gulkan-client.h>
 #include <gulkan-texture.h>
+
+typedef struct XrdPixelSize
+{
+  uint32_t width;
+  uint32_t height;
+} XrdPixelSize;
+
+typedef struct XrdHoverEvent
+{
+  graphene_point3d_t point;
+  graphene_matrix_t  pose;
+  float              distance;
+  int                controller_index;
+} XrdHoverEvent;
+
+typedef struct XrdGrabEvent
+{
+  graphene_matrix_t  pose;
+  int                controller_index;
+} XrdGrabEvent;
+
+typedef struct XrdControllerIndexEvent
+{
+  int index;
+} XrdControllerIndexEvent;
+
 
 G_BEGIN_DECLS
 
@@ -42,7 +69,7 @@ struct _XrdWindowClass
 
   void
   (*xrd_window_submit_texture) (XrdWindow *self,
-                                OpenVROverlayUploader *uploader,
+                                GulkanClient *client,
                                 GulkanTexture *texture);
 
   float
@@ -69,9 +96,9 @@ struct _XrdWindowClass
                             graphene_point3d_t *intersection_point);
 
   gboolean
-  (*xrd_window_intersection_to_window_coords) (XrdWindow   *self,
+  (*xrd_window_intersection_to_window_coords) (XrdWindow          *self,
                                                graphene_point3d_t *intersection_point,
-                                               PixelSize          *size_pixels,
+                                               XrdPixelSize       *size_pixels,
                                                graphene_point_t   *window_coords);
 
   gboolean
@@ -79,30 +106,29 @@ struct _XrdWindowClass
                                                graphene_point3d_t *intersection_point,
                                                graphene_point_t   *offset_center);
 
-  /* TODO: get rid of [OpenVR]ControllerIndexEvent*/
   void
   (*xrd_window_emit_grab_start) (XrdWindow *self,
-                                 OpenVRControllerIndexEvent *event);
+                                 XrdControllerIndexEvent *event);
 
   void
   (*xrd_window_emit_grab) (XrdWindow *self,
-                           OpenVRGrabEvent *event);
+                           XrdGrabEvent *event);
 
   void
   (*xrd_window_emit_release) (XrdWindow *self,
-                              OpenVRControllerIndexEvent *event);
+                              XrdControllerIndexEvent *event);
 
   void
   (*xrd_window_emit_hover_end) (XrdWindow *self,
-                                OpenVRControllerIndexEvent *event);
+                                XrdControllerIndexEvent *event);
 
   void
   (*xrd_window_emit_hover) (XrdWindow    *self,
-                            OpenVRHoverEvent *event);
+                            XrdHoverEvent *event);
 
   void
   (*xrd_window_emit_hover_start) (XrdWindow *self,
-                                  OpenVRControllerIndexEvent *event);
+                                  XrdControllerIndexEvent *event);
 
   void
   (*xrd_window_add_child) (XrdWindow *self,
@@ -134,8 +160,8 @@ xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat);
 
 /* TODO: More generic class than OpenVROverlayUploader */
 void
-xrd_window_submit_texture (XrdWindow *self,
-                           OpenVROverlayUploader *uploader,
+xrd_window_submit_texture (XrdWindow    *self,
+                           GulkanClient *client,
                            GulkanTexture *texture);
 
 float
@@ -164,7 +190,7 @@ xrd_window_intersects (XrdWindow   *self,
 gboolean
 xrd_window_intersection_to_window_coords (XrdWindow   *self,
                                           graphene_point3d_t *intersection_point,
-                                          PixelSize          *size_pixels,
+                                          XrdPixelSize       *size_pixels,
                                           graphene_point_t   *window_coords);
 
 gboolean
@@ -175,27 +201,27 @@ xrd_window_intersection_to_offset_center (XrdWindow *self,
 
 void
 xrd_window_emit_grab_start (XrdWindow *self,
-                            OpenVRControllerIndexEvent *event);
+                            XrdControllerIndexEvent *event);
 
 void
 xrd_window_emit_grab (XrdWindow *self,
-                      OpenVRGrabEvent *event);
+                      XrdGrabEvent *event);
 
 void
 xrd_window_emit_release (XrdWindow *self,
-                         OpenVRControllerIndexEvent *event);
+                         XrdControllerIndexEvent *event);
 
 void
 xrd_window_emit_hover_end (XrdWindow *self,
-                           OpenVRControllerIndexEvent *event);
+                           XrdControllerIndexEvent *event);
 
 void
 xrd_window_emit_hover (XrdWindow    *self,
-                       OpenVRHoverEvent *event);
+                       XrdHoverEvent *event);
 
 void
 xrd_window_emit_hover_start (XrdWindow *self,
-                             OpenVRControllerIndexEvent *event);
+                             XrdControllerIndexEvent *event);
 
 void
 xrd_window_add_child (XrdWindow *self,

@@ -8,6 +8,8 @@
 #include "xrd-overlay-window.h"
 #include <gdk/gdk.h>
 #include <glib/gprintf.h>
+#include <openvr-overlay.h>
+#include <openvr-overlay-uploader.h>
 
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
 
@@ -182,50 +184,50 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 }
 void
-_grab_start_cb (OpenVROverlay *overlay,
-                gpointer       event,
-                gpointer       window)
+_grab_start_cb (gpointer overlay,
+                gpointer event,
+                gpointer window)
 {
   (void) overlay;
   g_signal_emit (window, window_signals[GRAB_START_EVENT], 0, event);
 }
 
 void
-_grab_cb (OpenVROverlay *overlay,
-          gpointer       event,
-          gpointer       window)
+_grab_cb (gpointer overlay,
+          gpointer event,
+          gpointer window)
 {
   (void) overlay;
   g_signal_emit (window, window_signals[GRAB_EVENT], 0, event);
 }
 void
-_release_cb (OpenVROverlay *overlay,
-             gpointer       event,
-             gpointer       window)
+_release_cb (gpointer overlay,
+             gpointer event,
+             gpointer window)
 {
   (void) overlay;
   g_signal_emit (window, window_signals[RELEASE_EVENT], 0, event);
 }
 void
-_hover_end_cb (OpenVROverlay *overlay,
-               gpointer       event,
-               gpointer       window)
+_hover_end_cb (gpointer overlay,
+               gpointer event,
+               gpointer window)
 {
   (void) overlay;
   g_signal_emit (window, window_signals[HOVER_END_EVENT], 0, event);
 }
 void
-_hover_cb (OpenVROverlay *overlay,
-           gpointer       event,
-           gpointer       window)
+_hover_cb (gpointer overlay,
+           gpointer event,
+           gpointer window)
 {
   (void) overlay;
   g_signal_emit (window, window_signals[HOVER_EVENT], 0, event);
 }
 void
-_hover_start_cb (OpenVROverlay *overlay,
-                 gpointer       event,
-                 gpointer       window)
+_hover_start_cb (gpointer overlay,
+                 gpointer event,
+                 gpointer window)
 {
   (void) overlay;
   g_signal_emit (window, window_signals[HOVER_START_EVENT], 0, event);
@@ -297,9 +299,11 @@ xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
 
 void
 xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
-                                   OpenVROverlayUploader *uploader,
+                                   GulkanClient *client,
                                    GulkanTexture *texture)
 {
+  OpenVROverlayUploader *uploader = OPENVR_OVERLAY_UPLOADER (client);
+
   if (self->texture_width != texture->width ||
       self->texture_height != texture->height)
     {
@@ -397,12 +401,16 @@ xrd_overlay_window_intersects (XrdOverlayWindow   *self,
 gboolean
 xrd_overlay_window_intersection_to_window_coords (XrdOverlayWindow   *self,
                                                   graphene_point3d_t *intersection_point,
-                                                  PixelSize          *size_pixels,
+                                                  XrdPixelSize       *size_pixels,
                                                   graphene_point_t   *window_coords)
 {
+  PixelSize pix_size = {
+    .width = size_pixels->width,
+    .height = size_pixels->height
+  };
   gboolean res =
       openvr_overlay_get_2d_intersection (self->overlay, intersection_point,
-                                          size_pixels, window_coords);
+                                          &pix_size, window_coords);
   return res;
 }
 
@@ -419,42 +427,42 @@ xrd_overlay_window_intersection_to_offset_center (XrdOverlayWindow *self,
 
 void
 xrd_overlay_window_emit_grab_start (XrdOverlayWindow *self,
-                                    OpenVRControllerIndexEvent *event)
+                                    XrdControllerIndexEvent *event)
 {
   g_signal_emit (self, window_signals[GRAB_START_EVENT], 0, event);
 }
 
 void
 xrd_overlay_window_emit_grab (XrdOverlayWindow *self,
-                              OpenVRGrabEvent *event)
+                              XrdGrabEvent *event)
 {
   g_signal_emit (self, window_signals[GRAB_EVENT], 0, event);
 }
 
 void
 xrd_overlay_window_emit_release (XrdOverlayWindow *self,
-                                 OpenVRControllerIndexEvent *event)
+                                 XrdControllerIndexEvent *event)
 {
   g_signal_emit (self, window_signals[RELEASE_EVENT], 0, event);
 }
 
 void
 xrd_overlay_window_emit_hover_end (XrdOverlayWindow *self,
-                                   OpenVRControllerIndexEvent *event)
+                                   XrdControllerIndexEvent *event)
 {
   g_signal_emit (self, window_signals[HOVER_END_EVENT], 0, event);
 }
 
 void
 xrd_overlay_window_emit_hover (XrdOverlayWindow    *self,
-                               OpenVRHoverEvent *event)
+                               XrdHoverEvent *event)
 {
   g_signal_emit (self, window_signals[HOVER_EVENT], 0, event);
 }
 
 void
 xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
-                                     OpenVRControllerIndexEvent *event)
+                                     XrdControllerIndexEvent *event)
 {
   g_signal_emit (self, window_signals[HOVER_START_EVENT], 0, event);
 }
