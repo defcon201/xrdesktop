@@ -12,6 +12,10 @@
 #include <graphene.h>
 #include <glib.h>
 
+#define PI   ((float) 3.1415926535)
+#define DEG_TO_RAD(x) ( (x) * 2.0 * PI / 360.0 )
+#define RAD_TO_DEG(x) ( (x) * 360.0 / ( 2.0 * PI ) )
+
 bool
 xrd_math_matrix_equals (graphene_matrix_t *a,
                         graphene_matrix_t *b);
@@ -19,5 +23,15 @@ xrd_math_matrix_equals (graphene_matrix_t *a,
 float
 xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
                                 graphene_matrix_t  *pose);
+
+
+void
+xrd_math_get_frustum_angles (float *left, float *right,
+                             float *top, float *bottom);
+
+void
+xrd_math_get_rotation_angles (graphene_vec3_t *direction,
+                              float *inclination,
+                              float *azimuth);
 
 #endif /* XRD_MATH_H_ */
