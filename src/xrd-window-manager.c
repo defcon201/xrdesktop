@@ -415,6 +415,86 @@ _get_point_cs  (float inclination,
                          - dist_2d * cos (DEG_TO_RAD (azimuth)));
 }
 
+/* Returns 1 if the lines intersect, otherwise 0. In addition, if the lines
+ * intersect the intersection point may be stored in the floats i_x and i_y.
+ * Based on an algorithm in Andre LeMothe's
+ * "Tricks of the Windows Game Programming Gurus".
+ * Implementation from https://stackoverflow.com/a/1968345 */
+gboolean
+get_line_intersection (float p0_x, float p0_y, float p1_x, float p1_y,
+                       float p2_x, float p2_y, float p3_x, float p3_y,
+                       float *i_x, float *i_y)
+{
+  float s1_x, s1_y, s2_x, s2_y;
+  s1_x = p1_x - p0_x;
+  s1_y = p1_y - p0_y;
+
+  s2_x = p3_x - p2_x;
+  s2_y = p3_y - p2_y;
+
+  float s, t;
+  s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) /
+      (-s2_x * s1_y + s1_x * s2_y);
+  t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) /
+      (-s2_x * s1_y + s1_x * s2_y);
+
+  if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+    {
+      // Collision detected
+      if (i_x != NULL)
+        *i_x = p0_x + (t * s1_x);
+      if (i_y != NULL)
+        *i_y = p0_y + (t * s1_y);
+      return TRUE;
+    }
+  return FALSE; // No collision
+}
+
+/** _angle_space_intersect_fov:
+ * In angle space a sphere is a 2D plane from [-180,180]x[-180,180] and the
+ * left / right / top / bottom angles yield a rectangle.
+ * To snap a window towards the edge of the FOV we don't just clamp the angle
+ * to the fov angle, because that would move the window perpendicular to the
+ * FOV edges which does not feel right.
+ * Instead imagine a line from the origin of angle space (the center view axis)
+ * towards the window's angles. Intersect this line with the FOV angles to
+ * yield intersection angles that move the window towards the center view axis
+ * until it becomes visible on an edge of the FOV.
+ * */
+gboolean
+_angle_space_intersect_fov (float left, float right, float top, float bottom,
+                            float inclination, float azimuth,
+                            float *inclination_intersection,
+                            float *azimuth_intersection)
+{
+  /* left */
+  if (get_line_intersection (0, 0, azimuth, inclination,
+                             left, bottom, left, top,
+                             azimuth_intersection, inclination_intersection))
+    return TRUE;
+
+  /* right */
+  if (get_line_intersection (0, 0, azimuth, inclination,
+                             right, bottom, right, top,
+                             azimuth_intersection, inclination_intersection))
+    return TRUE;
+
+  /* top */
+  if (get_line_intersection (0, 0, azimuth, inclination,
+                             left, top , right, top,
+                             azimuth_intersection, inclination_intersection))
+    return TRUE;
+
+  /* bottom */
+  if (get_line_intersection (0, 0, azimuth, inclination,
+                             left, bottom , right, bottom,
+                             azimuth_intersection, inclination_intersection))
+    return TRUE;
+
+
+  return FALSE;
+}
+
 gboolean
 _follow_head (FollowHeadWindow *fhw)
 {
@@ -475,30 +555,35 @@ _follow_head (FollowHeadWindow *fhw)
   if (inclination > top_outer || inclination < bottom_outer ||
       azimuth < left_outer || azimuth > right_outer)
     {
-      /* TODO: rather arbitrary increase of vdiff/hdiff will place the window
-       * "a little further in". This will avoid the window being "stuck" to the
-       * HMD view edge while the head rotation slows down, because this will
-       * lead to a perceived "lag" where the window slows down with the head,
-       * only to start moving towards its final destination with a "jump". */
 
-      float vdiff = 0;
-      float hdiff = 0;
-      if (inclination > top_outer)
-        vdiff = inclination - top_outer + 1.5;
-      else if (inclination < bottom_outer)
-        vdiff = inclination - bottom_outer - 1.5;
-      if (azimuth < left_outer)
-        hdiff = azimuth - left_outer - 1.5;
-      else if (azimuth > right_outer)
-        hdiff = azimuth - right_outer + 1.5;
+      /* delta is used to snap windows a little closer towards the view center
+       * because natural head movement doesn't suddenly stop, it slows down,
+       * making it snap very small distances before it leaves the snap phase
+       * and enters the smooth movement phase. This would make the transition
+       * from slowing snapping to fast smooth movement look like a jump. */
+      float delta = 1.0;
 
+      float i_inclination, i_azimuth;
+      gboolean intersects =
+          _angle_space_intersect_fov (left_outer + delta, right_outer - delta,
+                                      top_outer - delta, bottom_outer + delta,
+                                      inclination, azimuth,
+                                      &i_inclination, &i_azimuth);
 
-      graphene_vec2_t velocity;
-      graphene_vec2_init (&velocity, vdiff, hdiff);
-      fhw->speed = graphene_vec2_length (&velocity);
+      /* doesn't happen */
+      if (!intersects)
+        {
+          g_print ("Head Following Window should intersect, but doesn't!\n");
+          return TRUE;
+        }
+
+      /*
+      g_print ("Snap from %f %f to %f %f\n",
+               inclination, azimuth, i_inclination, i_azimuth);
+       */
 
       graphene_point3d_t new_pos_ws;
-      _get_point_cs (inclination - vdiff, azimuth - hdiff, radius, &new_pos_ws);
+      _get_point_cs (i_inclination, i_azimuth, radius, &new_pos_ws);
       graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
 
       graphene_matrix_t new_window_pose_ws;
@@ -506,23 +591,33 @@ _follow_head (FollowHeadWindow *fhw)
 
       xrd_window_set_transformation_matrix (window, &new_window_pose_ws);
 
+
+      graphene_vec2_t velocity;
+      graphene_vec2_init (&velocity,
+                          inclination - i_inclination, azimuth - i_azimuth);
+      fhw->speed = graphene_vec2_length (&velocity);
+
       //g_print ("Snap window to view frustum edge!\n");
       return TRUE;
     }
 
-
   /* Window is visible, but not in center area: move it towards center area*/
+  float i_inclination, i_azimuth;
+  gboolean intersects =
+      _angle_space_intersect_fov (left_inner, right_inner,
+                                  top_inner, bottom_inner,
+                                  inclination, azimuth,
+                                  &i_inclination, &i_azimuth);
 
-  float vdiff = 0;
-  float hdiff = 0;
-  if (inclination > top_inner)
-    vdiff = inclination - top_inner;
-  else if (inclination < bottom_inner)
-    vdiff = inclination - bottom_inner;
-  if (azimuth < left_inner)
-    hdiff = azimuth - left_inner;
-  else if (azimuth > right_inner)
-    hdiff = azimuth - right_inner;
+  /* doesn't happen */
+  if (!intersects)
+    {
+      g_print ("Head Following Window should intersect, but doesn't!\n");
+      return TRUE;
+    }
+
+  float vdiff = inclination - i_inclination;
+  float hdiff = azimuth - i_azimuth;
 
   /* To avoid sudden jumps in velocity:
    * Window starts with velocity 0.
