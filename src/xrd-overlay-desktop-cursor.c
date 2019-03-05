@@ -9,6 +9,7 @@
 
 #include "openvr-math.h"
 #include "xrd-settings.h"
+#include "xrd-math.h"
 
 G_DEFINE_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, OPENVR_TYPE_OVERLAY)
 
@@ -56,7 +57,7 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
       openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &cursor_pose);
 
       graphene_vec3_t cursor_point_vec;
-      openvr_math_matrix_get_translation (&cursor_pose, &cursor_point_vec);
+      xrd_math_matrix_get_translation_vec (&cursor_pose, &cursor_point_vec);
       graphene_point3d_t cursor_point;
       xrd_overlay_desktop_cursor_set_constant_width (self, &cursor_point);
     }
@@ -85,7 +86,7 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_cursor_width),
                                   "cursor-width", self);
-  
+
   xrd_settings_connect_and_apply (G_CALLBACK
                                   (_update_use_constant_apparent_width),
                                   "pointer-tip-apparent-width-is-constant",
@@ -95,7 +96,7 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 2);
 
   openvr_overlay_show (OPENVR_OVERLAY (self));
-  
+
   return self;
 }
 
@@ -131,7 +132,7 @@ xrd_overlay_desktop_cursor_upload_pixbuf (XrdOverlayDesktopCursor *self,
     }
 
   gulkan_client_upload_pixbuf (client, self->texture, pixbuf);
-  
+
   openvr_overlay_uploader_submit_frame (self->uploader, OPENVR_OVERLAY (self),
                                         self->texture);
 
@@ -165,7 +166,7 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
 
   graphene_point_t offset_2d;
   openvr_overlay_get_2d_offset (window->overlay, intersection, &offset_2d);
-  
+
   graphene_point3d_t offset_3d;
   graphene_point3d_init (&offset_3d, offset_2d.x, offset_2d.y, 0);
 
@@ -239,11 +240,8 @@ xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
       return;
     }
 
-  graphene_vec3_t hmd_point_vec;
-  openvr_math_matrix_get_translation (&hmd_pose,
-                                      &hmd_point_vec);
   graphene_point3d_t hmd_point;
-  graphene_point3d_init_from_vec3 (&hmd_point, &hmd_point_vec);
+  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_point);
 
   float distance = graphene_point3d_distance (cursor_point, &hmd_point, NULL);
 

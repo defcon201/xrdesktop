@@ -37,8 +37,6 @@ xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
   return klass->xrd_window_get_transformation_matrix (self, mat);
 }
 
-
-/* TODO: More generic class than OpenVROverlayUploader */
 void
 xrd_window_submit_texture (XrdWindow *self,
                            GulkanClient *client,

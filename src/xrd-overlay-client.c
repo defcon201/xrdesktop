@@ -12,6 +12,7 @@
 #include <glib/gprintf.h>
 #include "xrd-settings.h"
 #include <openvr-math.h>
+#include "xrd-math.h"
 
 G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, G_TYPE_OBJECT)
 
@@ -498,11 +499,8 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   graphene_quaternion_t controller_rotation;
   graphene_quaternion_init_from_matrix (&controller_rotation, &event->pose);
 
-  graphene_vec3_t controller_translation;
-  openvr_math_matrix_get_translation (&event->pose, &controller_translation);
   graphene_point3d_t controller_translation_point;
-  graphene_point3d_init_from_vec3 (&controller_translation_point,
-                                   &controller_translation);
+  xrd_math_matrix_get_translation_point (&event->pose, &controller_translation_point);
 
   graphene_matrix_init_identity (&tip_pose);
   graphene_matrix_translate (&tip_pose, &distance_translation_point);
@@ -733,7 +731,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
     }
 
   self->cursor = xrd_overlay_desktop_cursor_new (self->uploader);
-  
+
   self->wm_actions = openvr_action_set_new_from_url ("/actions/wm");
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
@@ -789,7 +787,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
                                   "event-update-rate-ms", self);
 
   self->input_synth = xrd_input_synth_new ();
-  
+
   g_signal_connect (self->input_synth, "click-event",
                     (GCallback) _synth_click_cb, self);
   g_signal_connect (self->input_synth, "move-cursor-event",

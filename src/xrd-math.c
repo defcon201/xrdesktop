@@ -87,3 +87,49 @@ xrd_math_get_rotation_angles (graphene_vec3_t *direction,
       RAD_TO_DEG (atan2 (graphene_vec3_get_x (&anti_direction),
                          - graphene_vec3_get_z (&anti_direction)));
 }
+
+void
+xrd_math_matrix_set_translation_point (graphene_matrix_t  *matrix,
+                                       graphene_point3d_t *point)
+{
+  float m[16];
+  graphene_matrix_to_float (matrix, m);
+
+  m[12] = point->x;
+  m[13] = point->y;
+  m[14] = point->z;
+  graphene_matrix_init_from_float (matrix, m);
+}
+
+void
+xrd_math_matrix_set_translation_vec (graphene_matrix_t  *matrix,
+                                     graphene_vec3_t *vec)
+{
+  float m[16];
+  graphene_matrix_to_float (matrix, m);
+
+  m[12] = graphene_vec3_get_x (vec);
+  m[13] = graphene_vec3_get_y (vec);
+  m[14] = graphene_vec3_get_z (vec);
+  graphene_matrix_init_from_float (matrix, m);
+}
+
+void
+xrd_math_matrix_get_translation_vec (graphene_matrix_t *matrix,
+                                     graphene_vec3_t   *vec)
+{
+  graphene_vec3_init (vec,
+                      graphene_matrix_get_value (matrix, 3, 0),
+                      graphene_matrix_get_value (matrix, 3, 1),
+                      graphene_matrix_get_value (matrix, 3, 2));
+}
+
+void
+xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
+                                       graphene_point3d_t *point)
+{
+  graphene_point3d_init (point,
+                         graphene_matrix_get_value (matrix, 3, 0),
+                         graphene_matrix_get_value (matrix, 3, 1),
+                         graphene_matrix_get_value (matrix, 3, 2));
+}

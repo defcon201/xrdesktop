@@ -241,7 +241,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
           xrd_window_get_scaling_factor (window, &transition->from_scaling);
 
-          if (!openvr_math_matrix_equals (&transition->from, &transform))
+          if (!xrd_math_matrix_equals (&transition->from, &transform))
             {
               transition->interpolate = 0;
               transition->window = window;
@@ -291,18 +291,15 @@ xrd_math_hmd_window_distance (XrdWindow *window)
     /* TODO: can't retry until we have a pose, will block the desktop */
     return 2.5;
 
-  graphene_vec3_t hmd_vec;
-  openvr_math_matrix_get_translation (&hmd_pose, &hmd_vec);
+
   graphene_point3d_t hmd_location;
-  graphene_point3d_init_from_vec3 (&hmd_location, &hmd_vec);
+  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_location);
 
 
   graphene_matrix_t window_pose;
   xrd_window_get_transformation_matrix (window, &window_pose);
-  graphene_vec3_t window_vec;
-  openvr_math_matrix_get_translation (&window_pose, &window_vec);
   graphene_point3d_t window_location;
-  graphene_point3d_init_from_vec3 (&window_location, &window_vec);
+  xrd_math_matrix_get_translation_point (&window_pose, &window_location);
 
   return graphene_point3d_distance (&hmd_location, &window_location, NULL);
 }
@@ -382,10 +379,8 @@ _hmd_facing_pose (graphene_matrix_t *hmd_pose,
                   graphene_point3d_t *look_at_point_ws,
                   graphene_matrix_t *pose_ws)
 {
-  graphene_vec3_t hmd_vec;
-  openvr_math_matrix_get_translation (hmd_pose, &hmd_vec);
   graphene_point3d_t hmd_location;
-  graphene_point3d_init_from_vec3 (&hmd_location, &hmd_vec);
+  xrd_math_matrix_get_translation_point (hmd_pose, &hmd_location);
 
   graphene_point3d_t look_at_from_hmd = {
     .x = look_at_point_ws->x - hmd_location.x,
@@ -403,7 +398,7 @@ _hmd_facing_pose (graphene_matrix_t *hmd_pose,
   graphene_matrix_rotate_x (pose_ws, inclination);
   graphene_matrix_rotate_y (pose_ws, - azimuth);
 
-  openvr_math_matrix_set_translation (pose_ws, look_at_point_ws);
+  xrd_math_matrix_set_translation_point (pose_ws, look_at_point_ws);
 }
 
 void
@@ -437,9 +432,7 @@ _follow_head (FollowHeadWindow *fhw)
                             &window_transform_cs);
 
   graphene_vec3_t window_vec_cs;
-  openvr_math_matrix_get_translation (&window_transform_cs, &window_vec_cs);
-  graphene_point3d_t window_location_cs;
-  graphene_point3d_init_from_vec3 (&window_location_cs, &window_vec_cs);
+  xrd_math_matrix_get_translation_vec (&window_transform_cs, &window_vec_cs);
 
   float left, right, top, bottom;
   xrd_math_get_frustum_angles (&left, &right, &top, &bottom);
@@ -714,11 +707,8 @@ _drag_window (XrdWindowManager  *self,
   HoverState *hover_state = &self->hover_state[controller_index];
   GrabState *grab_state = &self->grab_state[controller_index];
 
-  graphene_vec3_t controller_translation;
-  openvr_math_matrix_get_translation (pose, &controller_translation);
   graphene_point3d_t controller_translation_point;
-  graphene_point3d_init_from_vec3 (&controller_translation_point,
-                                   &controller_translation);
+  xrd_math_matrix_get_translation_point (pose, &controller_translation_point);
   graphene_quaternion_t controller_rotation;
   graphene_quaternion_init_from_matrix (&controller_rotation, pose);
 

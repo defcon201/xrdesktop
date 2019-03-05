@@ -34,4 +34,17 @@ xrd_math_get_rotation_angles (graphene_vec3_t *direction,
                               float *inclination,
                               float *azimuth);
 
+void
+xrd_math_matrix_set_translation_point (graphene_matrix_t  *matrix,
+                                       graphene_point3d_t *point);
+
+void
+xrd_math_matrix_set_translation_vec (graphene_matrix_t  *matrix,
+                                     graphene_vec3_t *vec);
+void
+xrd_math_matrix_get_translation_vec (graphene_matrix_t *matrix,
+                                     graphene_vec3_t   *vec);
+void
+xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
+                                       graphene_point3d_t *point);
 #endif /* XRD_MATH_H_ */

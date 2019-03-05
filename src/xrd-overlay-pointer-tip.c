@@ -9,6 +9,7 @@
 #include "xrd-overlay-pointer-tip.h"
 #include "openvr-math.h"
 #include "xrd-settings.h"
+#include "xrd-math.h"
 
 G_DEFINE_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, OPENVR_TYPE_OVERLAY)
 
@@ -390,11 +391,9 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
 
   graphene_matrix_t tip_pose;
   openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &tip_pose);
-
-  graphene_vec3_t tip_point_vec;
-  openvr_math_matrix_get_translation (&tip_pose, &tip_point_vec);
+;
   graphene_point3d_t tip_point;
-  graphene_point3d_init_from_vec3 (&tip_point, &tip_point_vec);
+  xrd_math_matrix_get_translation_point (&tip_pose, &tip_point);
 
   graphene_matrix_t hmd_pose;
   gboolean has_pose = _get_hmd_pose (&hmd_pose);
@@ -405,11 +404,8 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
       return;
     }
 
-  graphene_vec3_t hmd_point_vec;
-  openvr_math_matrix_get_translation (&hmd_pose,
-                                      &hmd_point_vec);
   graphene_point3d_t hmd_point;
-  graphene_point3d_init_from_vec3 (&hmd_point, &hmd_point_vec);
+  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_point);
 
   float distance = graphene_point3d_distance (&tip_point, &hmd_point, NULL);
 
@@ -417,7 +413,7 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
    * a distance of 3 meters. This makes e.g. self->width = 0.3 look decent in
    * both cases at typical usage distances. */
   float new_width = self->overlay_width / 3.0 * distance;
-  
+
   openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), new_width);
 }
 
@@ -428,7 +424,7 @@ xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
 {
   graphene_matrix_t transform;
   graphene_matrix_init_from_matrix (&transform, pose);
-  openvr_math_matrix_set_translation (&transform, intersection_point);
+  xrd_math_matrix_set_translation_point (&transform, intersection_point);
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);
 
   xrd_overlay_pointer_tip_set_constant_width (self);
