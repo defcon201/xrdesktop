@@ -255,11 +255,14 @@ static void
 _scale_move_child (XrdOverlayWindow *self)
 {
 
-  xrd_overlay_window_set_scaling_factor (self->child_window,
-                                         self->scaling_factor);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (xrd_window->child_window);
+
+  xrd_overlay_window_set_scaling_factor (child, xrd_window->scaling_factor);
 
   graphene_point_t scaled_offset;
-  graphene_point_scale (&self->child_offset_center, self->scaling_factor / self->ppm,
+  graphene_point_scale (&xrd_window->child_offset_center,
+                        xrd_window->scaling_factor / xrd_window->ppm,
                         &scaled_offset);
 
   graphene_point3d_t scaled_offset3d = {
@@ -273,9 +276,10 @@ _scale_move_child (XrdOverlayWindow *self)
   graphene_matrix_t parent_transform;
   xrd_overlay_window_get_transformation_matrix (self, &parent_transform);
 
-  graphene_matrix_multiply (&child_transform, &parent_transform, &child_transform);
+  graphene_matrix_multiply (&child_transform, &parent_transform,
+                            &child_transform);
 
-  xrd_overlay_window_set_transformation_matrix (self->child_window, &child_transform);
+  xrd_overlay_window_set_transformation_matrix (child, &child_transform);
 
 }
 
@@ -283,8 +287,10 @@ gboolean
 xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat)
 {
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+
   gboolean res = openvr_overlay_set_transform_absolute (self->overlay, mat);
-  if (self->child_window)
+  if (xrd_window->child_window)
     _scale_move_child (self);
   return res;
 }
@@ -302,21 +308,23 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
                                    GulkanClient *client,
                                    GulkanTexture *texture)
 {
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+
   OpenVROverlayUploader *uploader = OPENVR_OVERLAY_UPLOADER (client);
 
-  if (self->texture_width != texture->width ||
-      self->texture_height != texture->height)
+  if (xrd_window->texture_width != texture->width ||
+      xrd_window->texture_height != texture->height)
     {
       float new_xr_width =
         xrd_overlay_window_pixel_to_xr_scale (self, texture->width);
 
       openvr_overlay_set_width_meters (self->overlay, new_xr_width);
 
-      self->texture_width = texture->width;
-      self->texture_height = texture->height;
+      xrd_window->texture_width = texture->width;
+      xrd_window->texture_height = texture->height;
       /* Mouse scale is required for the intersection test */
-      openvr_overlay_set_mouse_scale (self->overlay, self->texture_width,
-                                      self->texture_height);
+      openvr_overlay_set_mouse_scale (self->overlay, xrd_window->texture_width,
+                                      xrd_window->texture_height);
     }
 
   openvr_overlay_uploader_submit_frame(uploader, self->overlay, texture);
@@ -326,41 +334,49 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
 float
 xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel)
 {
-  return (float)pixel / self->ppm * self->scaling_factor;
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  return (float)pixel / xrd_window->ppm * xrd_window->scaling_factor;
 }
 
 gboolean
 xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters)
 {
-  *meters = xrd_overlay_window_pixel_to_xr_scale (self, self->texture_width);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  *meters = xrd_overlay_window_pixel_to_xr_scale (self,
+                                                  xrd_window->texture_width);
   return TRUE;
 }
 
 gboolean
 xrd_overlay_window_get_xr_height (XrdOverlayWindow *self, float *meters)
 {
-  *meters = xrd_overlay_window_pixel_to_xr_scale (self, self->texture_height);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  *meters = xrd_overlay_window_pixel_to_xr_scale (self,
+                                                  xrd_window->texture_height);
   return TRUE;
 }
 
 gboolean
 xrd_overlay_window_get_scaling_factor (XrdOverlayWindow *self, float *factor)
 {
-  *factor = self->scaling_factor;
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+
+  *factor = xrd_window->scaling_factor;
   return TRUE;
 }
 
 gboolean
 xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
 {
-  self->scaling_factor = factor;
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  xrd_window->scaling_factor = factor;
 
   float xr_width =
-      xrd_overlay_window_pixel_to_xr_scale (self, self->texture_width);
+      xrd_overlay_window_pixel_to_xr_scale (self, xrd_window->texture_width);
 
   openvr_overlay_set_width_meters (self->overlay, xr_width);
 
-  if (self->child_window)
+  if (xrd_window->child_window)
     _scale_move_child (self);
 
   return TRUE;
@@ -371,13 +387,15 @@ xrd_overlay_window_add_child (XrdOverlayWindow *self,
                               XrdOverlayWindow *child,
                               graphene_point_t *offset_center)
 {
-  self->child_window = child;
-  graphene_point_init_from_point (&self->child_offset_center, offset_center);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  xrd_window->child_window = XRD_WINDOW (child);
+  graphene_point_init_from_point (&xrd_window->child_offset_center,
+                                  offset_center);
 
   if (child)
     {
       _scale_move_child (self);
-      child->parent_window = self;
+      XRD_WINDOW (child)->parent_window = XRD_WINDOW (self);
     }
 }
 
@@ -470,19 +488,20 @@ xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
 void
 xrd_overlay_window_internal_init (XrdOverlayWindow *self)
 {
-  self->scaling_factor = 1.0;
-  self->child_window = NULL;
-  self->parent_window = NULL;
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  xrd_window->scaling_factor = 1.0;
+  xrd_window->child_window = NULL;
+  xrd_window->parent_window = NULL;
 
   gchar overlay_id_str [25];
   g_sprintf (overlay_id_str, "xrd-window-%d", new_window_index);
 
   float xr_width = xrd_overlay_window_pixel_to_xr_scale (self,
-                                                         self->texture_width);
+                                                         xrd_window->texture_width);
 
   self->overlay = openvr_overlay_new ();
   openvr_overlay_create_width (self->overlay, overlay_id_str,
-                               self->window_title->str, xr_width);
+                               xrd_window->window_title->str, xr_width);
 
   if (!openvr_overlay_is_valid (self->overlay))
   {
@@ -509,12 +528,14 @@ xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native)
 {
   XrdOverlayWindow *self = (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
 
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+
   self->overlay = NULL;
-  self->native = native,
-  self->texture_width = 0;
-  self->texture_height = 0;
-  self->window_title = g_string_new (window_title);
-  self->ppm = ppm;
+  xrd_window->native = native,
+  xrd_window->texture_width = 0;
+  xrd_window->texture_height = 0;
+  xrd_window->window_title = g_string_new (window_title);
+  xrd_window->ppm = ppm;
 
   xrd_overlay_window_internal_init (self);
   return self;
@@ -524,13 +545,20 @@ static void
 xrd_overlay_window_finalize (GObject *gobject)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (gobject);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
 
   if (self->overlay)
     g_object_unref (self->overlay);
 
-  /* TODO: find a better solution */
-  if (self->parent_window)
-    self->parent_window->child_window = NULL;
+  /* TODO: find a better solution to clean up */
+  if (xrd_window->parent_window)
+    xrd_window->parent_window->child_window = NULL;
+
+  /* TODO: a child window should not exist without a parent window anyway,
+   * but it will be cleaned up already because the child window on the desktop
+   * will most likely close already. */
+  if (xrd_window->child_window)
+    xrd_window->child_window->parent_window = NULL;
 
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }

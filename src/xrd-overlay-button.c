@@ -97,17 +97,18 @@ xrd_overlay_button_new (gchar *text)
   XrdOverlayButton *self = (XrdOverlayButton*) g_object_new (XRD_TYPE_OVERLAY_BUTTON, 0);
 
   XrdOverlayWindow *window = XRD_OVERLAY_WINDOW (self);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
 
   int width = 220;
   int height = 120;
 
-  window->ppm = 450;
+  xrd_window->ppm = 450;
 
-  window->texture_width = width;
-  window->texture_height = height;
-  window->window_title = g_string_new (text);
+  xrd_window->texture_width = width;
+  xrd_window->texture_height = height;
+  xrd_window->window_title = g_string_new (text);
 
-  window->native = NULL,
+  xrd_window->native = NULL,
 
   xrd_overlay_window_internal_init (window);
 

@@ -57,7 +57,6 @@ xrd_window_pixel_to_xr_scale (XrdWindow *self, int pixel)
   return klass->xrd_window_pixel_to_xr_scale (self, pixel);
 }
 
-
 gboolean
 xrd_window_get_xr_width (XrdWindow *self, float *meters)
 {

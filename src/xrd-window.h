@@ -144,6 +144,22 @@ GType xrd_window_get_type (void) G_GNUC_CONST;
 struct _XrdWindow
 {
   GObject parent;
+  gpointer      native;
+
+  uint32_t       texture_width;
+  uint32_t       texture_height;
+  GString        *window_title;
+
+  double ppm;
+  double scaling_factor;
+  graphene_matrix_t vr_transform;
+
+  /* A window that is pinned on top of this window and follows this window's
+   * position and scaling */
+  XrdWindow *child_window;
+  XrdWindow *parent_window;
+
+  graphene_point_t child_offset_center;
 };
 
 /*

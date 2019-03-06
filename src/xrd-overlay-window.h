@@ -23,24 +23,8 @@ struct _XrdOverlayWindow
 {
   XrdWindow parent;
 
-  gpointer      native;
   gpointer      overlay;
-  uint32_t       texture_width;
-  uint32_t       texture_height;
-  GString        *window_title;
-
-  double ppm;
-  double scaling_factor;
-
-  graphene_matrix_t vr_transform;
   gboolean       recreate;
-
-  /* A window that is pinned on top of this window and follows this window's
-   * position and scaling */
-  XrdOverlayWindow *child_window;
-  XrdOverlayWindow *parent_window;
-
-  graphene_point_t child_offset_center;
 };
 
 XrdOverlayWindow *
