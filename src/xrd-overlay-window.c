@@ -10,6 +10,7 @@
 #include <glib/gprintf.h>
 #include <openvr-overlay.h>
 #include <openvr-overlay-uploader.h>
+#include "xrd-math.h"
 
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
 
@@ -47,24 +48,6 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
       (void*)xrd_overlay_window_intersection_to_offset_center;
   xrd_window_class->xrd_window_add_child =
       (void*)xrd_overlay_window_add_child;
-}
-
-// TODO: missing in upstream
-/**
- * graphene_point_scale:
- * @p: a #graphene_point_t
- * @factor: the scaling factor
- * @res: (out caller-allocates): return location for the scaled point
- *
- * Scales the coordinates of the given #graphene_point_t by
- * the given @factor.
- */
-void
-graphene_point_scale (const graphene_point_t *p,
-                      float                   factor,
-                      graphene_point_t       *res)
-{
-  graphene_point_init (res, p->x * factor, p->y * factor);
 }
 
 static void
@@ -271,6 +254,8 @@ xrd_overlay_window_constructed (GObject *gobject)
   openvr_overlay_show (self->overlay);
 
   parent_klass->windows_created++;
+
+
 }
 
 static void

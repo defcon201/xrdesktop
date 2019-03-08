@@ -47,4 +47,10 @@ xrd_math_matrix_get_translation_vec (graphene_matrix_t *matrix,
 void
 xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
                                        graphene_point3d_t *point);
+
+void
+graphene_point_scale (const graphene_point_t *p,
+                      float                   factor,
+                      graphene_point_t       *res);
+
 #endif /* XRD_MATH_H_ */
