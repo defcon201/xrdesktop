@@ -114,14 +114,14 @@ _interpolate_cb (gpointer _transition)
     transition->to_scaling * transition->interpolate;
 
   /* TODO interpolate scaling instead of width */
-  xrd_window_set_scaling_factor (window, interpolated_scaling);
+  g_object_set (G_OBJECT(window), "scaling-factor", &interpolated_scaling, NULL);
 
   transition->interpolate += 0.03f;
 
   if (transition->interpolate > 1)
     {
       xrd_window_set_transformation_matrix (window, &transition->to);
-      xrd_window_set_scaling_factor (window, transition->to_scaling);
+      g_object_set (G_OBJECT(window), "scaling-factor", &transition->to_scaling, NULL);
 
       g_object_unref (transition->window);
       g_free (transition);
@@ -161,7 +161,8 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
 
       float *scaling = g_hash_table_lookup (self->reset_scalings, window);
       transition->to_scaling = *scaling;
-      xrd_window_get_scaling_factor (window, &transition->from_scaling);
+
+      g_object_get (G_OBJECT(window), "scaling-factor", &transition->from_scaling, NULL);
 
       if (!xrd_math_matrix_equals (&transition->from, transform))
         {
@@ -239,7 +240,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
           xrd_window_get_transformation_matrix (window, &transition->from);
 
-          xrd_window_get_scaling_factor (window, &transition->from_scaling);
+          g_object_get (G_OBJECT(window), "scaling-factor", &transition->from_scaling, NULL);
 
           if (!xrd_math_matrix_equals (&transition->from, &transform))
             {
@@ -277,7 +278,7 @@ xrd_window_manager_save_reset_transform (XrdWindowManager *self,
   xrd_window_get_transformation_matrix (window, transform);
 
   float *scaling = g_hash_table_lookup (self->reset_scalings, window);
-  xrd_window_get_scaling_factor (window, scaling);
+  g_object_get (G_OBJECT(window), "scaling-factor", scaling, NULL);
 }
 
 gboolean
@@ -342,7 +343,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   g_hash_table_insert (self->reset_transforms, window, transform);
 
   float *scaling = (float*) g_malloc (sizeof (float));
-  xrd_window_get_scaling_factor (window, scaling);
+  g_object_get (G_OBJECT(window), "scaling-factor", scaling, NULL);
   g_hash_table_insert (self->reset_scalings, window, scaling);
 
   g_object_ref (window);
@@ -930,7 +931,7 @@ xrd_window_manager_scale (XrdWindowManager *self,
   (void) self;
 
   float current_factor;
-  xrd_window_get_scaling_factor (grab_state->window, &current_factor);
+  g_object_get (G_OBJECT(grab_state->window), "scaling-factor", &current_factor, NULL);
 
   float new_factor = current_factor + current_factor * factor * (update_rate_ms / 1000.);
   /* Don't make the overlay so small it can not be grabbed anymore */
@@ -941,7 +942,7 @@ xrd_window_manager_scale (XrdWindowManager *self,
                               1 + factor * (update_rate_ms / 1000.),
                               &grab_state->offset_translation_point);
 
-      xrd_window_set_scaling_factor (grab_state->window, new_factor);
+      g_object_set (G_OBJECT(grab_state->window), "scaling-factor", new_factor, NULL);
     }
 }
 

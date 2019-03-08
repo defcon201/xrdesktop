@@ -365,27 +365,6 @@ xrd_window_get_xr_height (XrdWindow *self, float *meters)
   return klass->xrd_window_get_xr_height (self, meters);
 }
 
-gboolean
-xrd_window_get_scaling_factor (XrdWindow *self, float *factor)
-{
-  XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_get_scaling_factor == NULL)
-    {
-      *factor = self->scaling_factor;
-      return TRUE;
-    }
-  return klass->xrd_window_get_scaling_factor (self, factor);
-}
-
-gboolean
-xrd_window_set_scaling_factor (XrdWindow *self, float factor)
-{
-  XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_set_scaling_factor == NULL)
-      return FALSE;
-  return klass->xrd_window_set_scaling_factor (self, factor);
-}
-
 void
 xrd_window_poll_event (XrdWindow *self)
 {

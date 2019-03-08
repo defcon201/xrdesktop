@@ -15,6 +15,29 @@
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
 
 static void
+_scale_move_child (XrdOverlayWindow *self);
+
+static void
+notify_property_scale_changed (GObject *object,
+                               GParamSpec *pspec,
+                               gpointer user_data)
+{
+  (void) pspec;
+  (void) user_data;
+
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (object);
+  XrdWindow *xrd_window = XRD_WINDOW (object);
+
+  float xr_width =
+      xrd_window_pixel_to_xr_scale (xrd_window, xrd_window->texture_width);
+
+  openvr_overlay_set_width_meters (self->overlay, xr_width);
+
+  if (xrd_window->child_window)
+    _scale_move_child (self);
+}
+
+static void
 xrd_overlay_window_finalize (GObject *gobject);
 
 static void
@@ -36,8 +59,6 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
       (void*)xrd_overlay_window_get_transformation_matrix;
   xrd_window_class->xrd_window_submit_texture =
       (void*)xrd_overlay_window_submit_texture;
-  xrd_window_class->xrd_window_set_scaling_factor =
-      (void*)xrd_overlay_window_set_scaling_factor;
   xrd_window_class->xrd_window_poll_event =
       (void*)xrd_overlay_window_poll_event;
   xrd_window_class->xrd_window_intersects =
@@ -57,7 +78,7 @@ _scale_move_child (XrdOverlayWindow *self)
   XrdWindow *xrd_window = XRD_WINDOW (self);
   XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (xrd_window->child_window);
 
-  xrd_overlay_window_set_scaling_factor (child, xrd_window->scaling_factor);
+  g_object_set (G_OBJECT(child), "scaling-factor", xrd_window->scaling_factor, NULL);
 
   graphene_point_t scaled_offset;
   graphene_point_scale (&xrd_window->child_offset_center,
@@ -127,23 +148,6 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
     }
 
   openvr_overlay_uploader_submit_frame(uploader, self->overlay, texture);
-}
-
-gboolean
-xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
-{
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  xrd_window->scaling_factor = factor;
-
-  float xr_width =
-      xrd_window_pixel_to_xr_scale (xrd_window, xrd_window->texture_width);
-
-  openvr_overlay_set_width_meters (self->overlay, xr_width);
-
-  if (xrd_window->child_window)
-    _scale_move_child (self);
-
-  return TRUE;
 }
 
 void
@@ -255,7 +259,11 @@ xrd_overlay_window_constructed (GObject *gobject)
 
   parent_klass->windows_created++;
 
+  g_signal_connect(xrd_window, "notify::scaling-factor",
+                   (GCallback)notify_property_scale_changed, NULL);
 
+  g_signal_connect(xrd_window, "notify::ppm",
+                   (GCallback)notify_property_scale_changed, NULL);
 }
 
 static void

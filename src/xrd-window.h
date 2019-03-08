@@ -81,12 +81,6 @@ struct _XrdWindowClass
   gboolean
   (*xrd_window_get_xr_height) (XrdWindow *self, float *meters);
 
-  gboolean
-  (*xrd_window_get_scaling_factor) (XrdWindow *self, float *factor);
-
-  gboolean
-  (*xrd_window_set_scaling_factor) (XrdWindow *self, float factor);
-
   void
   (*xrd_window_poll_event) (XrdWindow *self);
 
@@ -191,12 +185,6 @@ xrd_window_get_xr_width (XrdWindow *self, float *meters);
 
 gboolean
 xrd_window_get_xr_height (XrdWindow *self, float *meters);
-
-gboolean
-xrd_window_get_scaling_factor (XrdWindow *self, float *factor);
-
-gboolean
-xrd_window_set_scaling_factor (XrdWindow *self, float factor);
 
 void
 xrd_window_poll_event (XrdWindow *self);

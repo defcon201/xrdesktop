@@ -54,9 +54,6 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
                                    GulkanClient *client,
                                    GulkanTexture *texture);
 
-gboolean
-xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor);
-
 void
 xrd_overlay_window_poll_event (XrdOverlayWindow *self);
 
