@@ -155,8 +155,8 @@ struct _XrdWindow
   uint32_t texture_height;
   GString *window_title;
 
-  double ppm;
-  double scaling_factor;
+  float ppm;
+  float scaling_factor;
   graphene_matrix_t vr_transform;
 
   /* A window that is pinned on top of this window and follows this window's

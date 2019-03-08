@@ -6,32 +6,12 @@
  */
 
 #include "xrd-overlay-window.h"
-#include <gdk/gdk.h>
+
 #include <glib/gprintf.h>
 #include <openvr-overlay.h>
 #include <openvr-overlay-uploader.h>
 
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
-
-enum {
-  MOTION_NOTIFY_EVENT,
-  BUTTON_PRESS_EVENT,
-  BUTTON_RELEASE_EVENT,
-  SHOW,
-  DESTROY,
-  SCROLL_EVENT,
-  KEYBOARD_PRESS_EVENT,
-  KEYBOARD_CLOSE_EVENT,
-  GRAB_START_EVENT,
-  GRAB_EVENT,
-  RELEASE_EVENT,
-  HOVER_START_EVENT,
-  HOVER_EVENT,
-  HOVER_END_EVENT,
-  LAST_SIGNAL
-};
-
-static guint window_signals[LAST_SIGNAL] = { 0 };
 
 static void
 xrd_overlay_window_finalize (GObject *gobject);
@@ -42,11 +22,9 @@ xrd_overlay_window_constructed (GObject *gobject);
 static void
 xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
 {
-  /* TODO: parent, not G_OBJECT */
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = xrd_overlay_window_finalize;
   object_class->constructed = xrd_overlay_window_constructed;
-
 
   XrdWindowClass *xrd_window_class = XRD_WINDOW_CLASS (klass);
   /* TODO: void* cast avoids warning about first argument type mismatch.
@@ -67,163 +45,8 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
       (void*)xrd_overlay_window_intersection_to_window_coords;
   xrd_window_class->xrd_window_intersection_to_offset_center =
       (void*)xrd_overlay_window_intersection_to_offset_center;
-  xrd_window_class->xrd_window_emit_grab_start =
-      (void*)xrd_overlay_window_emit_grab_start;
-  xrd_window_class->xrd_window_emit_grab =
-      (void*)xrd_overlay_window_emit_grab;
-  xrd_window_class->xrd_window_emit_release =
-      (void*)xrd_overlay_window_emit_release;
-  xrd_window_class->xrd_window_emit_hover_end =
-      (void*)xrd_overlay_window_emit_hover_end;
-  xrd_window_class->xrd_window_emit_hover =
-      (void*)xrd_overlay_window_emit_hover;
-  xrd_window_class->xrd_window_emit_hover_start =
-      (void*)xrd_overlay_window_emit_hover_start;
   xrd_window_class->xrd_window_add_child =
       (void*)xrd_overlay_window_add_child;
-
-  window_signals[MOTION_NOTIFY_EVENT] =
-    g_signal_new ("motion-notify-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE,
-                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[BUTTON_PRESS_EVENT] =
-    g_signal_new ("button-press-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE,
-                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[BUTTON_RELEASE_EVENT] =
-    g_signal_new ("button-release-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE,
-                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[SHOW] =
-    g_signal_new ("show",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_FIRST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE, 0);
-
-  window_signals[DESTROY] =
-    g_signal_new ("destroy",
-                   G_TYPE_FROM_CLASS (klass),
-                     G_SIGNAL_RUN_CLEANUP |
-                      G_SIGNAL_NO_RECURSE |
-                      G_SIGNAL_NO_HOOKS,
-                   0, NULL, NULL, NULL, G_TYPE_NONE, 0);
-
-  window_signals[SCROLL_EVENT] =
-    g_signal_new ("scroll-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[KEYBOARD_PRESS_EVENT] =
-    g_signal_new ("keyboard-press-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[KEYBOARD_CLOSE_EVENT] =
-    g_signal_new ("keyboard-close-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_FIRST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE, 0);
-
-  window_signals[GRAB_START_EVENT] =
-    g_signal_new ("grab-start-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_FIRST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[GRAB_EVENT] =
-    g_signal_new ("grab-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_FIRST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  window_signals[RELEASE_EVENT] =
-    g_signal_new ("release-event",
-                  G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_FIRST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-  window_signals[HOVER_END_EVENT] =
-    g_signal_new ("hover-end-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-  window_signals[HOVER_EVENT] =
-    g_signal_new ("hover-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-  window_signals[HOVER_START_EVENT] =
-    g_signal_new ("hover-start-event",
-                  G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_LAST,
-                  0, NULL, NULL, NULL, G_TYPE_NONE,
-                  1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-}
-void
-_grab_start_cb (gpointer overlay,
-                gpointer event,
-                gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[GRAB_START_EVENT], 0, event);
-}
-
-void
-_grab_cb (gpointer overlay,
-          gpointer event,
-          gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[GRAB_EVENT], 0, event);
-}
-void
-_release_cb (gpointer overlay,
-             gpointer event,
-             gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[RELEASE_EVENT], 0, event);
-}
-void
-_hover_end_cb (gpointer overlay,
-               gpointer event,
-               gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[HOVER_END_EVENT], 0, event);
-}
-void
-_hover_cb (gpointer overlay,
-           gpointer event,
-           gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[HOVER_EVENT], 0, event);
-}
-void
-_hover_start_cb (gpointer overlay,
-                 gpointer event,
-                 gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[HOVER_START_EVENT], 0, event);
 }
 
 // TODO: missing in upstream
@@ -400,49 +223,6 @@ xrd_overlay_window_intersection_to_offset_center (XrdOverlayWindow *self,
   return res;
 }
 
-
-void
-xrd_overlay_window_emit_grab_start (XrdOverlayWindow *self,
-                                    XrdControllerIndexEvent *event)
-{
-  g_signal_emit (self, window_signals[GRAB_START_EVENT], 0, event);
-}
-
-void
-xrd_overlay_window_emit_grab (XrdOverlayWindow *self,
-                              XrdGrabEvent *event)
-{
-  g_signal_emit (self, window_signals[GRAB_EVENT], 0, event);
-}
-
-void
-xrd_overlay_window_emit_release (XrdOverlayWindow *self,
-                                 XrdControllerIndexEvent *event)
-{
-  g_signal_emit (self, window_signals[RELEASE_EVENT], 0, event);
-}
-
-void
-xrd_overlay_window_emit_hover_end (XrdOverlayWindow *self,
-                                   XrdControllerIndexEvent *event)
-{
-  g_signal_emit (self, window_signals[HOVER_END_EVENT], 0, event);
-}
-
-void
-xrd_overlay_window_emit_hover (XrdOverlayWindow    *self,
-                               XrdHoverEvent *event)
-{
-  g_signal_emit (self, window_signals[HOVER_EVENT], 0, event);
-}
-
-void
-xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
-                                     XrdControllerIndexEvent *event)
-{
-  g_signal_emit (self, window_signals[HOVER_START_EVENT], 0, event);
-}
-
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
@@ -458,13 +238,9 @@ xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native)
   XrdOverlayWindow *self =
       (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW,
                                         "window-title", window_title,
+                                        "ppm", ppm,
+                                        "native", native,
                                          NULL);
-
-
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  xrd_window->ppm = ppm;
-  xrd_window->native = native;
-
   return self;
 }
 

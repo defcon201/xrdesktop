@@ -76,31 +76,6 @@ xrd_overlay_window_intersection_to_offset_center (XrdOverlayWindow *self,
                                                   graphene_point3d_t *intersection_point,
                                                   graphene_point_t   *offset_center);
 
-
-void
-xrd_overlay_window_emit_grab_start (XrdOverlayWindow *self,
-                                    XrdControllerIndexEvent *event);
-
-void
-xrd_overlay_window_emit_grab (XrdOverlayWindow *self,
-                              XrdGrabEvent *event);
-
-void
-xrd_overlay_window_emit_release (XrdOverlayWindow *self,
-                                 XrdControllerIndexEvent *event);
-
-void
-xrd_overlay_window_emit_hover_end (XrdOverlayWindow *self,
-                                   XrdControllerIndexEvent *event);
-
-void
-xrd_overlay_window_emit_hover (XrdOverlayWindow    *self,
-                               XrdHoverEvent *event);
-
-void
-xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
-                                     XrdControllerIndexEvent *event);
-
 void
 xrd_overlay_window_add_child (XrdOverlayWindow *self,
                               XrdOverlayWindow *child,
