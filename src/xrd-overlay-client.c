@@ -234,14 +234,34 @@ _window_grab_cb (XrdOverlayWindow *window,
   g_free (event);
 }
 
+/* TODO: class hierarchie*/
 void
-_button_hover_cb (XrdOverlayButton *button,
-                  XrdHoverEvent    *event,
-                  gpointer          _self)
+xrd_window_unmark (XrdWindow *self)
+{
+  graphene_vec3_t unmarked_color;
+  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
+  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (self)->overlay;
+  openvr_overlay_set_color (overlay, &unmarked_color);
+}
+
+void
+xrd_window_mark_color (XrdWindow *self, float r, float g, float b)
+{
+  graphene_vec3_t marked_color;
+  //graphene_vec3_init (&marked_color, .8f, .4f, .2f);
+  graphene_vec3_init (&marked_color, r, g, b);
+  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (self)->overlay;
+  openvr_overlay_set_color (overlay, &marked_color);
+}
+
+void
+_button_hover_cb (XrdWindow     *window,
+                  XrdHoverEvent *event,
+                  gpointer       _self)
 {
   XrdOverlayClient *self = _self;
 
-  xrd_overlay_button_mark_color (button, .8f, .4f, .2f);
+  xrd_window_mark_color (window, .8f, .4f, .2f);
 
   XrdOverlayPointer *pointer =
       self->pointer_ray[event->controller_index];
@@ -250,8 +270,7 @@ _button_hover_cb (XrdOverlayButton *button,
 
   /* update pointer length and intersection overlay */
   graphene_matrix_t window_pose;
-  xrd_overlay_window_get_transformation_matrix (XRD_OVERLAY_WINDOW (button),
-                                                &window_pose);
+  xrd_window_get_transformation_matrix (window, &window_pose);
 
   xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
   xrd_overlay_pointer_set_length (pointer, event->distance);
@@ -260,7 +279,7 @@ _button_hover_cb (XrdOverlayButton *button,
 }
 
 void
-_window_hover_end_cb (XrdOverlayWindow        *window,
+_window_hover_end_cb (XrdWindow               *window,
                       XrdControllerIndexEvent *event,
                       gpointer                 _self)
 {
@@ -287,7 +306,7 @@ _window_hover_end_cb (XrdOverlayWindow        *window,
 }
 
 void
-_button_hover_end_cb (XrdOverlayButton        *button,
+_button_hover_end_cb (XrdWindow               *window,
                       XrdControllerIndexEvent *event,
                       gpointer                 _self)
 {
@@ -295,16 +314,81 @@ _button_hover_end_cb (XrdOverlayButton        *button,
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
 
   /* unmark if no controller is hovering over this overlay */
-  if (!xrd_window_manager_is_hovered (self->manager, XRD_WINDOW (button)))
-    xrd_overlay_button_unmark (button);
+  if (!xrd_window_manager_is_hovered (self->manager, window))
+    xrd_window_unmark (window);
 
-  _window_hover_end_cb (XRD_OVERLAY_WINDOW (button), event, _self);
+  _window_hover_end_cb (window, event, _self);
 }
 
 /* 3DUI buttons */
+
+static cairo_surface_t*
+_create_cairo_surface (unsigned char *image, uint32_t width,
+                       uint32_t height, const gchar *text)
+{
+  cairo_surface_t *surface =
+    cairo_image_surface_create_for_data (image,
+                                         CAIRO_FORMAT_ARGB32,
+                                         width, height,
+                                         width * 4);
+
+  cairo_t *cr = cairo_create (surface);
+
+  cairo_rectangle (cr, 0, 0, width, height);
+  cairo_set_source_rgba (cr, 1, 1, 1, 1);
+  cairo_fill (cr);
+
+  double r0;
+  if (width < height)
+    r0 = (double) width / 3.0;
+  else
+    r0 = (double) height / 3.0;
+
+  double radius = r0 * 4.0;
+  double r1 = r0 * 5.0;
+
+  double center_x = (double) width / 2.0;
+  double center_y = (double) height / 2.0;
+
+  double cx0 = center_x - r0 / 2.0;
+  double cy0 = center_y - r0;
+  double cx1 = center_x - r0;
+  double cy1 = center_y - r0;
+
+  cairo_pattern_t *pat = cairo_pattern_create_radial (cx0, cy0, r0,
+                                                      cx1, cy1, r1);
+  cairo_pattern_add_color_stop_rgba (pat, 0, .3, .3, .3, 1);
+  cairo_pattern_add_color_stop_rgba (pat, 1, 0, 0, 0, 1);
+  cairo_set_source (cr, pat);
+  cairo_arc (cr, center_x, center_y, radius, 0, 2 * M_PI);
+  cairo_fill (cr);
+  cairo_pattern_destroy (pat);
+
+  cairo_select_font_face (cr, "Sans",
+      CAIRO_FONT_SLANT_NORMAL,
+      CAIRO_FONT_WEIGHT_NORMAL);
+
+  float font_size = 52.0;
+
+  cairo_set_font_size (cr, font_size);
+
+  cairo_text_extents_t extents;
+  cairo_text_extents (cr, text, &extents);
+
+  cairo_move_to (cr,
+                 center_x - extents.width / 2,
+                 center_y  - extents.height / 2 + extents.height / 2);
+  cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
+  cairo_show_text (cr, text);
+
+  cairo_destroy (cr);
+
+  return surface;
+}
+
 gboolean
 _init_button (XrdOverlayClient   *self,
-              XrdOverlayButton  **button,
+              XrdWindow         **button,
               gchar              *label,
               graphene_point3d_t *position,
               GCallback           callback)
@@ -312,21 +396,41 @@ _init_button (XrdOverlayClient   *self,
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, position);
 
-  *button = xrd_overlay_button_new (label);
-  if (*button == NULL)
+
+  int width = 220;
+  int height = 120;
+
+  int ppm = 450;
+
+  unsigned char image[4 * width * height];
+  cairo_surface_t* surface =
+      _create_cairo_surface (image, width, height, label);
+
+  GulkanClient *client = GULKAN_CLIENT (self->uploader);
+  GulkanTexture *texture = gulkan_texture_new_from_cairo_surface (client->device, surface, VK_FORMAT_R8G8B8A8_UNORM);
+  gulkan_client_upload_cairo_surface (client, texture, surface);
+
+  XrdOverlayWindow *overlay_window = xrd_overlay_window_new (label, ppm, NULL);
+  if (overlay_window == NULL)
     return FALSE;
 
-  XrdOverlayWindow *window = XRD_OVERLAY_WINDOW (*button);
+  xrd_overlay_window_submit_texture (overlay_window, client, texture);
 
-  xrd_overlay_window_set_transformation_matrix (window, &transform);
+  *button = XRD_WINDOW (overlay_window);
+
+  xrd_overlay_window_set_transformation_matrix (overlay_window, &transform);
 
   xrd_window_manager_add_window (self->manager,
                                  XRD_WINDOW (*button),
                                  XRD_WINDOW_HOVERABLE);
 
-  g_signal_connect (window, "grab-start-event", (GCallback) callback, self);
-  g_signal_connect (window, "hover-event", (GCallback) _button_hover_cb, self);
-  g_signal_connect (window, "hover-end-event",
+  g_signal_connect (overlay_window, "grab-start-event",
+                    (GCallback) callback, self);
+
+  g_signal_connect (overlay_window, "hover-event",
+                    (GCallback) _button_hover_cb, self);
+
+  g_signal_connect (overlay_window, "hover-end-event",
                     (GCallback)_button_hover_end_cb, self);
 
   return TRUE;

@@ -137,6 +137,11 @@ struct _XrdWindowClass
 
   void
   (*xrd_window_internal_init) (XrdWindow *self);
+
+  void
+  (*constructed) (GObject *object);
+
+  guint windows_created;
 };
 
 GType xrd_window_get_type (void) G_GNUC_CONST;
@@ -144,11 +149,11 @@ GType xrd_window_get_type (void) G_GNUC_CONST;
 struct _XrdWindow
 {
   GObject parent;
-  gpointer      native;
+  gpointer native;
 
-  uint32_t       texture_width;
-  uint32_t       texture_height;
-  GString        *window_title;
+  uint32_t texture_width;
+  uint32_t texture_height;
+  GString *window_title;
 
   double ppm;
   double scaling_factor;
@@ -241,12 +246,6 @@ void
 xrd_window_add_child (XrdWindow *self,
                       XrdWindow *child,
                       graphene_point_t *offset_center);
-
-
-/* TODO: this is a stopgap solution for so children can init a window.
- * Pretty sure there's a more glib like solution. */
-void
-xrd_window_internal_init (XrdWindow *self);
 
 G_END_DECLS
 

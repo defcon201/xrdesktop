@@ -16,7 +16,6 @@
 #include "xrd-overlay-pointer.h"
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"
-#include "xrd-overlay-button.h"
 #include "xrd-input-synth.h"
 
 G_BEGIN_DECLS
@@ -45,8 +44,8 @@ struct _XrdOverlayClient
   XrdClientController left;
   XrdClientController right;
 
-  XrdOverlayButton *button_reset;
-  XrdOverlayButton *button_sphere;
+  XrdWindow *button_reset;
+  XrdWindow *button_sphere;
 
   OpenVROverlayUploader *uploader;
 

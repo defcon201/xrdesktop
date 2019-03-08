@@ -33,16 +33,19 @@ enum {
 
 static guint window_signals[LAST_SIGNAL] = { 0 };
 
-static guint new_window_index = 0;
-
 static void
 xrd_overlay_window_finalize (GObject *gobject);
 
 static void
+xrd_overlay_window_constructed (GObject *gobject);
+
+static void
 xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
 {
+  /* TODO: parent, not G_OBJECT */
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = xrd_overlay_window_finalize;
+  object_class->constructed = xrd_overlay_window_constructed;
 
 
   XrdWindowClass *xrd_window_class = XRD_WINDOW_CLASS (klass);
@@ -54,14 +57,6 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
       (void*)xrd_overlay_window_get_transformation_matrix;
   xrd_window_class->xrd_window_submit_texture =
       (void*)xrd_overlay_window_submit_texture;
-  xrd_window_class->xrd_window_pixel_to_xr_scale =
-      (void*)xrd_overlay_window_pixel_to_xr_scale;
-  xrd_window_class->xrd_window_get_xr_width =
-      (void*)xrd_overlay_window_get_xr_width;
-  xrd_window_class->xrd_window_get_xr_height =
-      (void*)xrd_overlay_window_get_xr_height;
-  xrd_window_class->xrd_window_get_scaling_factor =
-      (void*)xrd_overlay_window_get_scaling_factor;
   xrd_window_class->xrd_window_set_scaling_factor =
       (void*)xrd_overlay_window_set_scaling_factor;
   xrd_window_class->xrd_window_poll_event =
@@ -86,8 +81,6 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
       (void*)xrd_overlay_window_emit_hover_start;
   xrd_window_class->xrd_window_add_child =
       (void*)xrd_overlay_window_add_child;
-  xrd_window_class->xrd_window_internal_init =
-      (void*)xrd_overlay_window_internal_init;
 
   window_signals[MOTION_NOTIFY_EVENT] =
     g_signal_new ("motion-notify-event",
@@ -316,7 +309,7 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
       xrd_window->texture_height != texture->height)
     {
       float new_xr_width =
-        xrd_overlay_window_pixel_to_xr_scale (self, texture->width);
+        xrd_window_pixel_to_xr_scale (xrd_window, texture->width);
 
       openvr_overlay_set_width_meters (self->overlay, new_xr_width);
 
@@ -330,41 +323,6 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
   openvr_overlay_uploader_submit_frame(uploader, self->overlay, texture);
 }
 
-/* according to current ppm and scaling factor */
-float
-xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel)
-{
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  return (float)pixel / xrd_window->ppm * xrd_window->scaling_factor;
-}
-
-gboolean
-xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters)
-{
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  *meters = xrd_overlay_window_pixel_to_xr_scale (self,
-                                                  xrd_window->texture_width);
-  return TRUE;
-}
-
-gboolean
-xrd_overlay_window_get_xr_height (XrdOverlayWindow *self, float *meters)
-{
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  *meters = xrd_overlay_window_pixel_to_xr_scale (self,
-                                                  xrd_window->texture_height);
-  return TRUE;
-}
-
-gboolean
-xrd_overlay_window_get_scaling_factor (XrdOverlayWindow *self, float *factor)
-{
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-
-  *factor = xrd_window->scaling_factor;
-  return TRUE;
-}
-
 gboolean
 xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
 {
@@ -372,7 +330,7 @@ xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor)
   xrd_window->scaling_factor = factor;
 
   float xr_width =
-      xrd_overlay_window_pixel_to_xr_scale (self, xrd_window->texture_width);
+      xrd_window_pixel_to_xr_scale (xrd_window, xrd_window->texture_width);
 
   openvr_overlay_set_width_meters (self->overlay, xr_width);
 
@@ -485,35 +443,6 @@ xrd_overlay_window_emit_hover_start (XrdOverlayWindow *self,
   g_signal_emit (self, window_signals[HOVER_START_EVENT], 0, event);
 }
 
-void
-xrd_overlay_window_internal_init (XrdOverlayWindow *self)
-{
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  xrd_window->scaling_factor = 1.0;
-  xrd_window->child_window = NULL;
-  xrd_window->parent_window = NULL;
-
-  gchar overlay_id_str [25];
-  g_sprintf (overlay_id_str, "xrd-window-%d", new_window_index);
-
-  float xr_width = xrd_overlay_window_pixel_to_xr_scale (self,
-                                                         xrd_window->texture_width);
-
-  self->overlay = openvr_overlay_new ();
-  openvr_overlay_create_width (self->overlay, overlay_id_str,
-                               xrd_window->window_title->str, xr_width);
-
-  if (!openvr_overlay_is_valid (self->overlay))
-  {
-    g_printerr ("Overlay unavailable.\n");
-    return;
-  }
-
-  openvr_overlay_show (self->overlay);
-
-  new_window_index++;
-}
-
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
@@ -526,19 +455,46 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
 XrdOverlayWindow *
 xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native)
 {
-  XrdOverlayWindow *self = (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, 0);
+  XrdOverlayWindow *self =
+      (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW,
+                                        "window-title", window_title,
+                                         NULL);
+
 
   XrdWindow *xrd_window = XRD_WINDOW (self);
-
-  self->overlay = NULL;
-  xrd_window->native = native,
-  xrd_window->texture_width = 0;
-  xrd_window->texture_height = 0;
-  xrd_window->window_title = g_string_new (window_title);
   xrd_window->ppm = ppm;
+  xrd_window->native = native;
 
-  xrd_overlay_window_internal_init (self);
   return self;
+}
+
+static void
+xrd_overlay_window_constructed (GObject *gobject)
+{
+  G_OBJECT_CLASS (xrd_overlay_window_parent_class)->constructed (gobject);
+
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (gobject);
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+  XrdWindowClass *parent_klass = XRD_WINDOW_GET_CLASS (xrd_window);
+
+  gchar overlay_id_str [25];
+  g_sprintf (overlay_id_str, "xrd-window-%d", parent_klass->windows_created);
+
+  self->overlay = openvr_overlay_new ();
+  openvr_overlay_create (self->overlay, overlay_id_str,
+                         xrd_window->window_title->str);
+
+  /* g_print ("Created overlay %s\n", overlay_id_str); */
+
+  if (!openvr_overlay_is_valid (self->overlay))
+  {
+    g_printerr ("Overlay unavailable.\n");
+    return;
+  }
+
+  openvr_overlay_show (self->overlay);
+
+  parent_klass->windows_created++;
 }
 
 static void

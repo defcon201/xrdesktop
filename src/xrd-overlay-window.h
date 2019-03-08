@@ -54,18 +54,6 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
                                    GulkanClient *client,
                                    GulkanTexture *texture);
 
-float
-xrd_overlay_window_pixel_to_xr_scale (XrdOverlayWindow *self, int pixel);
-
-gboolean
-xrd_overlay_window_get_xr_width (XrdOverlayWindow *self, float *meters);
-
-gboolean
-xrd_overlay_window_get_xr_height (XrdOverlayWindow *self, float *meters);
-
-gboolean
-xrd_overlay_window_get_scaling_factor (XrdOverlayWindow *self, float *factor);
-
 gboolean
 xrd_overlay_window_set_scaling_factor (XrdOverlayWindow *self, float factor);
 
@@ -117,12 +105,6 @@ void
 xrd_overlay_window_add_child (XrdOverlayWindow *self,
                               XrdOverlayWindow *child,
                               graphene_point_t *offset_center);
-
-
-/* TODO: this is a stopgap solution for so children can init a window.
- * Pretty sure there's a more glib like solution. */
-void
-xrd_overlay_window_internal_init (XrdOverlayWindow *self);
 
 G_END_DECLS
 
