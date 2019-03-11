@@ -176,21 +176,28 @@ _action_grab_cb (OpenVRAction        *action,
 
 static void
 _action_rotate_cb (OpenVRAction        *action,
-                   OpenVRDigitalEvent  *event,
+                   OpenVRAnalogEvent  *event,
                    XrdClientController *controller)
 {
   (void) action;
   XrdOverlayClient *self = controller->self;
   GrabState *grab_state = &self->manager->grab_state[controller->index];
-  if (event->state == 1 && grab_state->window != NULL)
+
+  float force = graphene_vec3_get_x (&event->state);
+
+  /* Start rotating when pressed with some force, not just touched. */
+  float threshold = 0.5;
+  float slerp_factor = .05 * (((force - threshold) / (1 - threshold)));
+
+  if (force > threshold && grab_state->window != NULL)
     {
       graphene_quaternion_t id;
       graphene_quaternion_init_identity (&id);
       graphene_quaternion_slerp (&grab_state->window_transformed_rotation_neg,
-                                 &id, 0.05,
+                                 &id, slerp_factor,
                                  &grab_state->window_transformed_rotation_neg);
       graphene_quaternion_slerp (&grab_state->window_rotation,
-                                 &id, 0.05,
+                                 &id, slerp_factor,
                                  &grab_state->window_rotation);
     }
   g_free (event);
@@ -852,10 +859,10 @@ xrd_overlay_client_init (XrdOverlayClient *self)
                              "/actions/wm/in/grab_window_right",
                              (GCallback) _action_grab_cb, &self->right);
 
-  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_DIGITAL,
+  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/rotate_window_left",
                              (GCallback) _action_rotate_cb, &self->left);
-  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_DIGITAL,
+  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/rotate_window_right",
                              (GCallback) _action_rotate_cb, &self->right);
 

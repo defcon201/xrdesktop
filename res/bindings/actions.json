@@ -20,11 +20,11 @@
       },
       {
          "name":"/actions/wm/in/rotate_window_left",
-         "type":"boolean"
+         "type":"vector1"
       },
       {
          "name":"/actions/wm/in/rotate_window_right",
-         "type":"boolean"
+         "type":"vector1"
       },
       {
          "name":"/actions/wm/in/show_keyboard_left",

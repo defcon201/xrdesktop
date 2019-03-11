@@ -97,9 +97,9 @@
             },
             {
                "path": "/user/hand/right/input/grip",
-               "mode": "button",
+               "mode": "force_sensor",
                "inputs": {
-                  "click": {
+                  "force": {
                      "output": "/actions/wm/in/rotate_window_right"
                   }
                }
@@ -127,9 +127,9 @@
             },
             {
                "path": "/user/hand/left/input/grip",
-               "mode": "button",
+               "mode": "force_sensor",
                "inputs": {
-                  "click": {
+                  "force": {
                      "output": "/actions/wm/in/rotate_window_left"
                   }
                }
