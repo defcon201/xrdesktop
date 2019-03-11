@@ -389,6 +389,8 @@ xrd_overlay_pointer_tip_finalize (GObject *gobject)
   g_object_unref (self->uploader);
   if (self->texture)
     g_object_unref (self->texture);
+
+  G_OBJECT_CLASS (xrd_overlay_pointer_tip_parent_class)->finalize (gobject);
 }
 
 /* TODO: scene app needs device poses too. Put in openvr_system? */

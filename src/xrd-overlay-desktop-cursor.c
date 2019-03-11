@@ -295,6 +295,7 @@ static void
 xrd_overlay_desktop_cursor_finalize (GObject *gobject)
 {
   XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (gobject);
+  openvr_overlay_destroy (OPENVR_OVERLAY (self));
   if (self->pixbuf)
     g_object_unref (self->pixbuf);
   if (self->texture)

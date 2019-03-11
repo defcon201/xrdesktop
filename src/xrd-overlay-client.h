@@ -23,7 +23,7 @@ G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_CLIENT xrd_overlay_client_get_type()
 G_DECLARE_FINAL_TYPE (XrdOverlayClient, xrd_overlay_client,
-                      XRD, OVERLAY_CLIENT, GObject)
+                      XRD, OVERLAY_CLIENT, XrdWindow)
 
 typedef struct XrdClientController
 {
@@ -47,6 +47,13 @@ void
 xrd_overlay_client_remove_window (XrdOverlayClient *self,
                                   XrdOverlayWindow *window);
 
+gboolean
+xrd_overlay_client_add_button (XrdOverlayClient   *self,
+                               XrdWindow         **button,
+                               gchar              *label,
+                               graphene_point3d_t *position,
+                               GCallback           press_callback,
+                               gpointer            press_callback_data);
 GulkanClient *
 xrd_overlay_client_get_uploader (XrdOverlayClient *self);
 

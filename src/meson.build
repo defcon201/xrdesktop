@@ -23,6 +23,7 @@ xrdesktop_sources = [
   'xrd-scene-vector.c',
   'xrd-settings.c',
   'xrd-input-synth.c',
+  'xrd-client.c',
   'xrd-math.c',
   'graphene-ext.c',
   binding_resources
@@ -50,6 +51,7 @@ xrdesktop_headers = [
   'xrd-scene-vector.h',
   'xrd-settings.h',
   'xrd-input-synth.h',
+  'xrd-client.h',
   'xrd-math.h',
   'graphene-ext.h',
 ]

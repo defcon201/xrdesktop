@@ -99,6 +99,7 @@ xrd_overlay_model_finalize (GObject *gobject)
 {
   XrdOverlayModel *self = XRD_OVERLAY_MODEL (gobject);
   (void) self;
+  G_OBJECT_CLASS (xrd_overlay_model_parent_class)->finalize (gobject);
 }
 
 /*

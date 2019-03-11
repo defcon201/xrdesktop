@@ -13,6 +13,7 @@
 #include "xrd-settings.h"
 #include <openvr-math.h>
 #include "xrd-math.h"
+#include "xrd-client.h"
 #include "graphene-ext.h"
 
 struct _XrdOverlayClient
@@ -56,16 +57,7 @@ struct _XrdOverlayClient
   XrdOverlayDesktopCursor *cursor;
 };
 
-G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, G_TYPE_OBJECT)
-
-enum {
-  KEYBOARD_PRESS_EVENT,
-  CLICK_EVENT,
-  MOVE_CURSOR_EVENT,
-  REQUEST_QUIT_EVENT,
-  LAST_SIGNAL
-};
-static guint signals[LAST_SIGNAL] = { 0 };
+G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, XRD_TYPE_CLIENT)
 
 static void
 xrd_overlay_client_finalize (GObject *gobject);
@@ -77,32 +69,19 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
 
   object_class->finalize = xrd_overlay_client_finalize;
 
-  signals[KEYBOARD_PRESS_EVENT] =
-    g_signal_new ("keyboard-press-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE,
-                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  signals[CLICK_EVENT] =
-    g_signal_new ("click-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE,
-                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  signals[MOVE_CURSOR_EVENT] =
-    g_signal_new ("move-cursor-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE,
-                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
-
-  signals[REQUEST_QUIT_EVENT] =
-    g_signal_new ("request-quit-event",
-                   G_TYPE_FROM_CLASS (klass),
-                   G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE, 0, 0);
+  XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
+  xrd_client_class->add_window =
+      (void*) xrd_overlay_client_add_window;
+  xrd_client_class->add_button =
+      (void*) xrd_overlay_client_add_button;
+  xrd_client_class->remove_window =
+      (void*) xrd_overlay_client_remove_window;
+  xrd_client_class->save_reset_transform =
+      (void*) xrd_overlay_client_save_reset_transform;
+  xrd_client_class->get_keyboard_window =
+      (void*) xrd_overlay_client_get_keyboard_window;
+  xrd_client_class->get_uploader =
+      (void*) xrd_overlay_client_get_uploader;
 }
 
 XrdOverlayClient *
@@ -130,13 +109,18 @@ xrd_overlay_client_finalize (GObject *gobject)
 
   g_object_unref (self->manager);
 
+  /* disabling scene client does not mean we shut down VR */
+  /*
   g_object_unref (self->context);
   self->context = NULL;
+  */
 
   /* Uploader needs to be freed after context! */
   g_object_unref (self->uploader);
 
   xrd_settings_destroy_instance ();
+
+  G_OBJECT_CLASS (xrd_overlay_client_parent_class)->finalize (gobject);
 }
 
 GulkanClient *
@@ -470,11 +454,12 @@ _create_cairo_surface (unsigned char *image, uint32_t width,
 }
 
 gboolean
-_init_button (XrdOverlayClient   *self,
-              XrdWindow         **button,
-              gchar              *label,
-              graphene_point3d_t *position,
-              GCallback           callback)
+xrd_overlay_client_add_button (XrdOverlayClient   *self,
+                               XrdWindow         **button,
+                               gchar              *label,
+                               graphene_point3d_t *position,
+                               GCallback           press_callback,
+                               gpointer            press_callback_data)
 {
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, position);
@@ -505,10 +490,11 @@ _init_button (XrdOverlayClient   *self,
 
   xrd_window_manager_add_window (self->manager,
                                  XRD_WINDOW (*button),
-                                 XRD_WINDOW_HOVERABLE);
+                                 XRD_WINDOW_HOVERABLE |
+                                 XRD_WINDOW_DESTROY_WITH_PARENT);
 
   g_signal_connect (overlay_window, "grab-start-event",
-                    (GCallback) callback, self);
+                    (GCallback) press_callback, press_callback_data);
 
   g_signal_connect (overlay_window, "hover-event",
                     (GCallback) _button_hover_cb, self);
@@ -552,8 +538,10 @@ _init_buttons (XrdOverlayClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
-  if (!_init_button (self, &self->button_reset, "Reset", &position_reset,
-                     (GCallback) _button_reset_press_cb))
+  if (!xrd_overlay_client_add_button (self, &self->button_reset, "Reset",
+                                      &position_reset,
+                                      (GCallback) _button_reset_press_cb,
+                                      self))
     return FALSE;
 
   float reset_width_meter;
@@ -567,8 +555,10 @@ _init_buttons (XrdOverlayClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
-  if (!_init_button (self, &self->button_sphere, "Sphere", &position_sphere,
-                     (GCallback) _button_sphere_press_cb))
+  if (!xrd_overlay_client_add_button (self, &self->button_sphere, "Sphere",
+                                      &position_sphere,
+                                      (GCallback) _button_sphere_press_cb,
+                                      self))
     return FALSE;
 
   return TRUE;
@@ -580,7 +570,7 @@ _keyboard_press_cb (OpenVRContext    *context,
                     XrdOverlayClient *self)
 {
   (void) context;
-  g_signal_emit (self, signals[KEYBOARD_PRESS_EVENT], 0, event);
+  xrd_client_emit_keyboard_press (XRD_CLIENT (self), event);
 }
 
 static void
@@ -812,7 +802,7 @@ _synth_click_cb (XrdInputSynth    *synth,
   if (self->hover_window[event->controller_index])
     {
       event->window = self->hover_window[event->controller_index];
-      g_signal_emit (self, signals[CLICK_EVENT], 0, event);
+      xrd_client_emit_click (XRD_CLIENT (self), event);
 
       if (event->button == 1)
         {
@@ -835,7 +825,7 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
                        XrdOverlayClient   *self)
 {
   (void) synth;
-  g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
+  xrd_client_emit_move_cursor (XRD_CLIENT (self), event);
 }
 
 static void _system_quit_cb (OpenVRContext *context,
@@ -845,7 +835,7 @@ static void _system_quit_cb (OpenVRContext *context,
   (void) event;
   /* g_print("Handling VR quit event\n"); */
   openvr_context_acknowledge_quit (context);
-  g_signal_emit (self, signals[REQUEST_QUIT_EVENT], 0);
+  xrd_client_emit_system_quit (XRD_CLIENT (self), event);
 }
 
 static void

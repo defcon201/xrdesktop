@@ -78,6 +78,7 @@ xrd_overlay_pointer_finalize (GObject *gobject)
 {
   XrdOverlayPointer *self = XRD_OVERLAY_POINTER (gobject);
   (void) self;
+  G_OBJECT_CLASS (xrd_overlay_pointer_parent_class)->finalize (gobject);
 }
 
 void
