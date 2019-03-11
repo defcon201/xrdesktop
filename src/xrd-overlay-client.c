@@ -534,8 +534,7 @@ _action_show_keyboard_cb (OpenVRAction       *action,
       /* TODO: Perhaps there is a better way to get the window that should
                receive keyboard input */
       int controller = self->input_synth->synthing_controller_index;
-      self->keyboard_window =
-          XRD_OVERLAY_WINDOW (self->manager->hover_state[controller].window);
+      self->keyboard_window = self->manager->hover_state[controller].window;
 
       self->keyboard_press_signal =
           g_signal_connect (context, "keyboard-press-event",
@@ -547,7 +546,7 @@ _action_show_keyboard_cb (OpenVRAction       *action,
 }
 
 void
-_window_hover_cb (XrdOverlayWindow *window,
+_window_hover_cb (XrdWindow *window,
                   XrdHoverEvent    *event,
                   XrdOverlayClient *self)
 {
@@ -556,7 +555,7 @@ _window_hover_cb (XrdOverlayWindow *window,
     self->pointer_tip[event->controller_index];
 
   graphene_matrix_t window_pose;
-  xrd_overlay_window_get_transformation_matrix (window, &window_pose);
+  xrd_window_get_transformation_matrix (window, &window_pose);
   xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
 
   XrdOverlayPointer *pointer = self->pointer_ray[event->controller_index];
@@ -568,7 +567,9 @@ _window_hover_cb (XrdOverlayWindow *window,
       xrd_input_synth_synthing_controller (self->input_synth))
     {
       xrd_input_synth_move_cursor (self->input_synth, window, &event->point);
-      xrd_overlay_desktop_cursor_update (self->cursor, window, &event->point);
+
+      XrdOverlayWindow *owindow = XRD_OVERLAY_WINDOW (window);
+      xrd_overlay_desktop_cursor_update (self->cursor, owindow, &event->point);
 
       if (self->hover_window[event->controller_index] != window)
         xrd_input_synth_reset_scroll (self->input_synth);

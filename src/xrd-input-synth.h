@@ -12,8 +12,8 @@
 
 #include <openvr-action-set.h>
 
+#include "xrd-window.h"
 #include "xrd-overlay-window.h"
-#include "xrd-overlay-desktop-cursor.h"
 
 G_BEGIN_DECLS
 
@@ -21,7 +21,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdInputSynth, xrd_input_synth, XRD, INPUT_SYNTH, GObject)
 
 typedef struct XrdClickEvent {
-  XrdOverlayWindow *window;
+  XrdWindow *window;
   graphene_point_t *position;
   int               button;
   gboolean          state;
@@ -29,7 +29,7 @@ typedef struct XrdClickEvent {
 } XrdClickEvent;
 
 typedef struct XrdMoveCursorEvent {
-  XrdOverlayWindow *window;
+  XrdWindow *window;
   graphene_point_t *position;
 } XrdMoveCursorEvent;
 
@@ -73,7 +73,7 @@ xrd_input_synth_reset_press_state (XrdInputSynth *self);
 
 void
 xrd_input_synth_move_cursor (XrdInputSynth    *self,
-                             XrdOverlayWindow *window,
+                             XrdWindow *window,
                              graphene_point3d_t *intersection);
 
 int

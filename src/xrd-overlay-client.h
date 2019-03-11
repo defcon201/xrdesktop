@@ -17,6 +17,7 @@
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"
 #include "xrd-input-synth.h"
+#include "xrd-overlay-desktop-cursor.h"
 
 G_BEGIN_DECLS
 
@@ -51,8 +52,8 @@ struct _XrdOverlayClient
 
   OpenVRActionSet *wm_actions;
 
-  XrdOverlayWindow *hover_window[OPENVR_CONTROLLER_COUNT];
-  XrdOverlayWindow *keyboard_window;
+  XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
+  XrdWindow *keyboard_window;
   guint keyboard_press_signal;
   guint keyboard_close_signal;
 
