@@ -85,24 +85,6 @@ _create_draw_pixbuf (uint32_t width, uint32_t height)
   return pixbuf;
 }
 
-GdkPixbuf *
-load_gdk_pixbuf (const gchar* name)
-{
-  GError * error = NULL;
-  GdkPixbuf *pixbuf_rgb = gdk_pixbuf_new_from_resource (name, &error);
-
-  if (error != NULL)
-    {
-      g_printerr ("Unable to read file: %s\n", error->message);
-      g_error_free (error);
-      return NULL;
-    }
-
-  GdkPixbuf *pixbuf = gdk_pixbuf_add_alpha (pixbuf_rgb, false, 0, 0, 0);
-  g_object_unref (pixbuf_rgb);
-  return pixbuf;
-}
-
 typedef struct ColorRGBA
 {
   guchar r;
@@ -257,22 +239,14 @@ _init_paint_overlay (Example *self)
 
   gulkan_client_upload_pixbuf (client, self->texture, self->draw_pixbuf);
 
-  openvr_overlay_uploader_submit_frame (self->uploader,
-                                        self->paint_window->overlay,
-                                        self->texture);
+  xrd_overlay_window_submit_texture (self->paint_window, client, self->texture);
 
-  /* connect glib callbacks */
-  //g_signal_connect (self->paint_overlay, "intersection-event",
-  //                  (GCallback)_intersection_cb,
-  //                  self);
-  //
   xrd_window_manager_add_window (self->manager,
                                  XRD_WINDOW (self->paint_window),
                                  XRD_WINDOW_HOVERABLE);
 
   g_signal_connect (self->paint_window, "hover-event",
                     (GCallback) _paint_hover_cb, self);
-  //
   return TRUE;
 }
 
