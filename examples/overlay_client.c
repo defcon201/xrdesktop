@@ -12,7 +12,7 @@
 #include "xrd-overlay-client.h"
 #include <gdk/gdk.h>
 
-#define GRID_WIDTH 6
+#define GRID_WIDTH 5
 #define GRID_HEIGHT 5
 
 typedef struct Example
