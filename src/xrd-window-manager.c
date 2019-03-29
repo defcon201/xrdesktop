@@ -113,13 +113,8 @@ _interpolate_cb (gpointer _transition)
     transition->from_scaling * (1.0f - transition->interpolate) +
     transition->to_scaling * transition->interpolate;
 
-  GValue g_interpolated_scaling = G_VALUE_INIT;
-  g_value_init(&g_interpolated_scaling, G_TYPE_FLOAT);
-  g_value_set_float (&g_interpolated_scaling, interpolated_scaling);
-
   /* TODO interpolate scaling instead of width */
-  g_object_set_property (G_OBJECT(window), "scaling-factor",
-                        &g_interpolated_scaling);
+  g_object_set (G_OBJECT(window), "scaling-factor", interpolated_scaling, NULL);
 
   transition->interpolate += 0.03f;
 
@@ -127,12 +122,8 @@ _interpolate_cb (gpointer _transition)
     {
       xrd_window_set_transformation_matrix (window, &transition->to);
 
-      GValue g_to_scaling = G_VALUE_INIT;
-      g_value_init(&g_to_scaling, G_TYPE_FLOAT);
-      g_value_set_float (&g_to_scaling, transition->to_scaling);
-
-      g_object_set_property (G_OBJECT(window), "scaling-factor",
-                            &g_to_scaling);
+      g_object_set (G_OBJECT(window), "scaling-factor",
+                    transition->to_scaling, NULL);
 
       g_object_unref (transition->window);
       g_free (transition);
