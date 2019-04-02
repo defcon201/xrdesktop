@@ -17,6 +17,13 @@ add_project_arguments([
 ],
 ], language: ['c'])
 
+# Paths
+xrdesktop_prefix = get_option('prefix')
+xrdesktop_libdir = join_paths(xrdesktop_prefix, get_option('libdir'))
+xrdesktop_includedir = join_paths(xrdesktop_prefix, get_option('includedir'))
+xrdesktop_datadir = join_paths(xrdesktop_prefix, get_option('datadir'))
+src_inc = include_directories('src')
+
 ### Dependencies
 c = meson.get_compiler('c')
 
@@ -29,3 +36,4 @@ subdir('res')
 subdir('src')
 subdir('tests')
 subdir('examples')
+subdir('doc')
