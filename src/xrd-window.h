@@ -60,77 +60,67 @@ struct _XrdWindowClass
   GObjectClass parent;
 
   gboolean
-  (*xrd_window_set_transformation_matrix) (XrdWindow *self,
+  (*set_transformation_matrix) (XrdWindow *self,
                                            graphene_matrix_t *mat);
 
   gboolean
-  (*xrd_window_get_transformation_matrix) (XrdWindow *self,
+  (*get_transformation_matrix) (XrdWindow *self,
                                           graphene_matrix_t *mat);
 
   void
-  (*xrd_window_submit_texture) (XrdWindow *self,
+  (*submit_texture) (XrdWindow *self,
                                 GulkanClient *client,
                                 GulkanTexture *texture);
 
   float
-  (*xrd_window_pixel_to_xr_scale) (XrdWindow *self, int pixel);
+  (*pixel_to_xr_scale) (XrdWindow *self, int pixel);
 
   gboolean
-  (*xrd_window_get_xr_width) (XrdWindow *self, float *meters);
+  (*get_xr_width) (XrdWindow *self, float *meters);
 
   gboolean
-  (*xrd_window_get_xr_height) (XrdWindow *self, float *meters);
+  (*get_xr_height) (XrdWindow *self, float *meters);
 
   void
-  (*xrd_window_poll_event) (XrdWindow *self);
+  (*poll_event) (XrdWindow *self);
 
   gboolean
-  (*xrd_window_intersects) (XrdWindow   *self,
-                            graphene_matrix_t  *pointer_transformation_matrix,
-                            graphene_point3d_t *intersection_point);
+  (*intersects) (XrdWindow   *self,
+                 graphene_matrix_t  *pointer_transformation_matrix,
+                 graphene_point3d_t *intersection_point);
 
   gboolean
-  (*xrd_window_intersection_to_window_coords) (XrdWindow          *self,
-                                               graphene_point3d_t *intersection_point,
-                                               XrdPixelSize       *size_pixels,
-                                               graphene_point_t   *window_coords);
+  (*intersection_to_window_coords) (XrdWindow          *self,
+                                    graphene_point3d_t *intersection_point,
+                                    XrdPixelSize       *size_pixels,
+                                    graphene_point_t   *window_coords);
 
   gboolean
-  (*xrd_window_intersection_to_offset_center) (XrdWindow *self,
-                                               graphene_point3d_t *intersection_point,
-                                               graphene_point_t   *offset_center);
+  (*intersection_to_offset_center) (XrdWindow *self,
+                                    graphene_point3d_t *intersection_point,
+                                    graphene_point_t   *offset_center);
 
   void
-  (*xrd_window_emit_grab_start) (XrdWindow *self,
-                                 XrdControllerIndexEvent *event);
+  (*emit_grab_start) (XrdWindow *self, XrdControllerIndexEvent *event);
 
   void
-  (*xrd_window_emit_grab) (XrdWindow *self,
-                           XrdGrabEvent *event);
+  (*emit_grab) (XrdWindow *self, XrdGrabEvent *event);
 
   void
-  (*xrd_window_emit_release) (XrdWindow *self,
-                              XrdControllerIndexEvent *event);
+  (*emit_release) (XrdWindow *self, XrdControllerIndexEvent *event);
 
   void
-  (*xrd_window_emit_hover_end) (XrdWindow *self,
-                                XrdControllerIndexEvent *event);
+  (*emit_hover_end) (XrdWindow *self, XrdControllerIndexEvent *event);
 
   void
-  (*xrd_window_emit_hover) (XrdWindow    *self,
-                            XrdHoverEvent *event);
+  (*emit_hover) (XrdWindow *self, XrdHoverEvent *event);
 
   void
-  (*xrd_window_emit_hover_start) (XrdWindow *self,
-                                  XrdControllerIndexEvent *event);
+  (*emit_hover_start) (XrdWindow *self, XrdControllerIndexEvent *event);
 
   void
-  (*xrd_window_add_child) (XrdWindow *self,
-                           XrdWindow *child,
-                           graphene_point_t *offset_center);
-
-  void
-  (*xrd_window_internal_init) (XrdWindow *self);
+  (*add_child) (XrdWindow *self, XrdWindow *child,
+                graphene_point_t *offset_center);
 
   void
   (*constructed) (GObject *object);

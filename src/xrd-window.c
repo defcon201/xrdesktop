@@ -304,18 +304,18 @@ gboolean
 xrd_window_set_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_set_transformation_matrix == NULL)
+  if (klass->set_transformation_matrix == NULL)
       return FALSE;
-  return klass->xrd_window_set_transformation_matrix (self, mat);
+  return klass->set_transformation_matrix (self, mat);
 }
 
 gboolean
 xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_get_transformation_matrix == NULL)
+  if (klass->get_transformation_matrix == NULL)
       return FALSE;
-  return klass->xrd_window_get_transformation_matrix (self, mat);
+  return klass->get_transformation_matrix (self, mat);
 }
 
 void
@@ -324,32 +324,32 @@ xrd_window_submit_texture (XrdWindow *self,
                            GulkanTexture *texture)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_submit_texture == NULL)
+  if (klass->submit_texture == NULL)
       return;
-  return klass->xrd_window_submit_texture (self, client, texture);
+  return klass->submit_texture (self, client, texture);
 }
 
 float
 xrd_window_pixel_to_xr_scale (XrdWindow *self, int pixel)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_pixel_to_xr_scale == NULL)
+  if (klass->pixel_to_xr_scale == NULL)
     {
       return (float)pixel / self->ppm * self->scaling_factor;
     }
-  return klass->xrd_window_pixel_to_xr_scale (self, pixel);
+  return klass->pixel_to_xr_scale (self, pixel);
 }
 
 gboolean
 xrd_window_get_xr_width (XrdWindow *self, float *meters)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_get_xr_width == NULL)
+  if (klass->get_xr_width == NULL)
     {
       *meters = xrd_window_pixel_to_xr_scale (self, self->texture_width);
       return FALSE;
     }
-  return klass->xrd_window_get_xr_width (self, meters);
+  return klass->get_xr_width (self, meters);
 }
 
 
@@ -357,21 +357,21 @@ gboolean
 xrd_window_get_xr_height (XrdWindow *self, float *meters)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_get_xr_height == NULL)
+  if (klass->get_xr_height == NULL)
     {
       *meters = xrd_window_pixel_to_xr_scale (self, self->texture_height);
       return TRUE;
     }
-  return klass->xrd_window_get_xr_height (self, meters);
+  return klass->get_xr_height (self, meters);
 }
 
 void
 xrd_window_poll_event (XrdWindow *self)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_poll_event == NULL)
+  if (klass->poll_event == NULL)
       return;
-  return klass->xrd_window_poll_event (self);
+  return klass->poll_event (self);
 }
 
 gboolean
@@ -380,11 +380,11 @@ xrd_window_intersects (XrdWindow   *self,
                        graphene_point3d_t *intersection_point)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_intersects == NULL)
+  if (klass->intersects == NULL)
       return FALSE;
-  return klass->xrd_window_intersects (self,
-                                       pointer_transformation_matrix,
-                                       intersection_point);
+  return klass->intersects (self,
+                            pointer_transformation_matrix,
+                            intersection_point);
 }
 
 gboolean
@@ -394,12 +394,12 @@ xrd_window_intersection_to_window_coords (XrdWindow   *self,
                                           graphene_point_t   *window_coords)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_intersection_to_window_coords == NULL)
+  if (klass->intersection_to_window_coords == NULL)
       return FALSE;
-  return klass->xrd_window_intersection_to_window_coords (self,
-                                                          intersection_point,
-                                                          size_pixels,
-                                                          window_coords);
+  return klass->intersection_to_window_coords (self,
+                                               intersection_point,
+                                               size_pixels,
+                                               window_coords);
 }
 
 gboolean
@@ -408,11 +408,11 @@ xrd_window_intersection_to_offset_center (XrdWindow *self,
                                           graphene_point_t   *offset_center)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_intersection_to_offset_center == NULL)
+  if (klass->intersection_to_offset_center == NULL)
       return FALSE;
-  return klass->xrd_window_intersection_to_offset_center (self,
-                                                          intersection_point,
-                                                          offset_center);
+  return klass->intersection_to_offset_center (self,
+                                               intersection_point,
+                                               offset_center);
 }
 
 
@@ -421,10 +421,10 @@ xrd_window_emit_grab_start (XrdWindow *self,
                             XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_emit_grab_start == NULL)
+  if (klass->emit_grab_start == NULL)
     g_signal_emit (self, window_signals[GRAB_START_EVENT], 0, event);
   else
-    return klass->xrd_window_emit_grab_start (self, event);
+    return klass->emit_grab_start (self, event);
 }
 
 
@@ -433,10 +433,10 @@ xrd_window_emit_grab (XrdWindow *self,
                       XrdGrabEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_emit_grab == NULL)
+  if (klass->emit_grab == NULL)
     g_signal_emit (self, window_signals[GRAB_EVENT], 0, event);
   else
-    return klass->xrd_window_emit_grab (self, event);
+    return klass->emit_grab (self, event);
 }
 
 void
@@ -444,10 +444,10 @@ xrd_window_emit_release (XrdWindow *self,
                          XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_emit_release == NULL)
+  if (klass->emit_release == NULL)
     g_signal_emit (self, window_signals[RELEASE_EVENT], 0, event);
   else
-    return klass->xrd_window_emit_release (self, event);
+    return klass->emit_release (self, event);
 }
 
 void
@@ -455,10 +455,10 @@ xrd_window_emit_hover_end (XrdWindow *self,
                            XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_emit_hover_end == NULL)
+  if (klass->emit_hover_end == NULL)
     g_signal_emit (self, window_signals[HOVER_END_EVENT], 0, event);
   else
-    return klass->xrd_window_emit_hover_end (self, event);
+    return klass->emit_hover_end (self, event);
 }
 
 
@@ -467,10 +467,10 @@ xrd_window_emit_hover (XrdWindow    *self,
                        XrdHoverEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_emit_hover == NULL)
+  if (klass->emit_hover == NULL)
     g_signal_emit (self, window_signals[HOVER_EVENT], 0, event);
   else
-    return klass->xrd_window_emit_hover (self, event);
+    return klass->emit_hover (self, event);
 }
 
 void
@@ -478,10 +478,10 @@ xrd_window_emit_hover_start (XrdWindow *self,
                              XrdControllerIndexEvent *event)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_emit_hover_start == NULL)
+  if (klass->emit_hover_start == NULL)
     g_signal_emit (self, window_signals[HOVER_START_EVENT], 0, event);
   else
-    return klass->xrd_window_emit_hover_start (self, event);
+    return klass->emit_hover_start (self, event);
 }
 
 void
@@ -490,9 +490,9 @@ xrd_window_add_child (XrdWindow *self,
                       graphene_point_t *offset_center)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->xrd_window_add_child == NULL)
+  if (klass->add_child == NULL)
       return;
-  return klass->xrd_window_add_child (self, child, offset_center);
+  return klass->add_child (self, child, offset_center);
 }
 
 static void

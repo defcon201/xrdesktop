@@ -51,24 +51,19 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   object_class->constructed = xrd_overlay_window_constructed;
 
   XrdWindowClass *xrd_window_class = XRD_WINDOW_CLASS (klass);
-  /* TODO: void* cast avoids warning about first argument type mismatch.
-   * Local funcs have XrdOverlayWindow *self, parent have XrdWindow *self. */
-  xrd_window_class->xrd_window_set_transformation_matrix =
+
+  xrd_window_class->set_transformation_matrix =
       (void*)xrd_overlay_window_set_transformation_matrix;
-  xrd_window_class->xrd_window_get_transformation_matrix =
+  xrd_window_class->get_transformation_matrix =
       (void*)xrd_overlay_window_get_transformation_matrix;
-  xrd_window_class->xrd_window_submit_texture =
-      (void*)xrd_overlay_window_submit_texture;
-  xrd_window_class->xrd_window_poll_event =
-      (void*)xrd_overlay_window_poll_event;
-  xrd_window_class->xrd_window_intersects =
-      (void*)xrd_overlay_window_intersects;
-  xrd_window_class->xrd_window_intersection_to_window_coords =
+  xrd_window_class->submit_texture = (void*)xrd_overlay_window_submit_texture;
+  xrd_window_class->poll_event = (void*)xrd_overlay_window_poll_event;
+  xrd_window_class->intersects = (void*)xrd_overlay_window_intersects;
+  xrd_window_class->intersection_to_window_coords =
       (void*)xrd_overlay_window_intersection_to_window_coords;
-  xrd_window_class->xrd_window_intersection_to_offset_center =
+  xrd_window_class->intersection_to_offset_center =
       (void*)xrd_overlay_window_intersection_to_offset_center;
-  xrd_window_class->xrd_window_add_child =
-      (void*)xrd_overlay_window_add_child;
+  xrd_window_class->add_child = (void*)xrd_overlay_window_add_child;
 }
 
 static void
