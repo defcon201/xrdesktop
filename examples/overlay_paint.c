@@ -184,10 +184,10 @@ _paint_hover_cb (XrdOverlayWindow *window,
   };
 
   graphene_point_t position_2d;
-  if (!xrd_overlay_window_intersection_to_window_coords (window,
-                                                         &event->point,
-                                                         &size_pixels,
-                                                         &position_2d))
+  if (!xrd_window_intersection_to_pixels (XRD_WINDOW (window),
+                                          &event->point,
+                                          &size_pixels,
+                                          &position_2d))
     return;
 
   /* check bounds */

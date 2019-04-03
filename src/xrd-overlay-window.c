@@ -59,10 +59,10 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   xrd_window_class->submit_texture = (void*)xrd_overlay_window_submit_texture;
   xrd_window_class->poll_event = (void*)xrd_overlay_window_poll_event;
   xrd_window_class->intersects = (void*)xrd_overlay_window_intersects;
-  xrd_window_class->intersection_to_window_coords =
-      (void*)xrd_overlay_window_intersection_to_window_coords;
-  xrd_window_class->intersection_to_offset_center =
-      (void*)xrd_overlay_window_intersection_to_offset_center;
+  xrd_window_class->intersection_to_pixels =
+      (void*)xrd_overlay_window_intersection_to_pixels;
+  xrd_window_class->intersection_to_2d_offset_meter =
+      (void*)xrd_overlay_window_intersection_to_2d_offset_meter;
   xrd_window_class->add_child = (void*)xrd_overlay_window_add_child;
 }
 
@@ -182,10 +182,10 @@ xrd_overlay_window_intersects (XrdOverlayWindow   *self,
 }
 
 gboolean
-xrd_overlay_window_intersection_to_window_coords (XrdOverlayWindow   *self,
-                                                  graphene_point3d_t *intersection_point,
-                                                  XrdPixelSize       *size_pixels,
-                                                  graphene_point_t   *window_coords)
+xrd_overlay_window_intersection_to_pixels (XrdOverlayWindow   *self,
+                                           graphene_point3d_t *intersection_point,
+                                           XrdPixelSize       *size_pixels,
+                                           graphene_point_t   *window_coords)
 {
   PixelSize pix_size = {
     .width = size_pixels->width,
@@ -198,9 +198,9 @@ xrd_overlay_window_intersection_to_window_coords (XrdOverlayWindow   *self,
 }
 
 gboolean
-xrd_overlay_window_intersection_to_offset_center (XrdOverlayWindow *self,
-                                                  graphene_point3d_t *intersection_point,
-                                                  graphene_point_t   *offset_center)
+xrd_overlay_window_intersection_to_2d_offset_meter (XrdOverlayWindow *self,
+                                                    graphene_point3d_t *intersection_point,
+                                                    graphene_point_t   *offset_center)
 {
   gboolean res =
       openvr_overlay_get_2d_offset (self->overlay, intersection_point, offset_center);

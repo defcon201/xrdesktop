@@ -388,31 +388,31 @@ xrd_window_intersects (XrdWindow   *self,
 }
 
 gboolean
-xrd_window_intersection_to_window_coords (XrdWindow   *self,
-                                          graphene_point3d_t *intersection_point,
-                                          XrdPixelSize       *size_pixels,
-                                          graphene_point_t   *window_coords)
+xrd_window_intersection_to_pixels (XrdWindow   *self,
+                                   graphene_point3d_t *intersection_point,
+                                   XrdPixelSize       *size_pixels,
+                                   graphene_point_t   *window_coords)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->intersection_to_window_coords == NULL)
+  if (klass->intersection_to_pixels == NULL)
       return FALSE;
-  return klass->intersection_to_window_coords (self,
-                                               intersection_point,
-                                               size_pixels,
-                                               window_coords);
+  return klass->intersection_to_pixels (self,
+                                        intersection_point,
+                                        size_pixels,
+                                        window_coords);
 }
 
 gboolean
-xrd_window_intersection_to_offset_center (XrdWindow *self,
-                                          graphene_point3d_t *intersection_point,
-                                          graphene_point_t   *offset_center)
+xrd_window_intersection_to_2d_offset_meter (XrdWindow *self,
+                                            graphene_point3d_t *intersection_point,
+                                            graphene_point_t   *offset_center)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->intersection_to_offset_center == NULL)
+  if (klass->intersection_to_2d_offset_meter == NULL)
       return FALSE;
-  return klass->intersection_to_offset_center (self,
-                                               intersection_point,
-                                               offset_center);
+  return klass->intersection_to_2d_offset_meter (self,
+                                                 intersection_point,
+                                                 offset_center);
 }
 
 

@@ -262,8 +262,8 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
     .height = window->texture_height
   };
   graphene_point_t position;
-  if (!xrd_window_intersection_to_window_coords (window, intersection,
-                                                 &pixel_size, &position))
+  if (!xrd_window_intersection_to_pixels (window, intersection,
+                                          &pixel_size, &position))
     return;
   
   XrdMoveCursorEvent *event = g_malloc (sizeof (XrdClickEvent));

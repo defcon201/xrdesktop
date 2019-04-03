@@ -63,15 +63,15 @@ xrd_overlay_window_intersects (XrdOverlayWindow   *self,
                                graphene_point3d_t *intersection_point);
 
 gboolean
-xrd_overlay_window_intersection_to_window_coords (XrdOverlayWindow   *self,
-                                                  graphene_point3d_t *intersection_point,
-                                                  XrdPixelSize       *size_pixels,
-                                                  graphene_point_t   *window_coords);
+xrd_overlay_window_intersection_to_pixels (XrdOverlayWindow   *self,
+                                           graphene_point3d_t *intersection_point,
+                                           XrdPixelSize       *size_pixels,
+                                           graphene_point_t   *window_coords);
 
 gboolean
-xrd_overlay_window_intersection_to_offset_center (XrdOverlayWindow *self,
-                                                  graphene_point3d_t *intersection_point,
-                                                  graphene_point_t   *offset_center);
+xrd_overlay_window_intersection_to_2d_offset_meter (XrdOverlayWindow *self,
+                                                    graphene_point3d_t *intersection_point,
+                                                    graphene_point_t   *offset_center);
 
 void
 xrd_overlay_window_add_child (XrdOverlayWindow *self,
