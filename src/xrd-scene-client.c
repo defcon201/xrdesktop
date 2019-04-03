@@ -75,6 +75,8 @@ xrd_scene_client_init (XrdSceneClient *self)
 
   for (uint32_t i = 0; i < WINDOW_COUNT; i++)
     self->windows[i] = xrd_scene_window_new ();
+
+  self->selection = xrd_scene_selection_new ();
 }
 
 XrdSceneClient *
@@ -98,6 +100,8 @@ xrd_scene_client_finalize (GObject *gobject)
   g_object_unref (context);
 
   g_object_unref (self->device_manager);
+
+  g_object_unref (self->selection);
 
   if (device != VK_NULL_HANDLE)
     {
@@ -296,6 +300,17 @@ _init_vulkan (XrdSceneClient *self)
 
   _init_device_models (self);
 
+  xrd_scene_selection_initialize (self->selection,
+                                  client->device,
+                                 &self->descriptor_set_layout);
+
+  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (self->selection);
+
+  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (self->windows[3]);
+
+  graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
+                                    &window_obj->model_matrix);
+
   if (!gulkan_client_submit_res_cmd_buffer (client, &cmd_buffer))
     {
       g_printerr ("Could not submit command buffer.\n");
@@ -490,6 +505,12 @@ _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
                                self->pipelines[PIPELINE_WINDOWS],
                                self->pipeline_layout,
                                cmd_buffer, &vp);
+
+      xrd_scene_selection_render (self->selection, eye,
+                                  self->pipelines[PIPELINE_POINTER],
+                                  self->pipeline_layout,
+                                  cmd_buffer,
+                                  &vp);
 
       xrd_scene_device_manager_render_pointers (self->device_manager, eye,
                                                 cmd_buffer,

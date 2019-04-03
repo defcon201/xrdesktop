@@ -23,6 +23,7 @@
 #include "xrd-scene-device-manager.h"
 #include "xrd-scene-window.h"
 #include "xrd-scene-pointer.h"
+#include "xrd-scene-selection.h"
 
 // Pipeline state objects
 enum PipelineType
@@ -60,6 +61,7 @@ struct _XrdSceneClient
   float far_clip;
 
   XrdSceneWindow *windows[WINDOW_COUNT];
+  XrdSceneSelection *selection;
 
   VkShaderModule shader_modules[PIPELINE_COUNT * 2];
   VkPipeline pipelines[PIPELINE_COUNT];
