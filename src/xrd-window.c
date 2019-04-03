@@ -330,39 +330,39 @@ xrd_window_submit_texture (XrdWindow *self,
 }
 
 float
-xrd_window_pixel_to_xr_scale (XrdWindow *self, int pixel)
+xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->pixel_to_xr_scale == NULL)
+  if (klass->pixel_to_meter == NULL)
     {
       return (float)pixel / self->ppm * self->scaling_factor;
     }
-  return klass->pixel_to_xr_scale (self, pixel);
+  return klass->pixel_to_meter (self, pixel);
 }
 
 gboolean
-xrd_window_get_xr_width (XrdWindow *self, float *meters)
+xrd_window_get_width_meter (XrdWindow *self, float *meters)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->get_xr_width == NULL)
+  if (klass->get_width_meter == NULL)
     {
-      *meters = xrd_window_pixel_to_xr_scale (self, self->texture_width);
+      *meters = xrd_window_pixel_to_meter (self, self->texture_width);
       return FALSE;
     }
-  return klass->get_xr_width (self, meters);
+  return klass->get_width_meter (self, meters);
 }
 
 
 gboolean
-xrd_window_get_xr_height (XrdWindow *self, float *meters)
+xrd_window_get_height_meter (XrdWindow *self, float *meters)
 {
   XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
-  if (klass->get_xr_height == NULL)
+  if (klass->get_height_meter == NULL)
     {
-      *meters = xrd_window_pixel_to_xr_scale (self, self->texture_height);
+      *meters = xrd_window_pixel_to_meter (self, self->texture_height);
       return TRUE;
     }
-  return klass->get_xr_height (self, meters);
+  return klass->get_height_meter (self, meters);
 }
 
 void

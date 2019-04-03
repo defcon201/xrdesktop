@@ -28,10 +28,10 @@ notify_property_scale_changed (GObject *object,
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (object);
   XrdWindow *xrd_window = XRD_WINDOW (object);
 
-  float xr_width =
-      xrd_window_pixel_to_xr_scale (xrd_window, xrd_window->texture_width);
+  float width_meter =
+      xrd_window_pixel_to_meter (xrd_window, xrd_window->texture_width);
 
-  openvr_overlay_set_width_meters (self->overlay, xr_width);
+  openvr_overlay_set_width_meters (self->overlay, width_meter);
 
   if (xrd_window->child_window)
     _scale_move_child (self);
@@ -130,10 +130,10 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
   if (xrd_window->texture_width != texture->width ||
       xrd_window->texture_height != texture->height)
     {
-      float new_xr_width =
-        xrd_window_pixel_to_xr_scale (xrd_window, texture->width);
+      float new_width_meter =
+        xrd_window_pixel_to_meter (xrd_window, texture->width);
 
-      openvr_overlay_set_width_meters (self->overlay, new_xr_width);
+      openvr_overlay_set_width_meters (self->overlay, new_width_meter);
 
       xrd_window->texture_width = texture->width;
       xrd_window->texture_height = texture->height;

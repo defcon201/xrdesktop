@@ -98,11 +98,11 @@ _init_windows (Example *self)
           xrd_overlay_window_submit_texture (window, gc, hawk_big);
 
           float window_width;
-          xrd_window_get_xr_width (XRD_WINDOW (window), &window_width);
+          xrd_window_get_width_meter (XRD_WINDOW (window), &window_width);
           window_x += window_width;
 
           float window_height;
-          xrd_window_get_xr_height (XRD_WINDOW (window), &window_height);
+          xrd_window_get_height_meter (XRD_WINDOW (window), &window_height);
           if (window_height > max_window_height)
             max_window_height = window_height;
 

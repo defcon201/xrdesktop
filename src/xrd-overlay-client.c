@@ -480,10 +480,11 @@ _init_buttons (XrdOverlayClient *self)
                      (GCallback) _button_reset_press_cb))
     return FALSE;
 
-  float reset_xr_width;
-  xrd_window_get_xr_width (XRD_WINDOW (self->button_reset), &reset_xr_width);
+  float reset_width_meter;
+  xrd_window_get_width_meter (XRD_WINDOW (self->button_reset),
+                              &reset_width_meter);
 
-  button_x += reset_xr_width;
+  button_x += reset_width_meter;
 
   graphene_point3d_t position_sphere = {
     .x =  button_x,
