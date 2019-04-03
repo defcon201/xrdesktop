@@ -918,6 +918,10 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
 
 /**
  * xrd_window_manager_scale:
+ * @self: The #XrdWindowManager
+ * @grab_state: The #GrabState to scale
+ * @factor: Scale factor
+ * @update_rate_ms: The update rate in ms
  *
  * While dragging a window, scale the window *factor* times per second
  */
