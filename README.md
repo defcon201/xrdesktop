@@ -14,6 +14,11 @@ $ meson build
 $ ninja -C build
 ```
 
+#### Build the docs
+```
+ninja -C build xrdesktop-doc
+```
+
 ## Run
 
 #### Run the examples
