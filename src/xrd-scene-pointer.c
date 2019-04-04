@@ -73,9 +73,9 @@ xrd_scene_pointer_initialize (XrdScenePointer       *self,
 }
 
 void
-xrd_scene_pointer_update (XrdScenePointer    *self,
-                          graphene_vec4_t    *start,
-                          float               length)
+xrd_scene_pointer_update (XrdScenePointer *self,
+                          graphene_vec4_t *start,
+                          float            length)
 {
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
