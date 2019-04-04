@@ -29,6 +29,7 @@ xrd_scene_object_init (XrdSceneObject *self)
   self->scale = 1.0f;
   for (uint32_t eye = 0; eye < 2; eye++)
     self->uniform_buffers[eye] = gulkan_uniform_buffer_new ();
+  self->visible = TRUE;
 }
 
 XrdSceneObject *
@@ -52,6 +53,7 @@ _update_model_matrix (XrdSceneObject *self)
 {
   graphene_matrix_init_scale (&self->model_matrix,
                               self->scale, self->scale, self->scale);
+  graphene_matrix_rotate_quaternion (&self->model_matrix, &self->orientation);
   graphene_matrix_translate (&self->model_matrix, &self->position);
 }
 
@@ -91,6 +93,27 @@ xrd_scene_object_set_position (XrdSceneObject     *self,
 {
   graphene_point3d_init_from_point (&self->position, position);
   _update_model_matrix (self);
+}
+
+void
+xrd_scene_object_set_rotation_euler (XrdSceneObject   *self,
+                                     graphene_euler_t *euler)
+{
+  graphene_quaternion_init_from_euler (&self->orientation, euler);
+  _update_model_matrix (self);
+}
+
+void
+xrd_scene_object_get_normal (XrdSceneObject  *self,
+                             graphene_vec3_t *normal)
+{
+  graphene_vec3_init (normal, 0, 0, 1);
+
+  graphene_matrix_t rotation_matrix;
+  graphene_matrix_init_identity (&rotation_matrix);
+  graphene_matrix_rotate_quaternion (&rotation_matrix, &self->orientation);
+
+  graphene_matrix_transform_vec3 (&rotation_matrix, normal, normal);
 }
 
 gboolean

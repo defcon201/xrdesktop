@@ -297,11 +297,20 @@ _init_vulkan (XrdSceneClient *self)
                                    client->device,
                                    &self->descriptor_set_layout);
 
-      graphene_point3d_t position = { i, 1, 0 };
+      graphene_point3d_t position = {
+        i / 2.0f - 1,
+        (float) i / 3.0f + 1,
+        -(float) i / 3.0f
+      };
 
       XrdSceneObject *obj = XRD_SCENE_OBJECT (self->windows[i]);
       xrd_scene_object_set_position (obj, &position);
       xrd_scene_object_set_scale (obj, (i + 1) * 0.2f);
+
+      graphene_euler_t rotation;
+      graphene_euler_init (&rotation, i * 15.0f, 20.0f, 5.0f);
+      xrd_scene_object_set_rotation_euler (obj, &rotation);
+
     }
 
   _init_device_models (self);

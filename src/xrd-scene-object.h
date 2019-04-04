@@ -32,6 +32,9 @@ struct _XrdSceneObject
 
   graphene_point3d_t position;
   float scale;
+  graphene_quaternion_t orientation;
+
+  gboolean visible;
 
   GulkanDevice *device;
 };
@@ -44,6 +47,10 @@ xrd_scene_object_set_scale (XrdSceneObject *self, float scale);
 void
 xrd_scene_object_set_position (XrdSceneObject     *self,
                                graphene_point3d_t *position);
+
+void
+xrd_scene_object_set_rotation_euler (XrdSceneObject   *self,
+                                     graphene_euler_t *euler);
 
 void
 xrd_scene_object_update_mvp_matrix (XrdSceneObject    *self,
@@ -68,6 +75,10 @@ xrd_scene_object_update_descriptors_texture (XrdSceneObject *self,
 
 void
 xrd_scene_object_update_descriptors (XrdSceneObject *self);
+
+void
+xrd_scene_object_get_normal (XrdSceneObject  *self,
+                             graphene_vec3_t *normal);
 
 G_END_DECLS
 
