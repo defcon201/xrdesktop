@@ -30,17 +30,6 @@ struct _XrdOverlayWindow
 XrdOverlayWindow *
 xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native);
 
-XrdOverlayWindow *
-xrd_overlay_window_new_from_overlay (gpointer *overlay,
-                                     int width,
-                                     int height);
-
-void
-xrd_overlay_window_init_overlay (XrdOverlayWindow *self,
-                                 gpointer *overlay,
-                                 int width,
-                                 int height);
-
 gboolean
 xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat);
