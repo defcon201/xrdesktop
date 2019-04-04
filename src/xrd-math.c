@@ -63,8 +63,8 @@ xrd_math_get_frustum_angles (float *left, float *right,
  * - azimuth is clockwise around the y axis, starting at -z. */
 void
 xrd_math_get_rotation_angles (graphene_vec3_t *direction,
-                              float *inclination,
-                              float *azimuth)
+                              float *azimuth,
+                              float *inclination)
 {
   // -z is forward, so we look "in the other direction"
   graphene_vec3_t anti_direction;
@@ -150,4 +150,82 @@ graphene_point_scale (const graphene_point_t *p,
                       graphene_point_t       *res)
 {
   graphene_point_init (res, p->x * factor, p->y * factor);
+}
+
+gboolean
+xrd_math_intersect_lines_2d (float p0_x, float p0_y, float p1_x, float p1_y,
+                             float p2_x, float p2_y, float p3_x, float p3_y,
+                             float *i_x, float *i_y)
+{
+  float s1_x, s1_y, s2_x, s2_y;
+  s1_x = p1_x - p0_x;
+  s1_y = p1_y - p0_y;
+
+  s2_x = p3_x - p2_x;
+  s2_y = p3_y - p2_y;
+
+  float s, t;
+  s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) /
+      (-s2_x * s1_y + s1_x * s2_y);
+  t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) /
+      (-s2_x * s1_y + s1_x * s2_y);
+
+  if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+    {
+      // Collision detected
+      if (i_x != NULL)
+        *i_x = p0_x + (t * s1_x);
+      if (i_y != NULL)
+        *i_y = p0_y + (t * s1_y);
+      return TRUE;
+    }
+  return FALSE; // No collision
+}
+
+gboolean
+xrd_math_clamp_towards_zero_2d (float x_min, float x_max,
+                                float y_min, float y_max,
+                                float x, float y,
+                                float *x_clamped, float *y_clamped)
+{
+  /* left */
+  if (xrd_math_intersect_lines_2d (0, 0, x, y,
+                                   x_min, y_min, x_min, y_max,
+                                   x_clamped, y_clamped))
+    return TRUE;
+
+  /* right */
+  if (xrd_math_intersect_lines_2d (0, 0, x, y,
+                                   x_max, y_min, x_max, y_max,
+                                   x_clamped, y_clamped))
+    return TRUE;
+
+  /* top */
+  if (xrd_math_intersect_lines_2d (0, 0, x, y,
+                                   x_min, y_max, x_max, y_max,
+                                   x_clamped, y_clamped))
+    return TRUE;
+
+  /* bottom */
+  if (xrd_math_intersect_lines_2d (0, 0, x, y,
+                                   x_min, y_min, x_max, y_min,
+                                   x_clamped, y_clamped))
+    return TRUE;
+
+
+  return FALSE;
+}
+
+void
+xrd_math_sphere_to_3d_coords (float azimuth,
+                              float inclination,
+                              float distance,
+                              graphene_point3d_t *point)
+{
+
+  float dist_2d = distance * cos (DEG_TO_RAD (inclination));
+  graphene_point3d_init (point,
+                         dist_2d * sin (DEG_TO_RAD (azimuth)),
+                         distance * sin (DEG_TO_RAD (inclination)),
+                         - dist_2d * cos (DEG_TO_RAD (azimuth)));
 }

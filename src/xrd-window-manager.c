@@ -394,108 +394,14 @@ _hmd_facing_pose (graphene_matrix_t *hmd_pose,
   graphene_vec3_t look_at_direction;
   graphene_point3d_to_vec3 (&look_at_from_hmd, &look_at_direction);
 
-  float inclination, azimuth;
-  xrd_math_get_rotation_angles (&look_at_direction, &inclination, &azimuth);
+  float azimuth, inclination;
+  xrd_math_get_rotation_angles (&look_at_direction, &azimuth, &inclination);
 
   graphene_matrix_init_identity (pose_ws);
   graphene_matrix_rotate_x (pose_ws, inclination);
   graphene_matrix_rotate_y (pose_ws, - azimuth);
 
   xrd_math_matrix_set_translation_point (pose_ws, look_at_point_ws);
-}
-
-void
-_get_point_cs  (float inclination,
-                float azimuth,
-                float distance,
-                graphene_point3d_t *point)
-{
-
-  float dist_2d = distance * cos (DEG_TO_RAD (inclination));
-  graphene_point3d_init (point,
-                         dist_2d * sin (DEG_TO_RAD (azimuth)),
-                         distance * sin (DEG_TO_RAD (inclination)),
-                         - dist_2d * cos (DEG_TO_RAD (azimuth)));
-}
-
-/* Returns 1 if the lines intersect, otherwise 0. In addition, if the lines
- * intersect the intersection point may be stored in the floats i_x and i_y.
- * Based on an algorithm in Andre LeMothe's
- * "Tricks of the Windows Game Programming Gurus".
- * Implementation from https://stackoverflow.com/a/1968345 */
-gboolean
-get_line_intersection (float p0_x, float p0_y, float p1_x, float p1_y,
-                       float p2_x, float p2_y, float p3_x, float p3_y,
-                       float *i_x, float *i_y)
-{
-  float s1_x, s1_y, s2_x, s2_y;
-  s1_x = p1_x - p0_x;
-  s1_y = p1_y - p0_y;
-
-  s2_x = p3_x - p2_x;
-  s2_y = p3_y - p2_y;
-
-  float s, t;
-  s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) /
-      (-s2_x * s1_y + s1_x * s2_y);
-  t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) /
-      (-s2_x * s1_y + s1_x * s2_y);
-
-  if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
-    {
-      // Collision detected
-      if (i_x != NULL)
-        *i_x = p0_x + (t * s1_x);
-      if (i_y != NULL)
-        *i_y = p0_y + (t * s1_y);
-      return TRUE;
-    }
-  return FALSE; // No collision
-}
-
-/** _angle_space_intersect_fov:
- * In angle space a sphere is a 2D plane from [-180,180]x[-180,180] and the
- * left / right / top / bottom angles yield a rectangle.
- * To snap a window towards the edge of the FOV we don't just clamp the angle
- * to the fov angle, because that would move the window perpendicular to the
- * FOV edges which does not feel right.
- * Instead imagine a line from the origin of angle space (the center view axis)
- * towards the window's angles. Intersect this line with the FOV angles to
- * yield intersection angles that move the window towards the center view axis
- * until it becomes visible on an edge of the FOV.
- * */
-gboolean
-_angle_space_intersect_fov (float left, float right, float top, float bottom,
-                            float inclination, float azimuth,
-                            float *inclination_intersection,
-                            float *azimuth_intersection)
-{
-  /* left */
-  if (get_line_intersection (0, 0, azimuth, inclination,
-                             left, bottom, left, top,
-                             azimuth_intersection, inclination_intersection))
-    return TRUE;
-
-  /* right */
-  if (get_line_intersection (0, 0, azimuth, inclination,
-                             right, bottom, right, top,
-                             azimuth_intersection, inclination_intersection))
-    return TRUE;
-
-  /* top */
-  if (get_line_intersection (0, 0, azimuth, inclination,
-                             left, top , right, top,
-                             azimuth_intersection, inclination_intersection))
-    return TRUE;
-
-  /* bottom */
-  if (get_line_intersection (0, 0, azimuth, inclination,
-                             left, bottom , right, bottom,
-                             azimuth_intersection, inclination_intersection))
-    return TRUE;
-
-
-  return FALSE;
 }
 
 gboolean
@@ -532,31 +438,47 @@ _follow_head (FollowHeadWindow *fhw)
 
   float radius = fhw->distance;
 
-  float inclination, azimuth;
-  xrd_math_get_rotation_angles (&window_vec_cs, &inclination, &azimuth);
+  /* azimuth: angle between view direction to window, "left-right" component.
+   * inclination: angle between view directiont to window, "up-down" component.
+   *
+   * This reduces the problem in 3D space to a problem in 2D "angle space"
+   * where azimuth and inclination are in [-180°,180°]x[-180°,180°].
+   *
+   * First the case where the window is completely out of view is handled:
+   * Snapping the window towards the view direction is done by clamping
+   * azimuth and inclination both towards the view direction angles (0, 0) until
+   * any of the angles of the target FOV is hit.
+   *
+   * Then the case where the window is "too close" to being out of view is
+   * handled: Angles describing a final target location for the window are
+   * calculated by repeating the process towards a scaled down FOV, but it is
+   * not snapped to the new position, but per frame moves proportional to the
+   * remaining distance towards the target location.
+   * */
+
+  float azimuth, inclination;
+  xrd_math_get_rotation_angles (&window_vec_cs, &azimuth, &inclination);
 
   /* Bail early when the window already is in the "center area".
-   * Even when we don't move the window, we still recalculate the pose
-   * because the hmd can move and we want to keep the window on a sphere
-   * around the hmd */
-    if (inclination < top_inner && inclination > bottom_inner &&
-      azimuth > left_inner && azimuth < right_inner)
-    {
-      //g_print ("Not moving head following window!\n");
-      graphene_point3d_t new_pos_ws;
-      _get_point_cs (inclination, azimuth, radius, &new_pos_ws);
-      graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
+   * However still update the pose to reflect movement towards/away. */
+  if (azimuth > left_inner && azimuth < right_inner &&
+      inclination < top_inner && inclination > bottom_inner)
+  {
+    //g_print ("Not moving head following window!\n");
+    graphene_point3d_t new_pos_ws;
+    xrd_math_sphere_to_3d_coords (azimuth, inclination, radius, &new_pos_ws);
+    graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
 
-      graphene_matrix_t new_window_pose_ws;
-      _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_window_pose_ws);
+    graphene_matrix_t new_window_pose_ws;
+    _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_window_pose_ws);
 
-      xrd_window_set_transformation_matrix (window, &new_window_pose_ws);
-      return TRUE;
-    }
+    xrd_window_set_transformation_matrix (window, &new_window_pose_ws);
+    return TRUE;
+  }
 
   /* Window is not visible: snap it onto the edge of the visible area. */
-  if (inclination > top_outer || inclination < bottom_outer ||
-      azimuth < left_outer || azimuth > right_outer)
+  if (azimuth < left_outer || azimuth > right_outer ||
+      inclination > top_outer || inclination < bottom_outer)
     {
 
       /* delta is used to snap windows a little closer towards the view center
@@ -566,12 +488,12 @@ _follow_head (FollowHeadWindow *fhw)
        * from slowing snapping to fast smooth movement look like a jump. */
       float delta = 1.0;
 
-      float i_inclination, i_azimuth;
+      float i_azimuth, i_inclination;
       gboolean intersects =
-          _angle_space_intersect_fov (left_outer + delta, right_outer - delta,
-                                      top_outer - delta, bottom_outer + delta,
-                                      inclination, azimuth,
-                                      &i_inclination, &i_azimuth);
+          xrd_math_clamp_towards_zero_2d (left_outer + delta, right_outer - delta,
+                                      bottom_outer + delta, top_outer - delta,
+                                      azimuth, inclination,
+                                      &i_azimuth, &i_inclination);
 
       /* doesn't happen */
       if (!intersects)
@@ -580,13 +502,9 @@ _follow_head (FollowHeadWindow *fhw)
           return TRUE;
         }
 
-      /*
-      g_print ("Snap from %f %f to %f %f\n",
-               inclination, azimuth, i_inclination, i_azimuth);
-       */
-
       graphene_point3d_t new_pos_ws;
-      _get_point_cs (i_inclination, i_azimuth, radius, &new_pos_ws);
+      xrd_math_sphere_to_3d_coords (i_azimuth, i_inclination, radius,
+                                    &new_pos_ws);
       graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
 
       graphene_matrix_t new_window_pose_ws;
@@ -604,13 +522,14 @@ _follow_head (FollowHeadWindow *fhw)
       return TRUE;
     }
 
+
   /* Window is visible, but not in center area: move it towards center area*/
-  float i_inclination, i_azimuth;
+  float i_azimuth, i_inclination;
   gboolean intersects =
-      _angle_space_intersect_fov (left_inner, right_inner,
-                                  top_inner, bottom_inner,
-                                  inclination, azimuth,
-                                  &i_inclination, &i_azimuth);
+      xrd_math_clamp_towards_zero_2d (left_inner, right_inner,
+                                      bottom_inner, top_inner,
+                                      azimuth, inclination,
+                                      &i_azimuth, &i_inclination);
 
   /* doesn't happen */
   if (!intersects)
@@ -619,8 +538,8 @@ _follow_head (FollowHeadWindow *fhw)
       return TRUE;
     }
 
-  float vdiff = inclination - i_inclination;
-  float hdiff = azimuth - i_azimuth;
+  float azimuth_diff = azimuth - i_azimuth;
+  float inclination_diff = inclination - i_inclination;
 
   /* To avoid sudden jumps in velocity:
    * Window starts with velocity 0.
@@ -631,7 +550,7 @@ _follow_head (FollowHeadWindow *fhw)
    * Use this velocity, if the window already is moving that fast.
    * If not, then increase the window's speed with 1/10 of that speed.*/
   graphene_vec2_t angle_velocity;
-  graphene_vec2_init (&angle_velocity, vdiff, hdiff);
+  graphene_vec2_init (&angle_velocity, azimuth_diff, inclination_diff);
   float angle_distance = graphene_vec2_length (&angle_velocity);
   float distance_speed_factor = 0.05;
   float angle_speed = angle_distance * distance_speed_factor;
@@ -648,14 +567,15 @@ _follow_head (FollowHeadWindow *fhw)
   graphene_vec2_scale (&angle_velocity, angle_speed, &angle_velocity);
 
   graphene_vec2_t current_angles;
-  graphene_vec2_init (&current_angles, inclination, azimuth);
+  graphene_vec2_init (&current_angles, azimuth, inclination);
 
   graphene_vec2_t next_angles;
   graphene_vec2_subtract (&current_angles, &angle_velocity, &next_angles);
 
   graphene_point3d_t next_point_cs;
-  _get_point_cs (graphene_vec2_get_x (&next_angles),
-                 graphene_vec2_get_y (&next_angles), radius, &next_point_cs);
+  xrd_math_sphere_to_3d_coords (graphene_vec2_get_x (&next_angles),
+                                graphene_vec2_get_y (&next_angles),
+                                radius, &next_point_cs);
 
   graphene_point3d_t next_point_ws;
   graphene_matrix_transform_point3d (&hmd_pose, &next_point_cs, &next_point_ws);
