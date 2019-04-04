@@ -24,6 +24,7 @@
 #include "xrd-scene-window.h"
 #include "xrd-scene-pointer.h"
 #include "xrd-scene-selection.h"
+#include "xrd-scene-vector.h"
 
 // Pipeline state objects
 enum PipelineType
@@ -72,6 +73,8 @@ struct _XrdSceneClient
   graphene_matrix_t mat_head_pose;
   graphene_matrix_t mat_eye_pos[2];
   graphene_matrix_t mat_projection[2];
+
+  XrdSceneVector *debug_vectors[4];
 
   GulkanFrameBuffer *framebuffer[2];
 
