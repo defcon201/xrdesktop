@@ -73,7 +73,7 @@ xrd_scene_client_init (XrdSceneClient *self)
 
   self->device_manager = xrd_scene_device_manager_new ();
 
-  for (uint32_t i = 0; i < WINDOW_COUNT; i++)
+  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     self->windows[i] = xrd_scene_window_new ();
 
   self->selection = xrd_scene_selection_new ();
@@ -111,7 +111,7 @@ xrd_scene_client_finalize (GObject *gobject)
 
   if (device != VK_NULL_HANDLE)
     {
-      for (uint32_t i = 0; i < WINDOW_COUNT; i++)
+      for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
         g_object_unref (self->windows[i]);
 
       for (uint32_t eye = 0; eye < 2; eye++)
@@ -267,7 +267,7 @@ _init_vulkan (XrdSceneClient *self)
     if (!pixbufs[i])
       return FALSE;
 
-  for (uint32_t i = 0; i < WINDOW_COUNT; i++)
+  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     if (!xrd_scene_window_init_texture (self->windows[i], client->device,
                                         cmd_buffer.cmd_buffer,
                                         pixbufs[i % G_N_ELEMENTS (pixbufs)]))
@@ -291,7 +291,7 @@ _init_vulkan (XrdSceneClient *self)
   if (!_init_graphics_pipelines (self))
     return false;
 
-  for (uint32_t i = 0; i < WINDOW_COUNT; i++)
+  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     {
       xrd_scene_window_initialize (self->windows[i],
                                    client->device,
@@ -510,7 +510,7 @@ _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
 
       graphene_matrix_t vp = _get_view_projection_matrix (self, eye);
 
-      for (uint32_t i = 0; i < WINDOW_COUNT; i++)
+      for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
         xrd_scene_window_draw (self->windows[i], eye,
                                self->pipelines[PIPELINE_WINDOWS],
                                self->pipeline_layout,
