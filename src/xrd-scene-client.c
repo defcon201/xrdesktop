@@ -404,8 +404,10 @@ _test_intersection (XrdSceneClient *self)
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     {
       graphene_vec3_t intersection;
+      float distance;
       bool intersects = xrd_scene_pointer_get_intersection (pointer,
                                                             self->windows[i],
+                                                            &distance,
                                                             &intersection);
       if (intersects)
         {
@@ -413,11 +415,13 @@ _test_intersection (XrdSceneClient *self)
           graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
                                             &window_obj->model_matrix);
           selection_obj->visible = TRUE;
+          xrd_scene_pointer_set_length (pointer, distance);
           return;
         }
     }
 
   selection_obj->visible = FALSE;
+  xrd_scene_pointer_reset_length (pointer);
 }
 
 void

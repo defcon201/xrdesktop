@@ -29,6 +29,10 @@ static void
 xrd_scene_pointer_init (XrdScenePointer *self)
 {
   self->vertex_buffer = gulkan_vertex_buffer_new ();
+
+  self->start_offset = -0.02f;
+  self->default_length = 40.0f;
+  self->length = self->default_length;
 }
 
 XrdScenePointer *
@@ -54,12 +58,13 @@ xrd_scene_pointer_initialize (XrdScenePointer       *self,
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, -0.02f, 1);
+  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
 
   graphene_matrix_t identity;
   graphene_matrix_init_identity (&identity);
 
-  gulkan_geometry_append_ray (self->vertex_buffer, &start, 40.0f, &identity);
+  gulkan_geometry_append_ray (self->vertex_buffer,
+                              &start, self->length, &identity);
   if (!gulkan_vertex_buffer_alloc_empty (self->vertex_buffer, device,
                                          k_unMaxTrackedDeviceCount))
     return FALSE;
@@ -76,16 +81,29 @@ xrd_scene_pointer_initialize (XrdScenePointer       *self,
 }
 
 void
-xrd_scene_pointer_update (XrdScenePointer *self,
-                          graphene_vec4_t *start,
-                          float            length)
+xrd_scene_pointer_reset_length (XrdScenePointer *self)
 {
+  xrd_scene_pointer_set_length (self, self->default_length);
+}
+
+void
+xrd_scene_pointer_set_length (XrdScenePointer *self,
+                              float            length)
+{
+  if (length == self->length)
+    return;
+
+  self->length = length;
+
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_matrix_t identity;
   graphene_matrix_init_identity (&identity);
 
-  gulkan_geometry_append_ray (self->vertex_buffer, start, length, &identity);
+  graphene_vec4_t start;
+  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
+
+  gulkan_geometry_append_ray (self->vertex_buffer, &start, length, &identity);
   gulkan_vertex_buffer_map_array (self->vertex_buffer);
 }
 
@@ -117,18 +135,18 @@ xrd_scene_pointer_get_ray (XrdScenePointer *self,
   graphene_matrix_t *mat = &obj->model_matrix;
 
   graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, -0.02f, 1);
+  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
   graphene_matrix_transform_vec4 (mat, &start, &start);
 
   graphene_vec4_t end;
-  graphene_vec4_init (&end, 0, 0, -40, 1);
+  graphene_vec4_init (&end, 0, 0, -self->length, 1);
   graphene_matrix_transform_vec4 (mat, &end, &end);
 
   graphene_vec4_t direction_vec4;
   graphene_vec4_subtract (&end, &start, &direction_vec4);
 
   graphene_point3d_t origin;
-  graphene_vec3_t    direction;
+  graphene_vec3_t direction;
 
   graphene_vec3_t vec3_start;
   graphene_vec4_get_xyz (&start, &vec3_start);
@@ -142,6 +160,7 @@ xrd_scene_pointer_get_ray (XrdScenePointer *self,
 gboolean
 xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
                                     XrdSceneWindow  *window,
+                                    float           *distance,
                                     graphene_vec3_t *res)
 {
   graphene_ray_t ray;
@@ -150,12 +169,12 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
   graphene_plane_t plane;
   xrd_scene_window_get_plane (window, &plane);
 
-  float dist = graphene_ray_get_distance_to_plane (&ray, &plane);
-  if (dist == INFINITY)
+  *distance = graphene_ray_get_distance_to_plane (&ray, &plane);
+  if (*distance == INFINITY)
     return FALSE;
 
   graphene_ray_get_direction (&ray, res);
-  graphene_vec3_scale (res, dist, res);
+  graphene_vec3_scale (res, *distance, res);
 
   graphene_vec3_t origin;
   graphene_ray_get_origin_vec3 (&ray, &origin);

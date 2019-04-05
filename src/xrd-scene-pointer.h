@@ -29,6 +29,9 @@ struct _XrdScenePointer
 {
   XrdSceneObject parent;
   GulkanVertexBuffer *vertex_buffer;
+  float start_offset;
+  float length;
+  float default_length;
 };
 
 XrdScenePointer *xrd_scene_pointer_new (void);
@@ -47,9 +50,11 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
                           graphene_matrix_t *vp);
 
 void
-xrd_scene_pointer_update (XrdScenePointer    *self,
-                          graphene_vec4_t    *start,
-                          float               length);
+xrd_scene_pointer_reset_length (XrdScenePointer *self);
+
+void
+xrd_scene_pointer_set_length (XrdScenePointer *self,
+                              float            length);
 
 void
 xrd_scene_pointer_get_ray (XrdScenePointer *self,
@@ -58,6 +63,7 @@ xrd_scene_pointer_get_ray (XrdScenePointer *self,
 gboolean
 xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
                                     XrdSceneWindow  *window,
+                                    float           *distance,
                                     graphene_vec3_t *res);
 
 G_END_DECLS
