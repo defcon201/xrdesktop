@@ -5,3 +5,12 @@ test_system = executable(
   include_directories: xrdesktop_inc,
   install: false)
 test('test_scene_client', test_system)
+
+
+test_math_matrix_decomposition = executable(
+  'test_math_matrix_decomposition', 'test_math_matrix_decomposition.c',
+  dependencies: xrdesktop_deps,
+  link_with: xrdesktop_lib,
+  include_directories: xrdesktop_inc,
+  install: false)
+test('test_math_matrix_decomposition', test_math_matrix_decomposition)
