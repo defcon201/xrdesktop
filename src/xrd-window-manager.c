@@ -781,7 +781,8 @@ _test_hover (XrdWindowManager  *self,
           xrd_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
 
-      xrd_window_intersection_to_offset_center (closest, &hover_event->point, &hover_state->intersection_offset);
+      xrd_window_intersection_to_offset_center (
+          closest, &hover_event->point, &hover_state->intersection_offset);
 
       hover_event->controller_index = controller_index;
       xrd_window_emit_hover (closest, hover_event);
@@ -799,16 +800,14 @@ _test_hover (XrdWindowManager  *self,
           XrdControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (XrdControllerIndexEvent));
           hover_end_event->index = controller_index;
-          xrd_window_emit_hover_end (last_hovered_window,
-                                             hover_end_event);
+          xrd_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
 
       /* Emit no hover event every time when hovering nothing */
       XrdNoHoverEvent *no_hover_event = g_malloc (sizeof (XrdNoHoverEvent));
       no_hover_event->controller_index = controller_index;
       graphene_matrix_init_from_matrix (&no_hover_event->pose, pose);
-      g_signal_emit (self, manager_signals[NO_HOVER_EVENT], 0,
-                     no_hover_event);
+      g_signal_emit (self, manager_signals[NO_HOVER_EVENT], 0, no_hover_event);
     }
 }
 
