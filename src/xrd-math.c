@@ -229,3 +229,50 @@ xrd_math_sphere_to_3d_coords (float azimuth,
                          distance * sin (DEG_TO_RAD (inclination)),
                          - dist_2d * cos (DEG_TO_RAD (azimuth)));
 }
+
+gboolean
+openvr_system_get_hmd_pose (graphene_matrix_t *pose)
+{
+  OpenVRContext *context = openvr_context_get_instance ();
+  VRControllerState_t state;
+  if (context->system->IsTrackedDeviceConnected(k_unTrackedDeviceIndex_Hmd) &&
+      context->system->GetTrackedDeviceClass (k_unTrackedDeviceIndex_Hmd) ==
+          ETrackedDeviceClass_TrackedDeviceClass_HMD &&
+      context->system->GetControllerState (k_unTrackedDeviceIndex_Hmd,
+                                           &state, sizeof(state)))
+    {
+      /* k_unTrackedDeviceIndex_Hmd should be 0 => posearray[0] */
+      TrackedDevicePose_t openvr_pose;
+      context->system->GetDeviceToAbsoluteTrackingPose (context->origin, 0,
+                                                        &openvr_pose, 1);
+      openvr_math_matrix34_to_graphene (&openvr_pose.mDeviceToAbsoluteTracking,
+                                        pose);
+
+      return openvr_pose.bDeviceIsConnected &&
+             openvr_pose.bPoseIsValid &&
+             openvr_pose.eTrackingResult ==
+                 ETrackingResult_TrackingResult_Running_OK;
+    }
+  return FALSE;
+}
+
+float
+xrd_math_hmd_window_distance (XrdWindow *window)
+{
+  graphene_matrix_t hmd_pose;
+  if (!openvr_system_get_hmd_pose (&hmd_pose))
+    /* TODO: can't retry until we have a pose, will block the desktop */
+    return 2.5;
+
+
+  graphene_point3d_t hmd_location;
+  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_location);
+
+
+  graphene_matrix_t window_pose;
+  xrd_window_get_transformation_matrix (window, &window_pose);
+  graphene_point3d_t window_location;
+  xrd_math_matrix_get_translation_point (&window_pose, &window_location);
+
+  return graphene_point3d_distance (&hmd_location, &window_location, NULL);
+}

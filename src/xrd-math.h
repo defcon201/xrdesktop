@@ -11,6 +11,7 @@
 
 #include <graphene.h>
 #include <glib.h>
+#include "xrd-window.h"
 
 #define PI   ((float) 3.1415926535)
 #define DEG_TO_RAD(x) ( (x) * 2.0 * PI / 360.0 )
@@ -86,5 +87,11 @@ xrd_math_sphere_to_3d_coords (float azimuth,
                               float inclination,
                               float distance,
                               graphene_point3d_t *point);
+
+gboolean
+openvr_system_get_hmd_pose (graphene_matrix_t *pose);
+
+float
+xrd_math_hmd_window_distance (XrdWindow *window);
 
 #endif /* XRD_MATH_H_ */
