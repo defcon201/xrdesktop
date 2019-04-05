@@ -158,9 +158,9 @@ _draw_at_2d_position (Example          *self,
                                     self->draw_pixbuf))
     return FALSE;
 
-  openvr_overlay_uploader_submit_frame (self->uploader,
-                                        self->paint_window->overlay,
-                                        self->texture);
+
+  xrd_window_submit_texture (XRD_WINDOW (self->paint_window),
+                             GULKAN_CLIENT (self->uploader), self->texture);
 
   g_mutex_unlock (&paint_mutex);
 
@@ -228,8 +228,9 @@ _init_paint_overlay (Example *self)
 
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, &position);
-  openvr_overlay_set_transform_absolute (self->paint_window->overlay,
-                                         &transform);
+  xrd_window_set_transformation_matrix (XRD_WINDOW (self->paint_window),
+                                        &transform);
+
 
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
 

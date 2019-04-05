@@ -19,13 +19,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayWindow, xrd_overlay_window,
                       XRD, OVERLAY_WINDOW, XrdWindow)
 
-struct _XrdOverlayWindow
-{
-  XrdWindow parent;
-
-  gpointer      overlay;
-  gboolean       recreate;
-};
+struct _XrdOverlayWindow;
 
 XrdOverlayWindow *
 xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native);
@@ -66,6 +60,10 @@ void
 xrd_overlay_window_add_child (XrdOverlayWindow *self,
                               XrdOverlayWindow *child,
                               graphene_point_t *offset_center);
+
+void
+xrd_overlay_window_set_color (XrdOverlayWindow *self,
+                              graphene_vec3_t *color);
 
 G_END_DECLS
 

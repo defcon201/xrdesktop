@@ -61,22 +61,7 @@ typedef enum
   XRD_WINDOW_DESTROY_WITH_PARENT = 1 << 4
 } XrdWindowFlags;
 
-struct _XrdWindowManager
-{
-  GObject parent;
-
-  GSList *draggable_windows;
-  GSList *managed_windows;
-  GSList *hoverable_windows;
-  GSList *destroy_windows;
-  GSList *following;
-
-  HoverState hover_state[OPENVR_CONTROLLER_COUNT];
-  GrabState grab_state[OPENVR_CONTROLLER_COUNT];
-
-  GHashTable *reset_transforms;
-  GHashTable *reset_scalings;
-};
+struct _XrdWindowManager;
 
 XrdWindowManager *xrd_window_manager_new (void);
 
@@ -139,6 +124,13 @@ xrd_window_manager_is_hovered (XrdWindowManager *self,
 void
 xrd_window_manager_poll_window_events (XrdWindowManager *self);
 
+GrabState *
+xrd_window_manager_get_grab_state (XrdWindowManager *self,
+                                   int controller_index);
+
+HoverState *
+xrd_window_manager_get_hover_state (XrdWindowManager *self,
+                                    int controller_index);
 G_END_DECLS
 
 #endif /* XRD_WINDOW_MANAGER_H_ */

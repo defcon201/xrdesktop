@@ -11,6 +11,29 @@
 #include "xrd-settings.h"
 #include "xrd-math.h"
 
+struct _XrdOverlayDesktopCursor
+{
+  OpenVROverlay parent;
+
+  OpenVROverlayUploader *uploader;
+
+  gboolean use_constant_apparent_width;
+  /* setting, either absolute size or the apparent size in 3 meter distance */
+  float cursor_width_meter;
+
+  /* cached values set by apparent size and used in hotspot calculation */
+  float current_cursor_width_meter;
+
+  int hotspot_x;
+  int hotspot_y;
+
+  GdkPixbuf *pixbuf;
+  /* texture is cached to minimize texture allocations */
+  GulkanTexture *texture;
+  int texture_width;
+  int texture_height;
+};
+
 G_DEFINE_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, OPENVR_TYPE_OVERLAY)
 
 static void
@@ -165,7 +188,8 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
    *    This places exactly the hotspot at the target point. */
 
   graphene_point_t offset_2d;
-  openvr_overlay_get_2d_offset (window->overlay, intersection, &offset_2d);
+  xrd_window_intersection_to_2d_offset_meter (XRD_WINDOW (window),
+                                              intersection, &offset_2d);
 
   graphene_point3d_t offset_3d;
   graphene_point3d_init (&offset_3d, offset_2d.x, offset_2d.y, 0);
@@ -192,7 +216,8 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
   graphene_matrix_translate (&transform, &cursor_hotspot);
 
   graphene_matrix_t overlay_transform;
-  openvr_overlay_get_transform_absolute (window->overlay, &overlay_transform);
+  xrd_window_get_transformation_matrix (XRD_WINDOW (window),
+                                        &overlay_transform);
   graphene_matrix_multiply(&transform, &overlay_transform, &transform);
 
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);

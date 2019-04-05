@@ -14,6 +14,47 @@
 #include <openvr-math.h>
 #include "xrd-math.h"
 
+struct _XrdOverlayClient
+{
+  GObject parent;
+
+  OpenVRContext *context;
+
+  XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
+  XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
+
+  XrdWindowManager *manager;
+
+  XrdClientController left;
+  XrdClientController right;
+
+  XrdWindow *button_reset;
+  XrdWindow *button_sphere;
+
+  OpenVROverlayUploader *uploader;
+
+  OpenVRActionSet *wm_actions;
+
+  XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
+  XrdWindow *keyboard_window;
+  guint keyboard_press_signal;
+  guint keyboard_close_signal;
+
+  int poll_rate_ms;
+  guint poll_event_source_id;
+
+  double analog_threshold;
+
+  double scroll_to_push_ratio;
+  double scroll_to_scale_ratio;
+
+  double pixel_per_meter;
+
+  XrdInputSynth *input_synth;
+
+  XrdOverlayDesktopCursor *cursor;
+};
+
 G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, G_TYPE_OBJECT)
 
 enum {
@@ -97,6 +138,24 @@ xrd_overlay_client_finalize (GObject *gobject)
   xrd_settings_destroy_instance ();
 }
 
+GulkanClient *
+xrd_overlay_client_get_uploader (XrdOverlayClient *self)
+{
+  return GULKAN_CLIENT (self->uploader);
+}
+
+XrdWindowManager *
+xrd_overlay_client_get_manager (XrdOverlayClient *self)
+{
+  return self->manager;
+}
+
+XrdOverlayDesktopCursor *
+xrd_overlay_client_get_cursor (XrdOverlayClient *self)
+{
+  return self->cursor;
+}
+
 static void
 _action_hand_pose_cb (OpenVRAction            *action,
                       OpenVRPoseEvent         *event,
@@ -111,9 +170,11 @@ _action_hand_pose_cb (OpenVRAction            *action,
   xrd_overlay_pointer_move (pointer, &event->pose);
 
   /* show cursor while synth controller hovers window, but doesn't grab */
-  if (controller->index == self->input_synth->synthing_controller_index &&
+  if (controller->index ==
+          xrd_input_synth_synthing_controller (self->input_synth) &&
       self->hover_window[controller->index] != NULL &&
-      self->manager->grab_state[controller->index].window == NULL)
+      xrd_window_manager_get_grab_state
+          (self->manager, controller->index)->window == NULL)
     xrd_overlay_desktop_cursor_show (self->cursor);
 
   g_free (event);
@@ -128,7 +189,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   XrdOverlayClient *self = controller->self;
 
   GrabState *grab_state =
-      &self->manager->grab_state[controller->index];
+      xrd_window_manager_get_grab_state (self->manager, controller->index);
 
   float x_state = graphene_vec3_get_x (&event->state);
   if (grab_state->window && fabs (x_state) > self->analog_threshold)
@@ -142,7 +203,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   if (grab_state->window && fabs (y_state) > self->analog_threshold)
     {
       HoverState *hover_state =
-        &self->manager->hover_state[controller->index];
+        xrd_window_manager_get_hover_state (self->manager, controller->index);
       hover_state->distance +=
         self->scroll_to_push_ratio *
         hover_state->distance *
@@ -181,7 +242,8 @@ _action_rotate_cb (OpenVRAction        *action,
 {
   (void) action;
   XrdOverlayClient *self = controller->self;
-  GrabState *grab_state = &self->manager->grab_state[controller->index];
+  GrabState *grab_state =
+      xrd_window_manager_get_grab_state (self->manager, controller->index);
 
   float force = graphene_vec3_get_x (&event->state);
 
@@ -219,7 +281,7 @@ _window_grab_start_cb (XrdOverlayWindow        *window,
 
   xrd_window_manager_drag_start (self->manager, event->index);
 
-  if (event->index == self->input_synth->synthing_controller_index)
+  if (event->index == xrd_input_synth_synthing_controller (self->input_synth))
     xrd_overlay_desktop_cursor_hide (self->cursor);
 
   g_free (event);
@@ -247,8 +309,7 @@ xrd_window_unmark (XrdWindow *self)
 {
   graphene_vec3_t unmarked_color;
   graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
-  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (self)->overlay;
-  openvr_overlay_set_color (overlay, &unmarked_color);
+  xrd_window_set_color (self, &unmarked_color);
 }
 
 void
@@ -257,8 +318,7 @@ xrd_window_mark_color (XrdWindow *self, float r, float g, float b)
   graphene_vec3_t marked_color;
   //graphene_vec3_init (&marked_color, .8f, .4f, .2f);
   graphene_vec3_init (&marked_color, r, g, b);
-  OpenVROverlay *overlay = XRD_OVERLAY_WINDOW (self)->overlay;
-  openvr_overlay_set_color (overlay, &marked_color);
+  xrd_window_set_color (self, &marked_color);
 }
 
 void
@@ -299,14 +359,16 @@ _window_hover_end_cb (XrdWindow               *window,
 
   /* When leaving this window but now hovering another, the tip should
    * still be active because it is now hovering another window. */
-  gboolean active = self->manager->hover_state[event->index].window != NULL;
+  gboolean active =
+      xrd_window_manager_get_hover_state (self->manager, event->index)->window
+          != NULL;
 
   XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
   xrd_overlay_pointer_tip_set_active (pointer_tip, active);
 
   xrd_input_synth_reset_press_state (self->input_synth);
 
-  if (event->index == self->input_synth->synthing_controller_index)
+  if (event->index == xrd_input_synth_synthing_controller (self->input_synth))
     xrd_overlay_desktop_cursor_hide (self->cursor);
 
   g_free (event);
@@ -534,8 +596,9 @@ _action_show_keyboard_cb (OpenVRAction       *action,
 
       /* TODO: Perhaps there is a better way to get the window that should
                receive keyboard input */
-      int controller = self->input_synth->synthing_controller_index;
-      self->keyboard_window = self->manager->hover_state[controller].window;
+      int controller = xrd_input_synth_synthing_controller (self->input_synth);
+      self->keyboard_window = xrd_window_manager_get_hover_state
+          (self->manager, controller)->window;
 
       self->keyboard_press_signal =
           g_signal_connect (context, "keyboard-press-event",
@@ -605,7 +668,9 @@ _manager_no_hover_cb (XrdWindowManager *manager,
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,
-                         0.f, 0.f, -pointer_ray->default_length);
+                         0.f,
+                         0.f,
+                         -xrd_overlay_pointer_get_default_length (pointer_ray));
 
   graphene_matrix_t tip_pose;
 
@@ -737,7 +802,8 @@ _synth_click_cb (XrdInputSynth    *synth,
       if (event->button == 1)
         {
           HoverState *hover_state =
-              &self->manager->hover_state[event->controller_index];
+              xrd_window_manager_get_hover_state
+                  (self->manager, event->controller_index);
           if (hover_state->window != NULL && event->state)
             {
               XrdOverlayPointerTip *pointer_tip =

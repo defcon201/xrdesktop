@@ -31,46 +31,7 @@ typedef struct XrdClientController
   int               index;
 } XrdClientController;
 
-struct _XrdOverlayClient
-{
-  GObject parent;
-
-  OpenVRContext *context;
-
-  XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
-  XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
-
-  XrdWindowManager *manager;
-
-  XrdClientController left;
-  XrdClientController right;
-
-  XrdWindow *button_reset;
-  XrdWindow *button_sphere;
-
-  OpenVROverlayUploader *uploader;
-
-  OpenVRActionSet *wm_actions;
-
-  XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
-  XrdWindow *keyboard_window;
-  guint keyboard_press_signal;
-  guint keyboard_close_signal;
-
-  int poll_rate_ms;
-  guint poll_event_source_id;
-
-  double analog_threshold;
-  
-  double scroll_to_push_ratio;
-  double scroll_to_scale_ratio;
-  
-  double pixel_per_meter;
-
-  XrdInputSynth *input_synth;
-
-  XrdOverlayDesktopCursor *cursor;
-};
+struct _XrdOverlayClient;
 
 XrdOverlayClient *xrd_overlay_client_new (void);
 
@@ -85,6 +46,15 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 void
 xrd_overlay_client_remove_window (XrdOverlayClient *self,
                                   XrdOverlayWindow *window);
+
+GulkanClient *
+xrd_overlay_client_get_uploader (XrdOverlayClient *self);
+
+XrdWindowManager *
+xrd_overlay_client_get_manager (XrdOverlayClient *self);
+
+XrdOverlayDesktopCursor *
+xrd_overlay_client_get_cursor (XrdOverlayClient *self);
 
 G_END_DECLS
 

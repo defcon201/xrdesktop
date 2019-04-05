@@ -75,7 +75,7 @@ _make_texture (GulkanClient *gc, const gchar *resource,
 gboolean
 _init_windows (Example *self)
 {
-  GulkanClient *gc = GULKAN_CLIENT (self->client->uploader);
+  GulkanClient *gc = GULKAN_CLIENT (xrd_overlay_client_get_uploader (self->client));
   float texture_width, texture_height;
   GulkanTexture *hawk_big = _make_texture (gc, "/res/hawk.jpg",
                                            &texture_width, &texture_height);
@@ -115,7 +115,9 @@ _init_windows (Example *self)
           graphene_matrix_init_translate (&transform, &point);
           xrd_overlay_window_set_transformation_matrix (window, &transform);
 
-          xrd_window_manager_save_reset_transform (self->client->manager,
+          XrdWindowManager *manager =
+              xrd_overlay_client_get_manager (self->client);
+          xrd_window_manager_save_reset_transform (manager,
                                                    XRD_WINDOW (window));
 
           if (col == 0 && row == 0)
@@ -173,7 +175,9 @@ _init_windows (Example *self)
       g_printerr ("Could not load image.\n");
       return FALSE;
     }
-  xrd_overlay_desktop_cursor_upload_pixbuf (self->client->cursor,
+  XrdOverlayDesktopCursor *cursor =
+      xrd_overlay_client_get_cursor (self->client);
+  xrd_overlay_desktop_cursor_upload_pixbuf (cursor,
                                             cursor_pixbuf, 3, 3);
   return TRUE;
 }

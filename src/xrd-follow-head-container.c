@@ -12,6 +12,15 @@
 #include "openvr-math.h"
 #include "xrd-math.h"
 
+struct _XrdFollowHeadContainer
+{
+  GObject parent;
+  XrdWindow *window;
+  float distance;
+  /* TODO: inertia */
+  float speed;
+};
+
 G_DEFINE_TYPE (XrdFollowHeadContainer, xrd_follow_head_container, G_TYPE_OBJECT)
 
 static void

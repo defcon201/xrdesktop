@@ -7,6 +7,14 @@
 
 #include "xrd-overlay-pointer.h"
 
+struct _XrdOverlayPointer
+{
+  XrdOverlayModel parent;
+
+  float default_length;
+  float length;
+};
+
 G_DEFINE_TYPE (XrdOverlayPointer, xrd_overlay_pointer, XRD_TYPE_OVERLAY_MODEL)
 
 static void
@@ -94,4 +102,10 @@ void
 xrd_overlay_pointer_reset_length (XrdOverlayPointer *self)
 {
   self->length = self->default_length;
+}
+
+float
+xrd_overlay_pointer_get_default_length (XrdOverlayPointer *self)
+{
+  return self->default_length;
 }

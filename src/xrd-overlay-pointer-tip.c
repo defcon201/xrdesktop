@@ -11,6 +11,41 @@
 #include "xrd-settings.h"
 #include "xrd-math.h"
 
+struct _XrdOverlayPointerTip
+{
+  OpenVROverlay parent;
+  GulkanTexture *texture;
+  gboolean active;
+
+
+  gboolean use_constant_apparent_width;
+  float overlay_width;
+
+  /* 0, or the id of the currently running animation. */
+  guint animation_callback_id;
+
+  /* Pointer to the data of the currently running animation.
+   * Must be freed when an animation callback is cancelled. */
+  struct Animation *animation_data;
+
+  OpenVROverlayUploader  *uploader;
+
+  double inactive_r;
+  double inactive_g;
+  double inactive_b;
+  double active_r;
+  double active_g;
+  double active_b;
+  double background_alpha;
+
+  int tip_width;
+  int tip_height;
+
+  /* How much bigger the texture should be than the tip itsef.
+   * Used for animations. */
+  int texture_size_factor;
+};
+
 G_DEFINE_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, OPENVR_TYPE_OVERLAY)
 
 static void

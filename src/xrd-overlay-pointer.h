@@ -19,13 +19,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayPointer, xrd_overlay_pointer, XRD, OVERLAY_POINTER,
                       XrdOverlayModel)
 
-struct _XrdOverlayPointer
-{
-  XrdOverlayModel parent;
-
-  float default_length;
-  float length;
-};
+struct _XrdOverlayPointer;
 
 XrdOverlayPointer *xrd_overlay_pointer_new (int controller_index);
 
@@ -36,6 +30,9 @@ xrd_overlay_pointer_move (XrdOverlayPointer *self,
 void
 xrd_overlay_pointer_set_length (XrdOverlayPointer *self,
                                 float              length);
+
+float
+xrd_overlay_pointer_get_default_length (XrdOverlayPointer *self);
 
 void
 xrd_overlay_pointer_reset_length (XrdOverlayPointer *self);

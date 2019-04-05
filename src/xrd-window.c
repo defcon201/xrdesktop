@@ -495,6 +495,16 @@ xrd_window_add_child (XrdWindow *self,
   return klass->add_child (self, child, offset_center);
 }
 
+void
+xrd_window_set_color (XrdWindow *self,
+                      graphene_vec3_t *color)
+{
+  XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
+  if (klass->set_color == NULL)
+      return;
+  return klass->set_color (self, color);
+}
+
 static void
 xrd_window_constructed (GObject *gobject)
 {

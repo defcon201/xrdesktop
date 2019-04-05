@@ -39,25 +39,7 @@ typedef struct XrdInputSynthController
   int            index;
 } XrdInputSynthController;
 
-struct _XrdInputSynth
-{
-  GObject parent;
-
-  XrdInputSynthController left;
-  XrdInputSynthController right;
-  
-  /* hover_position is relative to hover_window */
-  graphene_point_t hover_position;
-
-  uint32_t button_press_state;
-  graphene_vec3_t scroll_accumulator;
-
-  double scroll_threshold;
-
-  int synthing_controller_index;
-
-  OpenVRActionSet *synth_actions;
-};
+struct _XrdInputSynth;
 
 XrdInputSynth *
 xrd_input_synth_new (void);

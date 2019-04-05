@@ -20,28 +20,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, XRD,
                       OVERLAY_DESKTOP_CURSOR, OpenVROverlay)
 
-struct _XrdOverlayDesktopCursor
-{
-  OpenVROverlay parent;
-
-  OpenVROverlayUploader *uploader;
-
-  gboolean use_constant_apparent_width;
-  /* setting, either absolute size or the apparent size in 3 meter distance */
-  float cursor_width_meter;
-
-  /* cached values set by apparent size and used in hotspot calculation */
-  float current_cursor_width_meter;
-
-  int hotspot_x;
-  int hotspot_y;
-
-  GdkPixbuf *pixbuf;
-  /* texture is cached to minimize texture allocations */
-  GulkanTexture *texture;
-  int texture_width;
-  int texture_height;
-};
+struct _XrdOverlayDesktopCursor;
 
 XrdOverlayDesktopCursor *
 xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader);

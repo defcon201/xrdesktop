@@ -16,14 +16,7 @@ G_BEGIN_DECLS
 #define XRD_TYPE_FOLLOW_HEAD_CONTAINER xrd_follow_head_container_get_type()
 G_DECLARE_FINAL_TYPE (XrdFollowHeadContainer, xrd_follow_head_container, XRD, FOLLOW_HEAD_CONTAINER, GObject)
 
-struct _XrdFollowHeadContainer
-{
-  GObject parent;
-  XrdWindow *window;
-  float distance;
-  /* TODO: inertia */
-  float speed;
-};
+struct _XrdFollowHeadContainer;
 
 XrdFollowHeadContainer*
 xrd_follow_head_container_new (void);

@@ -14,6 +14,23 @@
 
 #include "xrd-follow-head-container.h"
 
+struct _XrdWindowManager
+{
+  GObject parent;
+
+  GSList *draggable_windows;
+  GSList *managed_windows;
+  GSList *hoverable_windows;
+  GSList *destroy_windows;
+  GSList *following;
+
+  HoverState hover_state[OPENVR_CONTROLLER_COUNT];
+  GrabState grab_state[OPENVR_CONTROLLER_COUNT];
+
+  GHashTable *reset_transforms;
+  GHashTable *reset_scalings;
+};
+
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
 
 #define MINIMAL_SCALE_FACTOR 0.01
@@ -693,4 +710,18 @@ xrd_window_manager_is_hovered (XrdWindowManager *self,
     if (self->hover_state[i].window == window)
       return TRUE;
   return FALSE;
+}
+
+GrabState *
+xrd_window_manager_get_grab_state (XrdWindowManager *self,
+                                   int controller_index)
+{
+  return &self->grab_state[controller_index];
+}
+
+HoverState *
+xrd_window_manager_get_hover_state (XrdWindowManager *self,
+                                    int controller_index)
+{
+  return &self->hover_state[controller_index];
 }

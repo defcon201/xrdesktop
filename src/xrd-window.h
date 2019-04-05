@@ -123,6 +123,9 @@ struct _XrdWindowClass
                 graphene_point_t *offset_center);
 
   void
+  (*set_color) (XrdWindow *self, graphene_vec3_t *color);
+
+  void
   (*constructed) (GObject *object);
 
   guint windows_created;
@@ -234,6 +237,11 @@ void
 xrd_window_add_child (XrdWindow *self,
                       XrdWindow *child,
                       graphene_point_t *offset_center);
+
+void
+xrd_window_set_color (XrdWindow *self,
+                      graphene_vec3_t *color);
+
 
 G_END_DECLS
 

@@ -12,6 +12,14 @@
 #include <openvr-overlay-uploader.h>
 #include "xrd-math.h"
 
+struct _XrdOverlayWindow
+{
+  XrdWindow parent;
+
+  OpenVROverlay *overlay;
+  gboolean      recreate;
+};
+
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
 
 static void
@@ -64,6 +72,7 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   xrd_window_class->intersection_to_2d_offset_meter =
       (void*)xrd_overlay_window_intersection_to_2d_offset_meter;
   xrd_window_class->add_child = (void*)xrd_overlay_window_add_child;
+  xrd_window_class->set_color = (void*)xrd_overlay_window_set_color;
 }
 
 static void
@@ -226,6 +235,13 @@ xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native)
                                         "native", native,
                                          NULL);
   return self;
+}
+
+void
+xrd_overlay_window_set_color (XrdOverlayWindow *self,
+                              graphene_vec3_t *color)
+{
+  openvr_overlay_set_color (self->overlay, color);
 }
 
 static void
