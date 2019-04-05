@@ -11,6 +11,7 @@
 #include <openvr-overlay.h>
 #include <openvr-overlay-uploader.h>
 #include "xrd-math.h"
+#include "graphene-ext.h"
 
 struct _XrdOverlayWindow
 {

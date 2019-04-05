@@ -5,6 +5,8 @@
 #include <openvr-math.h>
 #include <openvr-context.h>
 
+#include "graphene-ext.h"
+
 bool
 xrd_math_matrix_equals (graphene_matrix_t *a,
                         graphene_matrix_t *b)
@@ -132,24 +134,6 @@ xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
                          graphene_matrix_get_value (matrix, 3, 0),
                          graphene_matrix_get_value (matrix, 3, 1),
                          graphene_matrix_get_value (matrix, 3, 2));
-}
-
-// TODO: missing in upstream
-/**
- * graphene_point_scale:
- * @p: a #graphene_point_t
- * @factor: the scaling factor
- * @res: (out caller-allocates): return location for the scaled point
- *
- * Scales the coordinates of the given #graphene_point_t by
- * the given @factor.
- */
-void
-graphene_point_scale (const graphene_point_t *p,
-                      float                   factor,
-                      graphene_point_t       *res)
-{
-  graphene_point_init (res, p->x * factor, p->y * factor);
 }
 
 gboolean

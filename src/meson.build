@@ -24,6 +24,7 @@ xrdesktop_sources = [
   'xrd-settings.c',
   'xrd-input-synth.c',
   'xrd-math.c',
+  'graphene-ext.c',
   binding_resources
 ]
 
@@ -50,6 +51,7 @@ xrdesktop_headers = [
   'xrd-settings.h',
   'xrd-input-synth.h',
   'xrd-math.h',
+  'graphene-ext.h',
 ]
 
 version_split = meson.project_version().split('.')
