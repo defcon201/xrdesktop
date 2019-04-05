@@ -164,6 +164,8 @@ xrd_overlay_window_add_child (XrdOverlayWindow *self,
     {
       _scale_move_child (self);
       XRD_WINDOW (child)->parent_window = XRD_WINDOW (self);
+      /* TODO: sort order hierarchy instead od ad hoc values*/
+      openvr_overlay_set_sort_order (child->overlay, 1);
     }
 }
 
