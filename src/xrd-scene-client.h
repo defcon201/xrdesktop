@@ -62,7 +62,6 @@ struct _XrdSceneClient
   float far_clip;
 
   XrdSceneWindow *windows[4];
-  XrdSceneSelection *selection;
 
   VkShaderModule shader_modules[PIPELINE_COUNT * 2];
   VkPipeline pipelines[PIPELINE_COUNT];

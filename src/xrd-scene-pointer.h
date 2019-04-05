@@ -17,7 +17,7 @@
 
 #include "xrd-scene-object.h"
 #include "xrd-scene-window.h"
-
+#include "xrd-scene-selection.h"
 
 G_BEGIN_DECLS
 
@@ -32,6 +32,8 @@ struct _XrdScenePointer
   float start_offset;
   float length;
   float default_length;
+
+  XrdSceneSelection *selection;
 };
 
 XrdScenePointer *xrd_scene_pointer_new (void);

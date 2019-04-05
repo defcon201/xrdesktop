@@ -78,8 +78,6 @@ xrd_scene_client_init (XrdSceneClient *self)
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     self->windows[i] = xrd_scene_window_new ();
 
-  self->selection = xrd_scene_selection_new ();
-
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     self->debug_vectors[i] = xrd_scene_vector_new ();
@@ -107,8 +105,6 @@ xrd_scene_client_finalize (GObject *gobject)
   g_object_unref (context);
 
   g_object_unref (self->device_manager);
-
-  g_object_unref (self->selection);
 
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
@@ -321,10 +317,6 @@ _init_vulkan (XrdSceneClient *self)
 
   _init_device_models (self);
 
-  xrd_scene_selection_initialize (self->selection,
-                                  client->device,
-                                 &self->descriptor_set_layout);
-
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     xrd_scene_vector_initialize (self->debug_vectors[i],
@@ -405,7 +397,7 @@ _test_intersection (XrdSceneClient *self)
   if (pointer == NULL)
     return;
 
-  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (self->selection);
+  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
 
   float lowest_distance = FLT_MAX;
   int32_t selected_window_id = -1;
@@ -575,12 +567,6 @@ _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
                                self->pipelines[PIPELINE_WINDOWS],
                                self->pipeline_layout,
                                cmd_buffer, &vp);
-
-      xrd_scene_selection_render (self->selection, eye,
-                                  self->pipelines[PIPELINE_POINTER],
-                                  self->pipeline_layout,
-                                  cmd_buffer,
-                                  &vp);
 
       xrd_scene_device_manager_render_pointers (self->device_manager, eye,
                                                 cmd_buffer,

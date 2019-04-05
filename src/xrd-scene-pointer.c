@@ -33,6 +33,8 @@ xrd_scene_pointer_init (XrdScenePointer *self)
   self->start_offset = -0.02f;
   self->default_length = 40.0f;
   self->length = self->default_length;
+
+  self->selection = xrd_scene_selection_new ();
 }
 
 XrdScenePointer *
@@ -46,6 +48,7 @@ xrd_scene_pointer_finalize (GObject *gobject)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (gobject);
   g_object_unref (self->vertex_buffer);
+  g_object_unref (self->selection);
   G_OBJECT_CLASS (xrd_scene_pointer_parent_class)->finalize (gobject);
 }
 
@@ -76,6 +79,8 @@ xrd_scene_pointer_initialize (XrdScenePointer       *self,
     return FALSE;
 
   xrd_scene_object_update_descriptors (obj);
+
+  xrd_scene_selection_initialize (self->selection, device, layout);
 
   return TRUE;
 }
@@ -124,6 +129,10 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
+
+  xrd_scene_selection_render (self->selection, eye,
+                              pipeline, pipeline_layout,
+                              cmd_buffer, vp);
 }
 
 void
