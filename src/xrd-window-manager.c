@@ -703,6 +703,21 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
   }
   g_hash_table_remove (self->reset_transforms, window);
 
+  for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
+    {
+      if (self->hover_state[i].window == XRD_WINDOW (window))
+        {
+          XrdControllerIndexEvent *hover_end_event =
+              g_malloc (sizeof (XrdControllerIndexEvent));
+          hover_end_event->index = i;
+          xrd_window_emit_hover_end (window, hover_end_event);
+
+          self->hover_state[i].window = NULL;
+        }
+      if (self->grab_state[i].window == XRD_WINDOW (window))
+        self->grab_state[i].window = NULL;
+    }
+
   g_object_unref (window);
 }
 
