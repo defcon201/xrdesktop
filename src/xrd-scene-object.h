@@ -76,10 +76,6 @@ xrd_scene_object_update_descriptors_texture (XrdSceneObject *self,
 void
 xrd_scene_object_update_descriptors (XrdSceneObject *self);
 
-void
-xrd_scene_object_get_normal (XrdSceneObject  *self,
-                             graphene_vec3_t *normal);
-
 G_END_DECLS
 
 #endif /* XRD_GLIB_SCENE_OBJECT_H_ */

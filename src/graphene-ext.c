@@ -111,3 +111,48 @@ graphene_point_scale (const graphene_point_t *p,
 {
   graphene_point_init (res, p->x * factor, p->y * factor);
 }
+
+void
+graphene_ray_get_origin_vec4 (const graphene_ray_t *r,
+                              float                 w,
+                              graphene_vec4_t      *res)
+{
+  graphene_vec3_t o;
+  graphene_ray_get_origin_vec3 (r, &o);
+  graphene_vec4_init_from_vec3 (res, &o, w);
+}
+
+void
+graphene_ray_get_origin_vec3 (const graphene_ray_t *r,
+                              graphene_vec3_t      *res)
+{
+  graphene_point3d_t o;
+  graphene_ray_get_origin (r, &o);
+  graphene_point3d_to_vec3 (&o, res);
+}
+
+void
+graphene_ray_get_direction_vec4 (const graphene_ray_t *r,
+                                 float                 w,
+                                 graphene_vec4_t      *res)
+{
+  graphene_vec3_t d;
+  graphene_ray_get_direction (r, &d);
+  graphene_vec4_init_from_vec3 (res, &d, w);
+}
+
+void
+graphene_vec4_print (const graphene_vec4_t *v)
+{
+  float f[4];
+  graphene_vec4_to_float (v, f);
+  g_print ("| %f %f %f %f |\n", f[0], f[1], f[2], f[3]);
+}
+
+void
+graphene_vec3_print (const graphene_vec3_t *v)
+{
+  float f[3];
+  graphene_vec3_to_float (v, f);
+  g_print ("| %f %f %f |\n", f[0], f[1], f[2]);
+}

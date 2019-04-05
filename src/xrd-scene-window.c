@@ -5,8 +5,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "xrd-scene-window.h"
 #include <gulkan-geometry.h>
+
+#include "graphene-ext.h"
+#include "xrd-scene-window.h"
 
 G_DEFINE_TYPE (XrdSceneWindow, xrd_scene_window, XRD_TYPE_SCENE_OBJECT)
 
@@ -139,4 +141,29 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
+}
+
+void
+xrd_scene_window_get_normal (XrdSceneWindow  *self,
+                             graphene_vec3_t *normal)
+{
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+
+  graphene_vec3_init (normal, 0, 0, 1);
+
+  graphene_matrix_t rotation_matrix;
+  graphene_matrix_get_rotation_matrix (&obj->model_matrix,
+                                       &rotation_matrix);
+
+  graphene_matrix_transform_vec3 (&rotation_matrix, normal, normal);
+}
+
+void
+xrd_scene_window_get_plane (XrdSceneWindow   *self,
+                            graphene_plane_t *res)
+{
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  graphene_vec3_t normal;
+  xrd_scene_window_get_normal (self, &normal);
+  graphene_plane_init_from_point (res, &normal, &obj->position);
 }

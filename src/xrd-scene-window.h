@@ -55,6 +55,14 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
                        VkCommandBuffer    cmd_buffer,
                        graphene_matrix_t *vp);
 
+void
+xrd_scene_window_get_normal (XrdSceneWindow  *self,
+                             graphene_vec3_t *normal);
+
+void
+xrd_scene_window_get_plane (XrdSceneWindow   *self,
+                            graphene_plane_t *res);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_SCENE_WINDOW_H_ */

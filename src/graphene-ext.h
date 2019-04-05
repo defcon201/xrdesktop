@@ -43,4 +43,24 @@ graphene_point_scale (const graphene_point_t *p,
                       float                   factor,
                       graphene_point_t       *res);
 
+void
+graphene_ray_get_origin_vec4 (const graphene_ray_t *r,
+                              float                 w,
+                              graphene_vec4_t      *res);
+
+void
+graphene_ray_get_origin_vec3 (const graphene_ray_t *r,
+                              graphene_vec3_t      *res);
+
+void
+graphene_ray_get_direction_vec4 (const graphene_ray_t *r,
+                                 float                 w,
+                                 graphene_vec4_t      *res);
+
+void
+graphene_vec4_print (const graphene_vec4_t *v);
+
+void
+graphene_vec3_print (const graphene_vec3_t *v);
+
 #endif /* XRD_GRAPHENE_QUATERNION_H_ */

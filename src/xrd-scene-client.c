@@ -20,6 +20,8 @@
 
 #include <signal.h>
 
+#include "graphene-ext.h"
+
 static bool use_validation = true;
 
 G_DEFINE_TYPE (XrdSceneClient, xrd_scene_client, GULKAN_TYPE_CLIENT)
@@ -386,94 +388,43 @@ _init_device_models (XrdSceneClient *self)
     }
 }
 
-gboolean
-_test_intersection (XrdScenePointer *pointer, XrdSceneWindow *window)
+void
+_test_intersection (XrdSceneClient *self)
 {
+  XrdScenePointer *pointer = NULL;
+  GList *pointers = g_hash_table_get_values (self->device_manager->pointers);
+  for (GList *l = pointers; l; l = l->next)
+    pointer = l->data;
+
   if (pointer == NULL)
-    return FALSE;
+    return;
 
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (pointer);
+  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (self->selection);
 
-  graphene_matrix_t *mat = &obj->model_matrix;
+  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
+    {
+      graphene_vec3_t intersection;
+      bool intersects = xrd_scene_pointer_get_intersection (pointer,
+                                                            self->windows[i],
+                                                            &intersection);
+      if (intersects)
+        {
+          XrdSceneObject *window_obj = XRD_SCENE_OBJECT (self->windows[i]);
+          graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
+                                            &window_obj->model_matrix);
+          selection_obj->visible = TRUE;
+          return;
+        }
+    }
 
-  if (mat == NULL)
-    return FALSE;
-
-  graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, -0.02f, 1);
-  graphene_matrix_transform_vec4 (mat, &start, &start);
-
-  graphene_vec4_t end;
-  graphene_vec4_init (&end, 0, 0, -40, 1);
-  graphene_matrix_transform_vec4 (mat, &end, &end);
-
-  graphene_vec4_t direction_vec4;
-  graphene_vec4_subtract (&end, &start, &direction_vec4);
-
-  graphene_point3d_t origin;
-  graphene_vec3_t    direction;
-
-  graphene_vec3_t vec3_start;
-  graphene_vec4_get_xyz (&start, &vec3_start);
-  graphene_point3d_init_from_vec3 (&origin, &vec3_start);
-
-  graphene_vec4_get_xyz (&direction_vec4, &direction);
-
-  graphene_ray_t ray;
-  graphene_ray_init (&ray, &origin, &direction);
-
-  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (window);
-
-  graphene_vec3_t window_normal;
-
-  xrd_scene_object_get_normal (window_obj, &window_normal);
-
-  graphene_vec4_t window_normal_vec4;
-  graphene_vec4_init_from_vec3 (&window_normal_vec4, &window_normal, 1);
-
-  graphene_plane_t plane;
-  graphene_plane_init_from_point (&plane, &window_normal, &window_obj->position);
-
-  graphene_vec4_t window_pos_vec4;
-  graphene_vec3_t window_pos_vec3;
-  graphene_point3d_to_vec3 (&window_obj->position, &window_pos_vec3);
-  graphene_vec4_init_from_vec3 (&window_pos_vec4, &window_pos_vec3, 1);
-
-  graphene_vec4_add (&window_pos_vec4, &window_normal_vec4, &end);
-
-  float dist = graphene_ray_get_distance_to_plane (&ray, &plane);
-
-  if (dist == INFINITY)
-    return FALSE;
-
-  graphene_vec4_t intersection;
-  graphene_vec4_normalize (&direction_vec4, &intersection);
-  graphene_vec4_scale (&intersection, dist, &intersection);
-  graphene_vec4_add (&start, &intersection, &intersection);
-
-
-  graphene_matrix_t inverse;
-  graphene_matrix_inverse (&window_obj->model_matrix, &inverse);
-
-  graphene_vec4_t intersection_origin;
-  graphene_matrix_transform_vec4 (&inverse,
-                                  &intersection,
-                                  &intersection_origin);
-
-  float f[4];
-  graphene_vec4_to_float (&intersection_origin, f);
-
-  bool intersects = f[0] >= 0 && f[0] <= 1.0f && f[1] >= 0 && f[1] <= 1.0f;
-
-  if (intersects)
-    return TRUE;
-
-  return FALSE;
+  selection_obj->visible = FALSE;
 }
 
 void
 xrd_scene_client_render (XrdSceneClient *self)
 {
+  _test_intersection (self);
+
   GulkanClient *client = GULKAN_CLIENT (self);
 
   FencedCommandBuffer cmd_buffer;
@@ -539,27 +490,6 @@ xrd_scene_client_render (XrdSceneClient *self)
 
   xrd_scene_device_manager_update_poses (self->device_manager,
                                         &self->mat_head_pose);
-
-  XrdScenePointer *pointer = NULL;
-  GList *pointers = g_hash_table_get_values (self->device_manager->pointers);
-  for (GList *l = pointers; l; l = l->next)
-    pointer = l->data;
-
-  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (self->selection);
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-    {
-      bool intersects = _test_intersection (pointer, self->windows[i]);
-      if (intersects)
-        {
-          XrdSceneObject *window_obj = XRD_SCENE_OBJECT (self->windows[i]);
-          graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
-                                            &window_obj->model_matrix);
-          selection_obj->visible = TRUE;
-          return;
-        }
-    }
-  selection_obj->visible = FALSE;
 }
 
 bool

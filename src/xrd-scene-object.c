@@ -103,19 +103,6 @@ xrd_scene_object_set_rotation_euler (XrdSceneObject   *self,
   _update_model_matrix (self);
 }
 
-void
-xrd_scene_object_get_normal (XrdSceneObject  *self,
-                             graphene_vec3_t *normal)
-{
-  graphene_vec3_init (normal, 0, 0, 1);
-
-  graphene_matrix_t rotation_matrix;
-  graphene_matrix_init_identity (&rotation_matrix);
-  graphene_matrix_rotate_quaternion (&rotation_matrix, &self->orientation);
-
-  graphene_matrix_transform_vec3 (&rotation_matrix, normal, normal);
-}
-
 gboolean
 xrd_scene_object_initialize (XrdSceneObject        *self,
                              GulkanDevice          *device,

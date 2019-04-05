@@ -16,6 +16,8 @@
 #include <gulkan-uniform-buffer.h>
 
 #include "xrd-scene-object.h"
+#include "xrd-scene-window.h"
+
 
 G_BEGIN_DECLS
 
@@ -48,6 +50,15 @@ void
 xrd_scene_pointer_update (XrdScenePointer    *self,
                           graphene_vec4_t    *start,
                           float               length);
+
+void
+xrd_scene_pointer_get_ray (XrdScenePointer *self,
+                           graphene_ray_t  *res);
+
+gboolean
+xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
+                                    XrdSceneWindow  *window,
+                                    graphene_vec3_t *res);
 
 G_END_DECLS
 
