@@ -389,47 +389,47 @@ _init_device_models (XrdSceneClient *self)
 void
 _test_intersection (XrdSceneClient *self)
 {
-  XrdScenePointer *pointer = NULL;
   GList *pointers = g_hash_table_get_values (self->device_manager->pointers);
   for (GList *l = pointers; l; l = l->next)
-    pointer = l->data;
-
-  if (pointer == NULL)
-    return;
-
-  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
-
-  float lowest_distance = FLT_MAX;
-  int32_t selected_window_id = -1;
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     {
-      graphene_vec3_t intersection;
-      float distance;
-      bool intersects = xrd_scene_pointer_get_intersection (pointer,
-                                                            self->windows[i],
-                                                            &distance,
-                                                            &intersection);
-      if (intersects && distance < lowest_distance)
+      XrdScenePointer *pointer = l->data;
+      if (pointer == NULL)
+        continue;
+
+      XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
+
+      float lowest_distance = FLT_MAX;
+      int32_t selected_window_id = -1;
+
+      for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
         {
-          selected_window_id = i;
-          lowest_distance = distance;
+          graphene_vec3_t intersection;
+          float distance;
+          bool intersects = xrd_scene_pointer_get_intersection (pointer,
+                                                                self->windows[i],
+                                                                &distance,
+                                                                &intersection);
+          if (intersects && distance < lowest_distance)
+            {
+              selected_window_id = i;
+              lowest_distance = distance;
+            }
         }
-    }
 
-  if (selected_window_id != -1)
-    {
-      XrdSceneObject *window_obj =
-        XRD_SCENE_OBJECT (self->windows[selected_window_id]);
-      graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
-                                            &window_obj->model_matrix);
-      selection_obj->visible = TRUE;
-      xrd_scene_pointer_set_length (pointer, lowest_distance);
-    }
-  else
-    {
-      selection_obj->visible = FALSE;
-      xrd_scene_pointer_reset_length (pointer);
+      if (selected_window_id != -1)
+        {
+          XrdSceneObject *window_obj =
+            XRD_SCENE_OBJECT (self->windows[selected_window_id]);
+          graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
+                                                &window_obj->model_matrix);
+          selection_obj->visible = TRUE;
+          xrd_scene_pointer_set_length (pointer, lowest_distance);
+        }
+      else
+        {
+          selection_obj->visible = FALSE;
+          xrd_scene_pointer_reset_length (pointer);
+        }
     }
 }
 
