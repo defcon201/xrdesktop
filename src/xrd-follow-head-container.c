@@ -189,13 +189,21 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
        * and enters the smooth movement phase. This would make the transition
        * from slowing snapping to fast smooth movement look like a jump. */
       float delta = 1.0;
+      graphene_point_t bottom_left = {
+        .x = left_outer + delta,
+        .y = bottom_outer + delta
+      };
+      graphene_point_t top_right = {
+        .x = right_outer - delta,
+        .y = top_outer - delta
+      };
+      graphene_point_t azimuth_inclination = { .x = azimuth, .y = inclination };
 
-      float i_azimuth, i_inclination;
+      graphene_point_t intersection_azimuth_inclination;
       gboolean intersects =
-          xrd_math_clamp_towards_zero_2d (left_outer + delta, right_outer - delta,
-                                      bottom_outer + delta, top_outer - delta,
-                                      azimuth, inclination,
-                                      &i_azimuth, &i_inclination);
+          xrd_math_clamp_towards_zero_2d (&bottom_left, &top_right,
+                                          &azimuth_inclination,
+                                          &intersection_azimuth_inclination);
 
       /* doesn't happen */
       if (!intersects)
@@ -205,7 +213,8 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
         }
 
       graphene_point3d_t new_pos_ws;
-      xrd_math_sphere_to_3d_coords (i_azimuth, i_inclination, radius,
+      xrd_math_sphere_to_3d_coords (intersection_azimuth_inclination.x,
+                                    intersection_azimuth_inclination.y, radius,
                                     &new_pos_ws);
       graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
 
@@ -217,7 +226,8 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
 
       graphene_vec2_t velocity;
       graphene_vec2_init (&velocity,
-                          inclination - i_inclination, azimuth - i_azimuth);
+                          inclination - intersection_azimuth_inclination.y,
+                          azimuth - intersection_azimuth_inclination.x);
       xrd_follow_head_container_set_speed (fhc,
                                            graphene_vec2_length (&velocity));
 
@@ -227,12 +237,15 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
 
 
   /* Window is visible, but not in center area: move it towards center area*/
-  float i_azimuth, i_inclination;
+  graphene_point_t bottom_left = { .x = left_inner, .y = bottom_inner };
+  graphene_point_t top_right = { .x = right_inner, .y = top_inner };
+  graphene_point_t azimuth_inclination = { .x = azimuth, .y = inclination };
+
+  graphene_point_t intersection_azimuth_inclination;
   gboolean intersects =
-      xrd_math_clamp_towards_zero_2d (left_inner, right_inner,
-                                      bottom_inner, top_inner,
-                                      azimuth, inclination,
-                                      &i_azimuth, &i_inclination);
+    xrd_math_clamp_towards_zero_2d (&bottom_left, &top_right,
+                                    &azimuth_inclination,
+                                    &intersection_azimuth_inclination);
 
   /* doesn't happen */
   if (!intersects)
@@ -241,8 +254,8 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
       return TRUE;
     }
 
-  float azimuth_diff = azimuth - i_azimuth;
-  float inclination_diff = inclination - i_inclination;
+  float azimuth_diff = azimuth - intersection_azimuth_inclination.x;
+  float inclination_diff = inclination - intersection_azimuth_inclination.y;
 
   /* To avoid sudden jumps in velocity:
    * Window starts with velocity 0.

@@ -136,63 +136,71 @@ xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
 }
 
 gboolean
-xrd_math_intersect_lines_2d (float p0_x, float p0_y, float p1_x, float p1_y,
-                             float p2_x, float p2_y, float p3_x, float p3_y,
-                             float *i_x, float *i_y)
+xrd_math_intersect_lines_2d (graphene_point_t *p0, graphene_point_t *p1,
+                             graphene_point_t *p2, graphene_point_t *p3,
+                             graphene_point_t *intersection)
 {
-  float s1_x, s1_y, s2_x, s2_y;
-  s1_x = p1_x - p0_x;
-  s1_y = p1_y - p0_y;
+  graphene_point_t s1 = {
+    .x = p1->x - p0->x,
+    .y = p1->y - p0->y
+  };
 
-  s2_x = p3_x - p2_x;
-  s2_y = p3_y - p2_y;
+  graphene_point_t s2 = {
+    .x = p3->x - p2->x,
+    .y = p3->y - p2->y
+  };
 
   float s, t;
-  s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) /
-      (-s2_x * s1_y + s1_x * s2_y);
-  t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) /
-      (-s2_x * s1_y + s1_x * s2_y);
+  s = (-s1.y * (p0->x - p2->x) + s1.x * (p0->y - p2->y)) /
+      (-s2.x * s1.y + s1.x * s2.y);
+  t = ( s2.x * (p0->y - p2->y) - s2.y * (p0->x - p2->x)) /
+      (-s2.x * s1.y + s1.x * s2.y);
 
   if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
     {
       // Collision detected
-      if (i_x != NULL)
-        *i_x = p0_x + (t * s1_x);
-      if (i_y != NULL)
-        *i_y = p0_y + (t * s1_y);
+      intersection->x = p0->x + (t * s1.x);
+      intersection->y = p0->y + (t * s1.y);
       return TRUE;
     }
   return FALSE; // No collision
 }
 
 gboolean
-xrd_math_clamp_towards_zero_2d (float x_min, float x_max,
-                                float y_min, float y_max,
-                                float x, float y,
-                                float *x_clamped, float *y_clamped)
+xrd_math_clamp_towards_zero_2d (graphene_point_t *min,
+                                graphene_point_t *max,
+                                graphene_point_t *point,
+                                graphene_point_t *clamped)
 {
+  graphene_point_t zero = { .x = 0, .y = 0};
+
+  graphene_point_t bottom_left = { min->x, min->y };
+  graphene_point_t top_left = { min->x, max->y };
+  graphene_point_t top_right = { max->x, max->y };
+  graphene_point_t bottom_right = { max->x, min->y };
+
   /* left */
-  if (xrd_math_intersect_lines_2d (0, 0, x, y,
-                                   x_min, y_min, x_min, y_max,
-                                   x_clamped, y_clamped))
+  if (xrd_math_intersect_lines_2d (&zero, point,
+                                   &bottom_left, &top_left,
+                                   clamped))
     return TRUE;
 
   /* right */
-  if (xrd_math_intersect_lines_2d (0, 0, x, y,
-                                   x_max, y_min, x_max, y_max,
-                                   x_clamped, y_clamped))
+  if (xrd_math_intersect_lines_2d (&zero, point,
+                                   &bottom_right, &top_right,
+                                   clamped))
     return TRUE;
 
   /* top */
-  if (xrd_math_intersect_lines_2d (0, 0, x, y,
-                                   x_min, y_max, x_max, y_max,
-                                   x_clamped, y_clamped))
+  if (xrd_math_intersect_lines_2d (&zero, point,
+                                   &top_left, &top_right,
+                                   clamped))
     return TRUE;
 
   /* bottom */
-  if (xrd_math_intersect_lines_2d (0, 0, x, y,
-                                   x_min, y_min, x_max, y_min,
-                                   x_clamped, y_clamped))
+  if (xrd_math_intersect_lines_2d (&zero, point,
+                                   &bottom_left, &bottom_right,
+                                   clamped))
     return TRUE;
 
 
