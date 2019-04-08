@@ -90,5 +90,22 @@ main ()
   g_print ("Result quat: ");
   graphene_quaternion_print (&q);
 
+
+  graphene_quaternion_init_from_angles (&orientation, 1, 2, 3);
+  graphene_matrix_init_identity (&mat);
+  graphene_matrix_init_scale (&mat, 1, 2, 4);
+  graphene_matrix_rotate_quaternion (&mat, &orientation);
+  g_print ("Scaled rotation:\n");
+
+  graphene_matrix_print (&mat);
+  _print_translation (&mat);
+  _print_scale (&mat);
+  _print_rotation (&mat);
+
+  g_print ("Rotation quat: ");
+  graphene_quaternion_print (&orientation);
+  graphene_matrix_get_rotation_quaternion (&mat, &q);
+  g_print ("Result quat: ");
+  graphene_quaternion_print (&q);
   return 0;
 }
