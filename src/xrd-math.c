@@ -98,26 +98,6 @@ xrd_math_matrix_set_translation_vec (graphene_matrix_t  *matrix,
   graphene_matrix_init_from_float (matrix, m);
 }
 
-void
-xrd_math_matrix_get_translation_vec (graphene_matrix_t *matrix,
-                                     graphene_vec3_t   *vec)
-{
-  graphene_vec3_init (vec,
-                      graphene_matrix_get_value (matrix, 3, 0),
-                      graphene_matrix_get_value (matrix, 3, 1),
-                      graphene_matrix_get_value (matrix, 3, 2));
-}
-
-void
-xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
-                                       graphene_point3d_t *point)
-{
-  graphene_point3d_init (point,
-                         graphene_matrix_get_value (matrix, 3, 0),
-                         graphene_matrix_get_value (matrix, 3, 1),
-                         graphene_matrix_get_value (matrix, 3, 2));
-}
-
 gboolean
 xrd_math_intersect_lines_2d (graphene_point_t *p0, graphene_point_t *p1,
                              graphene_point_t *p2, graphene_point_t *p3,
@@ -214,13 +194,13 @@ xrd_math_hmd_window_distance (XrdWindow *window)
 
 
   graphene_point3d_t hmd_location;
-  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_location);
+  graphene_matrix_get_translation_point3d (&hmd_pose, &hmd_location);
 
 
   graphene_matrix_t window_pose;
   xrd_window_get_transformation_matrix (window, &window_pose);
   graphene_point3d_t window_location;
-  xrd_math_matrix_get_translation_point (&window_pose, &window_location);
+  graphene_matrix_get_translation_point3d (&window_pose, &window_location);
 
   return graphene_point3d_distance (&hmd_location, &window_location, NULL);
 }

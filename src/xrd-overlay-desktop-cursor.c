@@ -10,6 +10,7 @@
 #include "openvr-math.h"
 #include "xrd-settings.h"
 #include "xrd-math.h"
+#include "graphene-ext.h"
 
 struct _XrdOverlayDesktopCursor
 {
@@ -80,7 +81,7 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
       openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &cursor_pose);
 
       graphene_vec3_t cursor_point_vec;
-      xrd_math_matrix_get_translation_vec (&cursor_pose, &cursor_point_vec);
+      graphene_matrix_get_translation_vec3 (&cursor_pose, &cursor_point_vec);
       graphene_point3d_t cursor_point;
       xrd_overlay_desktop_cursor_set_constant_width (self, &cursor_point);
     }
@@ -266,7 +267,7 @@ xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
     }
 
   graphene_point3d_t hmd_point;
-  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_point);
+  graphene_matrix_get_translation_point3d (&hmd_pose, &hmd_point);
 
   float distance = graphene_point3d_distance (cursor_point, &hmd_point, NULL);
 

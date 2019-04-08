@@ -18,8 +18,20 @@ void
 graphene_quaternion_print (const graphene_quaternion_t *q);
 
 void
-graphene_matrix_get_translation (const graphene_matrix_t *m,
-                                 graphene_vec3_t         *res);
+graphene_matrix_get_translation_vec3 (const graphene_matrix_t *m,
+                                      graphene_vec3_t         *res);
+
+void
+graphene_matrix_get_translation_point3d (const graphene_matrix_t *m,
+                                         graphene_point3d_t      *res);
+
+void
+graphene_matrix_set_translation_vec3 (const graphene_matrix_t *m,
+                                      graphene_vec3_t         *res);
+
+void
+graphene_matrix_set_translation_point3d (const graphene_matrix_t *m,
+                                         graphene_point3d_t      *res);
 
 void
 graphene_matrix_get_scale (const graphene_matrix_t *m,

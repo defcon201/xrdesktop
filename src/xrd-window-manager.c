@@ -486,7 +486,7 @@ _drag_window (XrdWindowManager  *self,
   GrabState *grab_state = &self->grab_state[controller_index];
 
   graphene_point3d_t controller_translation_point;
-  xrd_math_matrix_get_translation_point (pose, &controller_translation_point);
+  graphene_matrix_get_translation_point3d (pose, &controller_translation_point);
   graphene_quaternion_t controller_rotation;
   graphene_quaternion_init_from_matrix (&controller_rotation, pose);
 

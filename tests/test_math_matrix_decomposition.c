@@ -13,7 +13,7 @@ void
 _print_translation (graphene_matrix_t *m)
 {
   graphene_vec3_t t;
-  graphene_matrix_get_translation (m, &t);
+  graphene_matrix_get_translation_vec3 (m, &t);
 
   float f[3];
   graphene_vec3_to_float (&t, f);

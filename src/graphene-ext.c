@@ -29,12 +29,21 @@ graphene_quaternion_print (const graphene_quaternion_t *q)
 }
 
 void
-graphene_matrix_get_translation (const graphene_matrix_t *m,
-                                 graphene_vec3_t         *res)
+graphene_matrix_get_translation_vec3 (const graphene_matrix_t *m,
+                                      graphene_vec3_t         *res)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
   graphene_vec3_init (res, f[12], f[13], f[14]);
+}
+
+void
+graphene_matrix_get_translation_point3d (const graphene_matrix_t *m,
+                                         graphene_point3d_t      *res)
+{
+  float f[16];
+  graphene_matrix_to_float (m, f);
+  graphene_point3d_init (res, f[12], f[13], f[14]);
 }
 
 void

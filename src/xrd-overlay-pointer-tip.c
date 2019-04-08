@@ -10,6 +10,7 @@
 #include "openvr-math.h"
 #include "xrd-settings.h"
 #include "xrd-math.h"
+#include "graphene-ext.h"
 
 struct _XrdOverlayPointerTip
 {
@@ -428,7 +429,7 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
   openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &tip_pose);
 ;
   graphene_point3d_t tip_point;
-  xrd_math_matrix_get_translation_point (&tip_pose, &tip_point);
+  graphene_matrix_get_translation_point3d (&tip_pose, &tip_point);
 
   graphene_matrix_t hmd_pose;
   gboolean has_pose = _get_hmd_pose (&hmd_pose);
@@ -440,7 +441,7 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
     }
 
   graphene_point3d_t hmd_point;
-  xrd_math_matrix_get_translation_point (&hmd_pose, &hmd_point);
+  graphene_matrix_get_translation_point3d (&hmd_pose, &hmd_point);
 
   float distance = graphene_point3d_distance (&tip_point, &hmd_point, NULL);
 

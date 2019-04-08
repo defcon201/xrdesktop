@@ -38,12 +38,6 @@ xrd_math_matrix_set_translation_point (graphene_matrix_t  *matrix,
 void
 xrd_math_matrix_set_translation_vec (graphene_matrix_t  *matrix,
                                      graphene_vec3_t *vec);
-void
-xrd_math_matrix_get_translation_vec (graphene_matrix_t *matrix,
-                                     graphene_vec3_t   *vec);
-void
-xrd_math_matrix_get_translation_point (graphene_matrix_t  *matrix,
-                                       graphene_point3d_t *point);
 
 /** xrd_math_intersect_lines_2d:
  * 2 lines are given by 2 consecutive (x,y) points each.
