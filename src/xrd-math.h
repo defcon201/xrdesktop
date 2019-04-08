@@ -17,10 +17,6 @@
 #define DEG_TO_RAD(x) ( (x) * 2.0 * PI / 360.0 )
 #define RAD_TO_DEG(x) ( (x) * 360.0 / ( 2.0 * PI ) )
 
-bool
-xrd_math_matrix_equals (graphene_matrix_t *a,
-                        graphene_matrix_t *b);
-
 float
 xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
                                 graphene_matrix_t  *pose);

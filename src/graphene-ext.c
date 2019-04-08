@@ -7,6 +7,7 @@
 
 #include <glib.h>
 #include "graphene-ext.h"
+#include <inttypes.h>
 
 // TODO: Move to upstream
 
@@ -155,4 +156,21 @@ graphene_vec3_print (const graphene_vec3_t *v)
   float f[3];
   graphene_vec3_to_float (v, f);
   g_print ("| %f %f %f |\n", f[0], f[1], f[2]);
+}
+
+bool
+graphene_matrix_equals (graphene_matrix_t *a,
+                        graphene_matrix_t *b)
+{
+  float a_f[16];
+  float b_f[16];
+
+  graphene_matrix_to_float (a, a_f);
+  graphene_matrix_to_float (b, b_f);
+
+  for (uint32_t i = 0; i < 16; i++)
+    if (a_f[i] != b_f[i])
+      return FALSE;
+
+  return TRUE;
 }

@@ -11,6 +11,7 @@
 #include "xrd-window-manager.h"
 #include "openvr-math.h"
 #include "xrd-math.h"
+#include "graphene-ext.h"
 
 #include "xrd-follow-head-container.h"
 
@@ -174,7 +175,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
 
       g_object_get (G_OBJECT(window), "scaling-factor", &transition->from_scaling, NULL);
 
-      if (!xrd_math_matrix_equals (&transition->from, transform))
+      if (!graphene_matrix_equals (&transition->from, transform))
         {
           transition->interpolate = 0;
           transition->window = window;
@@ -252,7 +253,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
           g_object_get (G_OBJECT(window), "scaling-factor", &transition->from_scaling, NULL);
 
-          if (!xrd_math_matrix_equals (&transition->from, &transform))
+          if (!graphene_matrix_equals (&transition->from, &transform))
             {
               transition->interpolate = 0;
               transition->window = window;

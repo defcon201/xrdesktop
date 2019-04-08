@@ -63,4 +63,8 @@ graphene_vec4_print (const graphene_vec4_t *v);
 void
 graphene_vec3_print (const graphene_vec3_t *v);
 
+bool
+graphene_matrix_equals (graphene_matrix_t *a,
+                        graphene_matrix_t *b);
+
 #endif /* XRD_GRAPHENE_QUATERNION_H_ */
