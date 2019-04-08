@@ -83,9 +83,6 @@ xrd_math_sphere_to_3d_coords (float azimuth,
                               float distance,
                               graphene_point3d_t *point);
 
-gboolean
-openvr_system_get_hmd_pose (graphene_matrix_t *pose);
-
 float
 xrd_math_hmd_window_distance (XrdWindow *window);
 

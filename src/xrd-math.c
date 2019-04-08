@@ -3,8 +3,7 @@
 #include <inttypes.h>
 
 #include <openvr-math.h>
-#include <openvr-context.h>
-
+#include <openvr-system.h>
 #include "graphene-ext.h"
 
 bool
@@ -212,32 +211,6 @@ xrd_math_sphere_to_3d_coords (float azimuth,
                          dist_2d * sin (DEG_TO_RAD (azimuth)),
                          distance * sin (DEG_TO_RAD (inclination)),
                          - dist_2d * cos (DEG_TO_RAD (azimuth)));
-}
-
-gboolean
-openvr_system_get_hmd_pose (graphene_matrix_t *pose)
-{
-  OpenVRContext *context = openvr_context_get_instance ();
-  VRControllerState_t state;
-  if (context->system->IsTrackedDeviceConnected(k_unTrackedDeviceIndex_Hmd) &&
-      context->system->GetTrackedDeviceClass (k_unTrackedDeviceIndex_Hmd) ==
-          ETrackedDeviceClass_TrackedDeviceClass_HMD &&
-      context->system->GetControllerState (k_unTrackedDeviceIndex_Hmd,
-                                           &state, sizeof(state)))
-    {
-      /* k_unTrackedDeviceIndex_Hmd should be 0 => posearray[0] */
-      TrackedDevicePose_t openvr_pose;
-      context->system->GetDeviceToAbsoluteTrackingPose (context->origin, 0,
-                                                        &openvr_pose, 1);
-      openvr_math_matrix34_to_graphene (&openvr_pose.mDeviceToAbsoluteTracking,
-                                        pose);
-
-      return openvr_pose.bDeviceIsConnected &&
-             openvr_pose.bPoseIsValid &&
-             openvr_pose.eTrackingResult ==
-                 ETrackingResult_TrackingResult_Running_OK;
-    }
-  return FALSE;
 }
 
 float

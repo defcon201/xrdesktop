@@ -10,6 +10,8 @@
 #include <openvr-context.h>
 
 #include "openvr-math.h"
+#include <openvr-system.h>
+
 #include "xrd-math.h"
 
 struct _XrdFollowHeadContainer
