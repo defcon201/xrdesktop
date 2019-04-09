@@ -163,6 +163,13 @@ xrd_overlay_client_get_keyboard_window (XrdOverlayClient *self)
   return self->keyboard_window;
 }
 
+void
+xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
+                                         XrdWindow *window)
+{
+  xrd_window_manager_save_reset_transform (self->manager, window);
+}
+
 static void
 _action_hand_pose_cb (OpenVRAction            *action,
                       OpenVRPoseEvent         *event,

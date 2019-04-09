@@ -59,6 +59,10 @@ xrd_overlay_client_get_cursor (XrdOverlayClient *self);
 XrdWindow *
 xrd_overlay_client_get_keyboard_window (XrdOverlayClient *self);
 
+void
+xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
+                                         XrdWindow *window);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_CLIENT_H_ */
