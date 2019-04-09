@@ -25,6 +25,8 @@ struct _XrdWindowManager
   GSList *destroy_windows;
   GSList *following;
 
+  GSList *all_windows;
+
   HoverState hover_state[OPENVR_CONTROLLER_COUNT];
   GrabState grab_state[OPENVR_CONTROLLER_COUNT];
 
@@ -69,6 +71,7 @@ _free_matrix_cb (gpointer m)
 static void
 xrd_window_manager_init (XrdWindowManager *self)
 {
+  self->all_windows = NULL;
   self->draggable_windows = NULL;
   self->managed_windows = NULL;
   self->destroy_windows = NULL;
@@ -100,6 +103,9 @@ xrd_window_manager_finalize (GObject *gobject)
 
   g_hash_table_unref (self->reset_transforms);
   g_hash_table_unref (self->reset_scalings);
+
+  /* remove the window manager's reference to all windows */
+  g_slist_free_full (self->all_windows, g_object_unref);
 
   g_slist_free_full (self->destroy_windows, g_object_unref);
 }
@@ -297,6 +303,9 @@ xrd_window_manager_add_window (XrdWindowManager *self,
                                XrdWindow *window,
                                XrdWindowFlags flags)
 {
+  /* all windows that are added to the wm so they can be unrefed on finalize. */
+  self->all_windows = g_slist_append (self->all_windows, window);
+
   /* Freed with manager */
   if (flags & XRD_WINDOW_DESTROY_WITH_PARENT)
     self->destroy_windows = g_slist_append (self->destroy_windows, window);
@@ -331,6 +340,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   g_object_get (G_OBJECT(window), "scaling-factor", scaling, NULL);
   g_hash_table_insert (self->reset_scalings, window, scaling);
 
+  /* keep the window referenced as long as the window manages this window */
   g_object_ref (window);
 }
 
@@ -354,6 +364,7 @@ void
 xrd_window_manager_remove_window (XrdWindowManager *self,
                                   XrdWindow *window)
 {
+  self->all_windows = g_slist_remove (self->all_windows, window);
   self->destroy_windows = g_slist_remove (self->destroy_windows, window);
   self->draggable_windows = g_slist_remove (self->draggable_windows, window);
   self->managed_windows = g_slist_remove (self->managed_windows, window);
@@ -384,6 +395,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
         self->grab_state[i].window = NULL;
     }
 
+  /* remove the window manager's reference to the window */
   g_object_unref (window);
 }
 
