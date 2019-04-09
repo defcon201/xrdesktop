@@ -318,6 +318,14 @@ xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
   return klass->get_transformation_matrix (self, mat);
 }
 
+/**
+ * xrd_window_submit_texture:
+ * @self: The #XrdWindow
+ * @client: A GulkanClient, for example an OpenVROverlayUploader.
+ * @texture: A GulkanTexture that is created and owned by the caller.
+ * For performance reasons it is a good idea for the caller to reuse this
+ * texture.
+ */
 void
 xrd_window_submit_texture (XrdWindow *self,
                            GulkanClient *client,
@@ -329,6 +337,14 @@ xrd_window_submit_texture (XrdWindow *self,
   return klass->submit_texture (self, client, texture);
 }
 
+/**
+ * xrd_window_pixel_to_meter:
+ * @self: The #XrdWindow
+ * @pixel: The amount of pixels to convert to meter.
+ *
+ * Returns: How many meter in world space the amount of pixels occupy, based
+ * on the current ppm and scaling setting of this window.
+ */
 float
 xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
 {
@@ -340,6 +356,12 @@ xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
   return klass->pixel_to_meter (self, pixel);
 }
 
+/**
+ * xrd_window_get_width_meter:
+ * @self: The #XrdWindow
+ *
+ * Returns: The current world space width of the window in meter.
+ */
 gboolean
 xrd_window_get_width_meter (XrdWindow *self, float *meters)
 {
@@ -352,7 +374,12 @@ xrd_window_get_width_meter (XrdWindow *self, float *meters)
   return klass->get_width_meter (self, meters);
 }
 
-
+/**
+ * xrd_window_get_height_meter:
+ * @self: The #XrdWindow
+ *
+ * Returns: The current world space height of the window in meter.
+ */
 gboolean
 xrd_window_get_height_meter (XrdWindow *self, float *meters)
 {
@@ -365,6 +392,12 @@ xrd_window_get_height_meter (XrdWindow *self, float *meters)
   return klass->get_height_meter (self, meters);
 }
 
+/**
+ * xrd_window_poll_event:
+ * @self: The #XrdWindow
+ *
+ * Must be called periodically to receive events from this window.
+ */
 void
 xrd_window_poll_event (XrdWindow *self)
 {
@@ -374,6 +407,14 @@ xrd_window_poll_event (XrdWindow *self)
   return klass->poll_event (self);
 }
 
+/**
+ * xrd_window_intersects:
+ * @self: The #XrdWindow
+ * @pointer_transformation_matrix: pose of a pointer ray (like a controller).
+ * @intersection_point: The intersection point if there is an intersection.
+ *
+ * Returns: True if there is an intersection, else false.
+ */
 gboolean
 xrd_window_intersects (XrdWindow   *self,
                        graphene_matrix_t  *pointer_transformation_matrix,
@@ -387,6 +428,13 @@ xrd_window_intersects (XrdWindow   *self,
                             intersection_point);
 }
 
+/**
+ * xrd_window_intersection_to_pixels:
+ * @self: The #XrdWindow
+ * @intersection_point: intersection point in meters.
+ * @size_pixels: size of the window in pixels.
+ * @window_coords: coordinates on the window in pixels.
+ */
 gboolean
 xrd_window_intersection_to_pixels (XrdWindow   *self,
                                    graphene_point3d_t *intersection_point,
@@ -402,6 +450,13 @@ xrd_window_intersection_to_pixels (XrdWindow   *self,
                                         window_coords);
 }
 
+/**
+ * xrd_window_intersection_to_2d_offset_meter:
+ * @self: The #XrdWindow
+ * @intersection_point: intersection point in meters.
+ * @offset_center: offset of the intersection point to the center of the window,
+ * on the window plane (xy) and in meter.
+ */
 gboolean
 xrd_window_intersection_to_2d_offset_meter (XrdWindow *self,
                                             graphene_point3d_t *intersection_point,
@@ -414,7 +469,6 @@ xrd_window_intersection_to_2d_offset_meter (XrdWindow *self,
                                                  intersection_point,
                                                  offset_center);
 }
-
 
 void
 xrd_window_emit_grab_start (XrdWindow *self,
@@ -484,6 +538,15 @@ xrd_window_emit_hover_start (XrdWindow *self,
     return klass->emit_hover_start (self, event);
 }
 
+/**
+ * xrd_window_add_child:
+ * @self: The #XrdWindow
+ * @child: An already existing window.
+ * @offset_center: The offset of the child window's center to the parent
+ * window's center in pixels.
+ *
+ * x axis points right, y axis points up.
+ */
 void
 xrd_window_add_child (XrdWindow *self,
                       XrdWindow *child,
@@ -495,6 +558,11 @@ xrd_window_add_child (XrdWindow *self,
   return klass->add_child (self, child, offset_center);
 }
 
+/**
+ * xrd_window_set_color:
+ * @self: The #XrdWindow
+ * @color: RGB  value in [0,1]x[0,1]x[0,1]
+ */
 void
 xrd_window_set_color (XrdWindow *self,
                       graphene_vec3_t *color)

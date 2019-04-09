@@ -94,6 +94,15 @@ _emit_click (XrdInputSynth    *self,
   g_signal_emit (self, signals[CLICK_EVENT], 0, click_event);
 }
 
+/**
+ * xrd_input_synth_reset_press_state:
+ * @self: The #XrdInputSynth
+ *
+ * Issue a button release event for every button that previously was used for a
+ * button press event, but has not been released yet.
+ *
+ * When calling this function, also consider xrd_input_synth_reset_scroll().
+ */
 void
 xrd_input_synth_reset_press_state (XrdInputSynth *self)
 {
@@ -341,12 +350,24 @@ xrd_input_synth_init (XrdInputSynth *self)
   self->synthing_controller_index = 1;
 }
 
+/**
+ * xrd_input_synth_synthing_controller:
+ * @self: The #XrdInputSynth
+ *
+ * Returns: The index of the controller that is used for input synth.
+ */
 int
 xrd_input_synth_synthing_controller (XrdInputSynth *self)
 {
   return self->synthing_controller_index;
 }
 
+/**
+ * xrd_input_synth_hand_off_to_controller:
+ * @self: The #XrdInputSynth
+ * @controller_index: The index of the controller that will be used for input
+ * synth.
+ */
 void
 xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
                                         int controller_index)
@@ -356,6 +377,12 @@ xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
   self->synthing_controller_index = controller_index;
 }
 
+/**
+ * xrd_input_synth_poll_events:
+ * @self: The #XrdInputSynth
+ *
+ * Must be called periodically to receive input events.
+ */
 gboolean
 xrd_input_synth_poll_events (XrdInputSynth *self)
 {
@@ -364,6 +391,15 @@ xrd_input_synth_poll_events (XrdInputSynth *self)
   return TRUE;
 }
 
+/**
+ * xrd_input_synth_reset_scroll:
+ * @self: The #XrdInputSynth
+ *
+ * Resets the internal state of the scrolling, so the in-flight scroll distance
+ * on the touchpad is discarded.
+ *
+ * When calling this function, also consider xrd_input_synth_reset_press_state()
+ */
 void
 xrd_input_synth_reset_scroll (XrdInputSynth *self)
 {

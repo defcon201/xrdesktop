@@ -25,6 +25,17 @@ xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
 }
 
 /* TODO: Put GetProjectionRaw into openvr-glib */
+/**
+ * xrd_math_get_frustum_angles:
+ * @left: The angle from the center view axis to the left in deg.
+ * @right: The angle from the center view axis to the right in deg.
+ * @top: The angle from the center view axis to the top in deg.
+ * @bottom: The angle from the center view axis to the bottom in deg.
+ *
+ * Left and bottom are usually negative, top and right usually positive.
+ * Exceptions are FOVs where both opposing sides are on the same side of the
+ * center view axis (e.g. 2+ viewports per eye).
+ */
 void
 xrd_math_get_frustum_angles (float *left, float *right,
                              float *top, float *bottom)
@@ -38,13 +49,24 @@ xrd_math_get_frustum_angles (float *left, float *right,
   *top = - RAD_TO_DEG (atan (*top));
   *bottom = - RAD_TO_DEG (atan (*bottom));
 
+  // TODO: check if flipping top and bottom is the right thing to do
+
   //g_print ("Get angles %f %f %f %f\n", *left, *right, *top, *bottom);
 }
 
-/** xrd_math_get_rotation_angles:
- * calculates 2 angles akin to the spherical coordinate system:
- * - inclination is upwards from the xz plane.
- * - azimuth is clockwise around the y axis, starting at -z. */
+/**
+ * xrd_math_get_rotation_angles:
+ * @direction: a direction vector
+ * @azimuth clockwise angle in deg around the y axis, starting at -z:
+ * "left-right" component.
+ * @inclination: upwards angle in deg from the xz plane: "up-down" component.
+ *
+ * Calculate spherical angles from a direction vector with the direction
+ * vector's origin as the origin of the sphere.
+ *
+ * Note that the distance (sphere radius) is not calculated. For converting
+ * between spherical and 3D coordinates, the caller needs to keep track of it.
+ */
 void
 xrd_math_get_rotation_angles (graphene_vec3_t *direction,
                               float *azimuth,
@@ -98,6 +120,21 @@ xrd_math_matrix_set_translation_vec (graphene_matrix_t  *matrix,
   graphene_matrix_init_from_float (matrix, m);
 }
 
+/**
+ * xrd_math_intersect_lines_2d:
+ * @p0: The first point of the first line.
+ * @p1: The second point of the first line.
+ * @p2: The first point of the second line.
+ * @p3: The second point of the second line.
+ * @intersection: The resulting intersection point, if the lines intersect.
+ *
+ * Returns: TRUE if the lines intersect, else FALSE.
+ *
+ * 2 lines are given by 2 consecutive (x,y) points each.
+ * Based on an algorithm in Andre LeMothe's
+ * "Tricks of the Windows Game Programming Gurus".
+ * Implementation from https://stackoverflow.com/a/1968345
+ */
 gboolean
 xrd_math_intersect_lines_2d (graphene_point_t *p0, graphene_point_t *p1,
                              graphene_point_t *p2, graphene_point_t *p3,
@@ -129,6 +166,19 @@ xrd_math_intersect_lines_2d (graphene_point_t *p0, graphene_point_t *p1,
   return FALSE; // No collision
 }
 
+/**
+ * xrd_math_clamp_towards_zero_2d:
+ * @min: The (x,y) limit at the bottom left.
+ * @max: The (x,y) limit at the top right.
+ * @point: An (x,y) point, will be clamped if outside the min, max limits.
+ * @clamped: The clamped point, if the point was outside the limits.
+ *
+ * Returns: TRUE if the point was clamped, else FALSE.
+ *
+ * The bottom left "min" and top right "max" limits define a rectangle.
+ * Clamp a value to the borders of this rectangle such that both x and y go
+ * towards zero, until a rectangle border is hit.
+ */
 gboolean
 xrd_math_clamp_towards_zero_2d (graphene_point_t *min,
                                 graphene_point_t *max,
@@ -170,6 +220,12 @@ xrd_math_clamp_towards_zero_2d (graphene_point_t *min,
   return FALSE;
 }
 
+/**
+ * xrd_math_sphere_to_3d_coords:
+ * @azimuth: rotation around y axis, starting at -z. "left-right" component.
+ * @inclination: rotation upwards from xz plane. "up-down" component".
+ * @distance: the radius of the sphere around (0,0,0)
+ */
 void
 xrd_math_sphere_to_3d_coords (float azimuth,
                               float inclination,
@@ -184,6 +240,12 @@ xrd_math_sphere_to_3d_coords (float azimuth,
                          - dist_2d * cos (DEG_TO_RAD (azimuth)));
 }
 
+/**
+ * xrd_math_hmd_window_distance:
+ * @window: The #XrdWindow
+ *
+ * Returns: The distance of the HMD to the given window in meter.
+ */
 float
 xrd_math_hmd_window_distance (XrdWindow *window)
 {

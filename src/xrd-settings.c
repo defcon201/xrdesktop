@@ -35,6 +35,22 @@ xrd_settings_destroy_instance ()
 typedef void (*settings_callback) (GSettings *settings,
                                    gchar     *key,
                                    gpointer   user_data);
+
+/**
+ * xrd_settings_connect_and_apply:
+ * @callback: A function that will be called with the given
+ * @key and @data 1) immediately and 2) when the value for the given key is
+ * updated.
+ * @key: The settings key
+ * @data: A pointer that will be passed to the update callback.
+ *
+ * Use this convenience function when you don't want to initially read a config
+ * value from the settings, and then connect a callback to when the value
+ * changes.
+ *
+ * Instead write only one callback that handles initially setting the value, as
+ * well as any updates to this value.
+ */
 void
 xrd_settings_connect_and_apply (GCallback callback, gchar *key, gpointer data)
 {

@@ -154,11 +154,6 @@ struct _XrdWindow
   graphene_point_t child_offset_center;
 };
 
-/*
-XrdWindow *
-xrd_window_new (gchar *window_title, int width, int height, gpointer native);
-*/
-
 gboolean
 xrd_window_set_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat);
 
@@ -187,22 +182,12 @@ xrd_window_intersects (XrdWindow   *self,
                        graphene_matrix_t  *pointer_transformation_matrix,
                        graphene_point3d_t *intersection_point);
 
-/** xrd_window_intersection_to_pixels:
- * @intersection_point: intersection point in meters.
- * @size_pixels: size of the window in pixels.
- * @window_coords: coordinates on the window in pixels.
- * */
 gboolean
 xrd_window_intersection_to_pixels (XrdWindow          *self,
                                    graphene_point3d_t *intersection_point,
                                    XrdPixelSize       *size_pixels,
                                    graphene_point_t   *window_coords);
 
-/** xrd_window_intersection_to_offset_meter:
- * @intersection_point: intersection point in meters.
- * @offset_center: offset of the intersection point to the center of the window,
- * on the window plane (xy) and in meter.
- */
 gboolean
 xrd_window_intersection_to_2d_offset_meter (XrdWindow *self,
                                             graphene_point3d_t *intersection_point,

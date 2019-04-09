@@ -13,15 +13,15 @@ xrd_input_synth_synthing_controller
 
 <SECTION>
 <FILE>XrdMath</FILE>
+xrd_math_clamp_towards_zero_2d
 xrd_math_get_frustum_angles
 xrd_math_get_rotation_angles
-xrd_math_matrix_equals
-xrd_math_matrix_get_translation_point
-xrd_math_matrix_get_translation_vec
+xrd_math_hmd_window_distance
+xrd_math_intersect_lines_2d
 xrd_math_matrix_set_translation_point
 xrd_math_matrix_set_translation_vec
 xrd_math_point_matrix_distance
-graphene_point_scale
+xrd_math_sphere_to_3d_coords
 </SECTION>
 
 <SECTION>
@@ -96,11 +96,9 @@ XrdOverlayWindow
 xrd_overlay_window_new
 xrd_overlay_window_add_child
 xrd_overlay_window_get_transformation_matrix
-xrd_overlay_window_init_overlay
-xrd_overlay_window_intersection_to_offset_center
-xrd_overlay_window_intersection_to_window_coords
+xrd_overlay_window_intersection_to_2d_offset_meter
+xrd_overlay_window_intersection_to_pixels
 xrd_overlay_window_intersects
-xrd_overlay_window_new_from_overlay
 xrd_overlay_window_poll_event
 xrd_overlay_window_set_transformation_matrix
 xrd_overlay_window_submit_texture
@@ -156,7 +154,10 @@ XrdScenePointer
 xrd_scene_pointer_new
 xrd_scene_pointer_initialize
 xrd_scene_pointer_render
-xrd_scene_pointer_update
+xrd_scene_pointer_reset_length
+xrd_scene_pointer_set_length
+xrd_scene_pointer_get_ray
+xrd_scene_pointer_get_intersection
 XRD_TYPE_SCENE_POINTER
 </SECTION>
 
@@ -184,12 +185,12 @@ xrd_window_emit_hover_start
 xrd_window_emit_release
 xrd_window_get_transformation_matrix
 xrd_window_get_type
-xrd_window_get_xr_height
-xrd_window_get_xr_width
-xrd_window_intersection_to_offset_center
-xrd_window_intersection_to_window_coords
+xrd_window_get_height_meter
+xrd_window_get_width_meter
+xrd_window_intersection_to_2d_offset_meter
+xrd_window_intersection_to_pixels
 xrd_window_intersects
-xrd_window_pixel_to_xr_scale
+xrd_window_pixel_to_meter
 xrd_window_poll_event
 xrd_window_set_transformation_matrix
 xrd_window_submit_texture
@@ -235,7 +236,6 @@ DEG_TO_RAD
 OPENVR_GLIB_INSIDE
 PI
 RAD_TO_DEG
-WINDOW_COUNT
 XRD_CHECK_VERSION
 XRD_ENCODE_VERSION
 XRD_IS_WINDOW
