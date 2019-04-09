@@ -70,6 +70,9 @@ void
 xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
                                          XrdWindow *window);
 
+XrdWindow *
+xrd_overlay_client_get_synth_hovered (XrdOverlayClient *self);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_CLIENT_H_ */

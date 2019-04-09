@@ -55,6 +55,8 @@ struct _XrdClientClass
   GulkanClient *
   (*get_uploader) (XrdClient *self);
 
+  XrdWindow *
+  (*get_synth_hovered) (XrdClient *self);
 };
 
 XrdClient *xrd_client_new (void);
@@ -103,6 +105,9 @@ xrd_client_emit_move_cursor (XrdClient *self,
 void
 xrd_client_emit_system_quit (XrdClient *self,
                              GdkEvent *event);
+
+XrdWindow *
+xrd_client_get_synth_hovered (XrdClient *self);
 
 
 G_END_DECLS

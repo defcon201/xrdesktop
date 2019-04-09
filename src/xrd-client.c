@@ -132,6 +132,15 @@ xrd_client_get_uploader (XrdClient *self)
   return klass->get_uploader (self);
 }
 
+XrdWindow *
+xrd_client_get_synth_hovered (XrdClient *self)
+{
+  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
+  if (klass->get_synth_hovered == NULL)
+      return NULL;
+  return klass->get_synth_hovered (self);
+}
+
 void
 xrd_client_emit_keyboard_press (XrdClient *self,
                                 GdkEventKey *event)

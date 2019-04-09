@@ -82,6 +82,8 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
       (void*) xrd_overlay_client_get_keyboard_window;
   xrd_client_class->get_uploader =
       (void*) xrd_overlay_client_get_uploader;
+  xrd_client_class->get_synth_hovered =
+      (void*) xrd_overlay_client_get_synth_hovered;
 }
 
 XrdOverlayClient *
@@ -152,6 +154,15 @@ xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
                                          XrdWindow *window)
 {
   xrd_window_manager_save_reset_transform (self->manager, window);
+}
+
+XrdWindow *
+xrd_overlay_client_get_synth_hovered (XrdOverlayClient *self)
+{
+  int controller = xrd_input_synth_synthing_controller (self->input_synth);
+  XrdWindow *parent =
+      xrd_window_manager_get_hover_state (self->manager, controller)->window;
+  return parent;
 }
 
 static void
