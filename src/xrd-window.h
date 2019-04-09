@@ -61,16 +61,16 @@ struct _XrdWindowClass
 
   gboolean
   (*set_transformation_matrix) (XrdWindow *self,
-                                           graphene_matrix_t *mat);
+                                graphene_matrix_t *mat);
 
   gboolean
   (*get_transformation_matrix) (XrdWindow *self,
-                                          graphene_matrix_t *mat);
+                                graphene_matrix_t *mat);
 
   void
   (*submit_texture) (XrdWindow *self,
-                                GulkanClient *client,
-                                GulkanTexture *texture);
+                     GulkanClient *client,
+                     GulkanTexture *texture);
 
   float
   (*pixel_to_meter) (XrdWindow *self, int pixel);
@@ -91,9 +91,9 @@ struct _XrdWindowClass
 
   gboolean
   (*intersection_to_pixels) (XrdWindow          *self,
-                                    graphene_point3d_t *intersection_point,
-                                    XrdPixelSize       *size_pixels,
-                                    graphene_point_t   *window_coords);
+                             graphene_point3d_t *intersection_point,
+                             XrdPixelSize       *size_pixels,
+                             graphene_point_t   *window_coords);
 
   gboolean
   (*intersection_to_2d_offset_meter) (XrdWindow *self,
