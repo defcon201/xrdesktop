@@ -157,6 +157,12 @@ xrd_overlay_client_get_cursor (XrdOverlayClient *self)
   return self->cursor;
 }
 
+XrdWindow *
+xrd_overlay_client_get_keyboard_window (XrdOverlayClient *self)
+{
+  return self->keyboard_window;
+}
+
 static void
 _action_hand_pose_cb (OpenVRAction            *action,
                       OpenVRPoseEvent         *event,

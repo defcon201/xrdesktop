@@ -56,6 +56,9 @@ xrd_overlay_client_get_manager (XrdOverlayClient *self);
 XrdOverlayDesktopCursor *
 xrd_overlay_client_get_cursor (XrdOverlayClient *self);
 
+XrdWindow *
+xrd_overlay_client_get_keyboard_window (XrdOverlayClient *self);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_CLIENT_H_ */
