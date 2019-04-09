@@ -126,6 +126,10 @@ struct _XrdWindowClass
   (*set_color) (XrdWindow *self, graphene_vec3_t *color);
 
   void
+  (*set_flip_y) (XrdWindow *self,
+                 gboolean flip_y);
+
+  void
   (*constructed) (GObject *object);
 
   guint windows_created;
@@ -227,6 +231,9 @@ void
 xrd_window_set_color (XrdWindow *self,
                       graphene_vec3_t *color);
 
+void
+xrd_window_set_flip_y (XrdWindow *self,
+                       gboolean flip_y);
 
 G_END_DECLS
 

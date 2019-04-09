@@ -573,6 +573,16 @@ xrd_window_set_color (XrdWindow *self,
   return klass->set_color (self, color);
 }
 
+void
+xrd_window_set_flip_y (XrdWindow *self,
+                       gboolean flip_y)
+{
+  XrdWindowClass *klass = XRD_WINDOW_GET_CLASS (self);
+  if (klass->set_flip_y == NULL)
+      return;
+  return klass->set_flip_y (self, flip_y);
+}
+
 static void
 xrd_window_constructed (GObject *gobject)
 {

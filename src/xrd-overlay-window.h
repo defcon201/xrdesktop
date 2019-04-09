@@ -65,6 +65,10 @@ void
 xrd_overlay_window_set_color (XrdOverlayWindow *self,
                               graphene_vec3_t *color);
 
+void
+xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
+                               gboolean flip_y);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_WINDOW_H_ */

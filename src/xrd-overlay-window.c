@@ -18,10 +18,14 @@ struct _XrdOverlayWindow
   XrdWindow parent;
 
   OpenVROverlay *overlay;
-  gboolean      recreate;
+  gboolean       recreate;
+  gboolean       flip_y;
 };
 
 G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
+
+static struct VRTextureBounds_t defaultBounds = { 0., 0., 1., 1. };
+static struct VRTextureBounds_t flippedBounds = { 0., 1., 1., 0. };
 
 static void
 _scale_move_child (XrdOverlayWindow *self);
@@ -74,6 +78,7 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
       (void*)xrd_overlay_window_intersection_to_2d_offset_meter;
   xrd_window_class->add_child = (void*)xrd_overlay_window_add_child;
   xrd_window_class->set_color = (void*)xrd_overlay_window_set_color;
+  xrd_window_class->set_flip_y = (void*)xrd_overlay_window_set_flip_y;
 }
 
 static void
@@ -220,7 +225,7 @@ xrd_overlay_window_intersection_to_2d_offset_meter (XrdOverlayWindow *self,
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
-  (void) self;
+  self->flip_y = false;
 }
 
 /** xrd_overlay_window_new:
@@ -243,6 +248,21 @@ xrd_overlay_window_set_color (XrdOverlayWindow *self,
                               graphene_vec3_t *color)
 {
   openvr_overlay_set_color (self->overlay, color);
+}
+
+void
+xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
+                               gboolean flip_y)
+{
+  if (flip_y != self->flip_y)
+    {
+      OpenVRContext *openvrContext = openvr_context_get_instance();
+      VRTextureBounds_t *bounds = flip_y ? &flippedBounds : &defaultBounds;
+      openvrContext->overlay->SetOverlayTextureBounds (
+          self->overlay->overlay_handle, bounds);
+
+      self->flip_y = flip_y;
+    }
 }
 
 static void
