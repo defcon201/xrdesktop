@@ -107,6 +107,10 @@ xrd_window_manager_finalize (GObject *gobject)
   /* remove the window manager's reference to all windows */
   g_slist_free_full (self->all_windows, g_object_unref);
 
+  g_slist_free (self->hoverable_windows);
+  g_slist_free (self->following);
+  g_slist_free (self->draggable_windows);
+
   g_slist_free_full (self->destroy_windows, g_object_unref);
 }
 
