@@ -43,12 +43,6 @@ xrd_overlay_desktop_cursor_class_init (XrdOverlayDesktopCursorClass *klass)
   object_class->finalize = xrd_overlay_desktop_cursor_finalize;
 }
 
-static void
-xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
-{
-  (void) self;
-}
-
 void
 _set_width (XrdOverlayDesktopCursor *self, float width)
 {
@@ -84,11 +78,9 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
     _set_width (self, self->cursor_width_meter);
 }
 
-XrdOverlayDesktopCursor *
-xrd_overlay_desktop_cursor_new ()
+static void
+xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
 {
-  XrdOverlayDesktopCursor *self =
-      (XrdOverlayDesktopCursor*) g_object_new (XRD_TYPE_OVERLAY_DESKTOP_CURSOR, 0);
   self->texture_width = 0;
   self->texture_height = 0;
 
@@ -97,7 +89,7 @@ xrd_overlay_desktop_cursor_new ()
   if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
     {
       g_printerr ("Cursor overlay unavailable.\n");
-      return NULL;
+      return;
     }
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_cursor_width),
@@ -112,7 +104,13 @@ xrd_overlay_desktop_cursor_new ()
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 2);
 
   openvr_overlay_show (OPENVR_OVERLAY (self));
+}
 
+XrdOverlayDesktopCursor *
+xrd_overlay_desktop_cursor_new ()
+{
+  XrdOverlayDesktopCursor *self =
+      (XrdOverlayDesktopCursor*) g_object_new (XRD_TYPE_OVERLAY_DESKTOP_CURSOR, 0);
   return self;
 }
 
