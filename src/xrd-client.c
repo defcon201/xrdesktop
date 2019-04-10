@@ -64,6 +64,22 @@ xrd_client_init (XrdClient *self)
   (void) self;
 }
 
+/**
+ * xrd_client_add_window:
+ * @self: The #XrdClient
+ * @title: An arbitrary title for the window.
+ * @native: A user pointer that should be used for associating a native window
+ * struct (or wrapper) with the created #XrdWindow.
+ * @ppm: The initial pixel per meter setting for this #XrdWindow.
+ * @is_child: If this #XrdWindow is a child window, the parent window will be
+ * automatically determined and this #XrdWindow will be pinned to it, and move
+ * and scale with it.
+ * @follow_head: An #XrdWindow with this attribute will move to keep its
+ * current distance from the user and will move to stay in the user's view.
+ *
+ * Creates an #XrdWindow, puts it under the management of the #XrdWindowManager
+ * and returns it.
+ */
 XrdWindow *
 xrd_client_add_window (XrdClient  *self,
                        const char *title,
@@ -79,6 +95,15 @@ xrd_client_add_window (XrdClient  *self,
                             is_child, follow_head);
 }
 
+/**
+ * xrd_client_remove_window:
+ * @self: The #XrdClient
+ * @window: The #XrdWindow to remove.
+ *
+ * Removes an #XrdWindow from the management of the #XrdClient and the
+ * #XrdWindowManager.
+ * Note that the #XrdWindow will not be destroyed by this function.
+ */
 void
 xrd_client_remove_window (XrdClient *self,
                           XrdWindow *window)
@@ -89,6 +114,15 @@ xrd_client_remove_window (XrdClient *self,
   return klass->remove_window (self, window);
 }
 
+/**
+ * xrd_client_add_button:
+ * @self: The #XrdClient
+ * @button: The button (#XrdWindow) that will be created by this function.
+ * @label: Text that will be displayed on the button.
+ * @position: World space position of the button.
+ * @press_callback: A function that will be called when the button is grabbed.
+ * @press_callback_data: User pointer passed to @press_callback.
+ */
 gboolean
 xrd_client_add_button (XrdClient          *self,
                        XrdWindow         **button,
@@ -104,6 +138,12 @@ xrd_client_add_button (XrdClient          *self,
                             press_callback, press_callback_data);
 }
 
+/**
+ * xrd_client_get_keyboard_window
+ * @self: The #XrdClient
+ *
+ * Returns: The window that is currently used for keyboard input. Can be NULL.
+ */
 XrdWindow *
 xrd_client_get_keyboard_window (XrdClient *self)
 {
@@ -113,6 +153,13 @@ xrd_client_get_keyboard_window (XrdClient *self)
   return klass->get_keyboard_window (self);
 }
 
+/**
+ * xrd_client_save_reset_transform:
+ * @self: The #XrdClient
+ * @window: The #XrdWindow to save the current transform for. The reset
+ * functionality of #XrdWindowManager will reset the transform of this window
+ * to the transform the window has when this function is called.
+ */
 void
 xrd_client_save_reset_transform (XrdClient *self,
                                  XrdWindow *window)
@@ -132,6 +179,13 @@ xrd_client_get_uploader (XrdClient *self)
   return klass->get_uploader (self);
 }
 
+/**
+ * xrd_client_get_synth_hovered:
+ * @self: The #XrdClient
+ *
+ * Returns: If the controller used for synthesizing input is hovering over an
+ * #XrdWindow, return this window, else NULL.
+ */
 XrdWindow *
 xrd_client_get_synth_hovered (XrdClient *self)
 {
@@ -141,6 +195,19 @@ xrd_client_get_synth_hovered (XrdClient *self)
   return klass->get_synth_hovered (self);
 }
 
+/**
+ * xrd_client_submit_cursor_texture:
+ * @self: The #XrdClient
+ * @client: A GulkanClient, for example an OpenVROverlayUploader.
+ * @texture: A GulkanTexture that is created and owned by the caller.
+ * For performance reasons it is a good idea for the caller to reuse this
+ * texture.
+ * @hotspot_x: The x component of the hotspot.
+ * @hotspot_y: The x component of the hotspot.
+ *
+ * A hotspot of (x, y) means that the hotspot is at x pixels right, y pixels
+ * down from the top left corner of the texture.
+ */
 void
 xrd_client_submit_cursor_texture (XrdClient *self,
                                   GulkanClient *client,

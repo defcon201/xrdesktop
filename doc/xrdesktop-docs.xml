@@ -28,6 +28,7 @@
       </para>
     </refsect2>
 
+    <xi:include href="xml/XrdClient.xml"/>
     <xi:include href="xml/XrdOverlayClient.xml"/>
     <xi:include href="xml/XrdOverlayWindow.xml"/>
     <xi:include href="xml/XrdOverlayDesktopCursor.xml"/>
