@@ -49,6 +49,14 @@ XrdOverlayClient
 xrd_overlay_client_new
 xrd_overlay_client_add_window
 xrd_overlay_client_remove_window
+xrd_overlay_client_add_button
+xrd_overlay_client_get_uploader
+xrd_overlay_client_get_manager
+xrd_overlay_client_get_cursor
+xrd_overlay_client_get_keyboard_window
+xrd_overlay_client_save_reset_transform
+xrd_overlay_client_get_synth_hovered
+xrd_overlay_client_submit_cursor_texture
 XRD_TYPE_OVERLAY_CLIENT
 </SECTION>
 
@@ -60,7 +68,7 @@ xrd_overlay_desktop_cursor_new
 xrd_overlay_desktop_cursor_set_constant_width
 xrd_overlay_desktop_cursor_show
 xrd_overlay_desktop_cursor_update
-xrd_overlay_desktop_cursor_upload_pixbuf
+xrd_overlay_desktop_cursor_submit_texture
 XRD_TYPE_OVERLAY_DESKTOP_CURSOR
 </SECTION>
 
@@ -106,6 +114,7 @@ xrd_overlay_pointer_tip_set_constant_width
 xrd_overlay_pointer_tip_set_transformation_matrix
 xrd_overlay_pointer_tip_show
 xrd_overlay_pointer_tip_update
+xrd_overlay_pointer_get_default_length
 XRD_TYPE_OVERLAY_POINTER_TIP
 </SECTION>
 
@@ -121,6 +130,8 @@ xrd_overlay_window_intersects
 xrd_overlay_window_poll_event
 xrd_overlay_window_set_transformation_matrix
 xrd_overlay_window_submit_texture
+xrd_overlay_window_set_color
+xrd_overlay_window_set_flip_y
 XRD_TYPE_OVERLAY_WINDOW
 </SECTION>
 
@@ -160,6 +171,7 @@ xrd_scene_object_new
 xrd_scene_object_bind
 xrd_scene_object_initialize
 xrd_scene_object_set_position
+xrd_scene_object_set_rotation_euler
 xrd_scene_object_set_scale
 xrd_scene_object_update_descriptors
 xrd_scene_object_update_descriptors_texture
@@ -213,6 +225,8 @@ xrd_window_pixel_to_meter
 xrd_window_poll_event
 xrd_window_set_transformation_matrix
 xrd_window_submit_texture
+xrd_window_set_color
+xrd_window_set_flip_y
 XRD_WINDOW
 XRD_WINDOW_CLASS
 XRD_WINDOW_GET_CLASS
@@ -229,6 +243,8 @@ xrd_window_manager_arrange_sphere
 xrd_window_manager_check_grab
 xrd_window_manager_check_release
 xrd_window_manager_drag_start
+xrd_window_manager_get_grab_state
+xrd_window_manager_get_hover_state
 xrd_window_manager_is_grabbed
 xrd_window_manager_is_grabbing
 xrd_window_manager_is_hovered

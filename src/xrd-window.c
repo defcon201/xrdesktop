@@ -359,6 +359,7 @@ xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
 /**
  * xrd_window_get_width_meter:
  * @self: The #XrdWindow
+ * @meters: The width of the #XrdWindow in meters.
  *
  * Returns: The current world space width of the window in meter.
  */
@@ -377,6 +378,7 @@ xrd_window_get_width_meter (XrdWindow *self, float *meters)
 /**
  * xrd_window_get_height_meter:
  * @self: The #XrdWindow
+ * @meters: The height of the #XrdWindow in meter.
  *
  * Returns: The current world space height of the window in meter.
  */

@@ -57,7 +57,7 @@ xrd_math_get_frustum_angles (float *left, float *right,
 /**
  * xrd_math_get_rotation_angles:
  * @direction: a direction vector
- * @azimuth clockwise angle in deg around the y axis, starting at -z:
+ * @azimuth: clockwise angle in deg around the y axis, starting at -z:
  * "left-right" component.
  * @inclination: upwards angle in deg from the xz plane: "up-down" component.
  *
@@ -224,7 +224,9 @@ xrd_math_clamp_towards_zero_2d (graphene_point_t *min,
  * xrd_math_sphere_to_3d_coords:
  * @azimuth: rotation around y axis, starting at -z. "left-right" component.
  * @inclination: rotation upwards from xz plane. "up-down" component".
- * @distance: the radius of the sphere around (0,0,0)
+ * @distance: the radius of the sphere
+ * @point: the resulting point in 3D space on the surface of a sphere around
+ * (0,0,0) with @distance.
  */
 void
 xrd_math_sphere_to_3d_coords (float azimuth,
