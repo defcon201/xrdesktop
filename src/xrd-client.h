@@ -57,6 +57,13 @@ struct _XrdClientClass
 
   XrdWindow *
   (*get_synth_hovered) (XrdClient *self);
+
+  void
+  (*submit_cursor_texture) (XrdClient *self,
+                            GulkanClient *client,
+                            GulkanTexture *texture,
+                            int hotspot_x,
+                            int hotspot_y);
 };
 
 XrdClient *xrd_client_new (void);
@@ -109,6 +116,12 @@ xrd_client_emit_system_quit (XrdClient *self,
 XrdWindow *
 xrd_client_get_synth_hovered (XrdClient *self);
 
+void
+xrd_client_submit_cursor_texture (XrdClient *self,
+                                  GulkanClient *client,
+                                  GulkanTexture *texture,
+                                  int hotspot_x,
+                                  int hotspot_y);
 
 G_END_DECLS
 

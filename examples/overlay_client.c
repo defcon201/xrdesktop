@@ -175,10 +175,16 @@ _init_windows (Example *self)
       g_printerr ("Could not load image.\n");
       return FALSE;
     }
-  XrdOverlayDesktopCursor *cursor =
-      xrd_overlay_client_get_cursor (self->client);
-  xrd_overlay_desktop_cursor_upload_pixbuf (cursor,
-                                            cursor_pixbuf, 3, 3);
+
+  GulkanTexture *texture = gulkan_texture_new_from_pixbuf (
+      gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
+  gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
+
+  xrd_overlay_client_submit_cursor_texture (
+      self->client, xrd_overlay_client_get_uploader (self->client),
+      texture, 3, 3);
+
+
   return TRUE;
 }
 

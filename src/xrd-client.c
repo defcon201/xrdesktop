@@ -142,6 +142,20 @@ xrd_client_get_synth_hovered (XrdClient *self)
 }
 
 void
+xrd_client_submit_cursor_texture (XrdClient *self,
+                                  GulkanClient *client,
+                                  GulkanTexture *texture,
+                                  int hotspot_x,
+                                  int hotspot_y)
+{
+  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
+  if (klass->submit_cursor_texture == NULL)
+      return;
+  return klass->submit_cursor_texture (self, client, texture,
+                                       hotspot_x, hotspot_y);
+}
+
+void
 xrd_client_emit_keyboard_press (XrdClient *self,
                                 GdkEventKey *event)
 {

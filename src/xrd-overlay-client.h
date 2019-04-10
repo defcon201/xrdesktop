@@ -73,6 +73,13 @@ xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
 XrdWindow *
 xrd_overlay_client_get_synth_hovered (XrdOverlayClient *self);
 
+void
+xrd_overlay_client_submit_cursor_texture (XrdOverlayClient *self,
+                                          GulkanClient *client,
+                                          GulkanTexture *texture,
+                                          int hotspot_x,
+                                          int hotspot_y);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_CLIENT_H_ */

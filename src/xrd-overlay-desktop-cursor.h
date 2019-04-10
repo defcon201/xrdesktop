@@ -23,13 +23,14 @@ G_DECLARE_FINAL_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, XRD,
 struct _XrdOverlayDesktopCursor;
 
 XrdOverlayDesktopCursor *
-xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader);
+xrd_overlay_desktop_cursor_new ();
 
 void
-xrd_overlay_desktop_cursor_upload_pixbuf (XrdOverlayDesktopCursor *self,
-                                          GdkPixbuf *pixbuf,
-                                          int hotspot_x,
-                                          int hotspot_y);
+xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
+                                           GulkanClient *uploader,
+                                           GulkanTexture *texture,
+                                           int hotspot_x,
+                                           int hotspot_y);
 
 void
 xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,

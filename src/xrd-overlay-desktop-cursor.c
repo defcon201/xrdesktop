@@ -16,8 +16,6 @@ struct _XrdOverlayDesktopCursor
 {
   OpenVROverlay parent;
 
-  OpenVROverlayUploader *uploader;
-
   gboolean use_constant_apparent_width;
   /* setting, either absolute size or the apparent size in 3 meter distance */
   float cursor_width_meter;
@@ -28,9 +26,6 @@ struct _XrdOverlayDesktopCursor
   int hotspot_x;
   int hotspot_y;
 
-  GdkPixbuf *pixbuf;
-  /* texture is cached to minimize texture allocations */
-  GulkanTexture *texture;
   int texture_width;
   int texture_height;
 };
@@ -90,13 +85,10 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
 }
 
 XrdOverlayDesktopCursor *
-xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
+xrd_overlay_desktop_cursor_new ()
 {
   XrdOverlayDesktopCursor *self =
       (XrdOverlayDesktopCursor*) g_object_new (XRD_TYPE_OVERLAY_DESKTOP_CURSOR, 0);
-  self->uploader = g_object_ref (uploader);
-  self->pixbuf = NULL;
-  self->texture = NULL;
   self->texture_width = 0;
   self->texture_height = 0;
 
@@ -124,44 +116,21 @@ xrd_overlay_desktop_cursor_new (OpenVROverlayUploader *uploader)
   return self;
 }
 
-/** xrd_overlay_desktop_cursor_upload_pixbuf:
- * Sets the current cursor to pixbuf.
- * This XrdDesktopCursor takes ownership of the pixbuf and will free it when
- * appropriate. */
 void
-xrd_overlay_desktop_cursor_upload_pixbuf (XrdOverlayDesktopCursor *self,
-                                          GdkPixbuf *pixbuf,
-                                          int hotspot_x,
-                                          int hotspot_y)
+xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
+                                           GulkanClient *uploader,
+                                           GulkanTexture *texture,
+                                           int hotspot_x,
+                                           int hotspot_y)
 {
-  GulkanClient *client = GULKAN_CLIENT (self->uploader);
-
-  int new_texture_width = gdk_pixbuf_get_width (pixbuf);
-  int new_texture_height = gdk_pixbuf_get_height (pixbuf);
-
-  if (self->texture_width != new_texture_width ||
-      self->texture_height != new_texture_height)
-    {
-      if (self->texture)
-        g_object_unref (self->texture);
-      self->texture = gulkan_texture_new_from_pixbuf (client->device, pixbuf,
-                                                      VK_FORMAT_R8G8B8A8_UNORM);
-
-      if (self->pixbuf)
-        g_object_unref (self->pixbuf);
-      self->pixbuf = pixbuf;
-
-      self->texture_width = new_texture_width;
-      self->texture_height = new_texture_height;
-    }
-
-  gulkan_client_upload_pixbuf (client, self->texture, pixbuf);
-
-  openvr_overlay_uploader_submit_frame (self->uploader, OPENVR_OVERLAY (self),
-                                        self->texture);
+  openvr_overlay_uploader_submit_frame (OPENVR_OVERLAY_UPLOADER (uploader),
+                                        OPENVR_OVERLAY (self), texture);
 
   self->hotspot_x = hotspot_x;
   self->hotspot_y = hotspot_y;
+
+  self->texture_width = texture->width;
+  self->texture_height = texture->height;
 }
 
 void
@@ -169,7 +138,7 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
                                    XrdOverlayWindow        *window,
                                    graphene_point3d_t      *intersection)
 {
-  if (!self->pixbuf)
+  if (self->texture_width == 0 || self->texture_height == 0)
     return;
 
   /* TODO: first we have to know the size of the cursor at the target  position
@@ -296,10 +265,4 @@ xrd_overlay_desktop_cursor_finalize (GObject *gobject)
 {
   XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (gobject);
   openvr_overlay_destroy (OPENVR_OVERLAY (self));
-  if (self->pixbuf)
-    g_object_unref (self->pixbuf);
-  if (self->texture)
-    g_object_unref (self->texture);
-  g_object_unref (self->uploader);
-  (void) self;
 }

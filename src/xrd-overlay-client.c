@@ -84,6 +84,8 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
       (void*) xrd_overlay_client_get_uploader;
   xrd_client_class->get_synth_hovered =
       (void*) xrd_overlay_client_get_synth_hovered;
+  xrd_client_class->submit_cursor_texture =
+      (void*) xrd_overlay_client_submit_cursor_texture;
 }
 
 XrdOverlayClient *
@@ -847,6 +849,17 @@ static void _system_quit_cb (OpenVRContext *context,
   /* g_print("Handling VR quit event\n"); */
   openvr_context_acknowledge_quit (context);
   xrd_client_emit_system_quit (XRD_CLIENT (self), event);
+}
+
+void
+xrd_overlay_client_submit_cursor_texture (XrdOverlayClient *self,
+                                          GulkanClient *client,
+                                          GulkanTexture *texture,
+                                          int hotspot_x,
+                                          int hotspot_y)
+{
+  xrd_overlay_desktop_cursor_submit_texture (self->cursor, client, texture,
+                                             hotspot_x, hotspot_y);
 }
 
 static void
