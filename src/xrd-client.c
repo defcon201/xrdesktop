@@ -71,9 +71,10 @@ xrd_client_init (XrdClient *self)
  * @native: A user pointer that should be used for associating a native window
  * struct (or wrapper) with the created #XrdWindow.
  * @ppm: The initial pixel per meter setting for this #XrdWindow.
- * @is_child: If this #XrdWindow is a child window, the parent window will be
- * automatically determined and this #XrdWindow will be pinned to it, and move
- * and scale with it.
+ * @is_child: If true, the window can not be dragged with controllers and will
+ * not be otherwise managed by the window manager. For windows that have this
+ * attribute set, xrd_window_add_child() should be called on a desired parent
+ * window.
  * @follow_head: An #XrdWindow with this attribute will move to keep its
  * current distance from the user and will move to stay in the user's view.
  *
