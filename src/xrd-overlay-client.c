@@ -113,11 +113,9 @@ xrd_overlay_client_finalize (GObject *gobject)
 
   g_object_unref (self->manager);
 
-  /* disabling scene client does not mean we shut down VR */
-  /*
+  /* TODO: disabling scene client does not mean we shut down VR */
   g_object_unref (self->context);
   self->context = NULL;
-  */
 
   /* Uploader needs to be freed after context! */
   g_object_unref (self->uploader);
