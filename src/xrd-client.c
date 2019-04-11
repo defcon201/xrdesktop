@@ -260,7 +260,5 @@ xrd_client_new (void)
 static void
 xrd_client_finalize (GObject *gobject)
 {
-  XrdClient *self = XRD_CLIENT (gobject);
-
-  (void) self;
+  G_OBJECT_CLASS (xrd_client_parent_class)->finalize (gobject);
 }
