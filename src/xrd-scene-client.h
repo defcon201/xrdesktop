@@ -61,8 +61,6 @@ struct _XrdSceneClient
   float near_clip;
   float far_clip;
 
-  XrdSceneWindow *windows[4];
-
   VkShaderModule shader_modules[PIPELINE_COUNT * 2];
   VkPipeline pipelines[PIPELINE_COUNT];
   VkDescriptorSetLayout descriptor_set_layout;
@@ -81,6 +79,8 @@ struct _XrdSceneClient
 
   uint32_t render_width;
   uint32_t render_height;
+
+  GSList *windows;
 };
 
 XrdSceneClient *xrd_scene_client_new (void);
@@ -88,6 +88,10 @@ XrdSceneClient *xrd_scene_client_new (void);
 bool xrd_scene_client_initialize (XrdSceneClient *self);
 
 void xrd_scene_client_render (XrdSceneClient *self);
+
+void
+xrd_scene_client_add_window (XrdSceneClient *self,
+                             XrdSceneWindow *window);
 
 G_END_DECLS
 

@@ -75,13 +75,12 @@ xrd_scene_client_init (XrdSceneClient *self)
 
   self->device_manager = xrd_scene_device_manager_new ();
 
-  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-    self->windows[i] = xrd_scene_window_new ();
-
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     self->debug_vectors[i] = xrd_scene_vector_new ();
 #endif
+
+  self->windows = NULL;
 }
 
 XrdSceneClient *
@@ -106,6 +105,8 @@ xrd_scene_client_finalize (GObject *gobject)
 
   g_object_unref (self->device_manager);
 
+  g_slist_free_full (self->windows, g_object_unref);
+
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     g_object_unref (self->debug_vectors[i]);
@@ -113,9 +114,6 @@ xrd_scene_client_finalize (GObject *gobject)
 
   if (device != VK_NULL_HANDLE)
     {
-      for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-        g_object_unref (self->windows[i]);
-
       for (uint32_t eye = 0; eye < 2; eye++)
         g_object_unref (self->framebuffer[eye]);
 
@@ -156,27 +154,6 @@ _init_openvr ()
     }
 
   return true;
-}
-
-GdkPixbuf *
-_load_gdk_pixbuf (const gchar* path)
-{
-  GError *error = NULL;
-  GdkPixbuf *pixbuf_rgb = gdk_pixbuf_new_from_resource (path, &error);
-
-  if (error != NULL)
-    {
-      g_printerr ("Unable to read file: %s\n", error->message);
-      g_error_free (error);
-      return NULL;
-    }
-  else
-    {
-      GdkPixbuf *pixbuf_rgba = gdk_pixbuf_add_alpha (pixbuf_rgb,
-                                                     false, 0, 0, 0);
-      g_object_unref (pixbuf_rgb);
-      return pixbuf_rgba;
-    }
 }
 
 static void
@@ -260,23 +237,6 @@ _init_vulkan (XrdSceneClient *self)
       return false;
     }
 
-  GdkPixbuf *pixbufs[2] = {
-    _load_gdk_pixbuf ("/res/cat.jpg"),
-    _load_gdk_pixbuf ("/res/hawk.jpg"),
-  };
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (pixbufs); i++)
-    if (!pixbufs[i])
-      return FALSE;
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-    if (!xrd_scene_window_init_texture (self->windows[i], client->device,
-                                        cmd_buffer.cmd_buffer,
-                                        pixbufs[i % G_N_ELEMENTS (pixbufs)]))
-      return FALSE;
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (pixbufs); i++)
-    g_object_unref (pixbufs[i]);
 
   _update_matrices (self);
   _init_framebuffers (self, cmd_buffer.cmd_buffer);
@@ -292,28 +252,6 @@ _init_vulkan (XrdSceneClient *self)
     return false;
   if (!_init_graphics_pipelines (self))
     return false;
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-    {
-      xrd_scene_window_initialize (self->windows[i],
-                                   client->device,
-                                   &self->descriptor_set_layout);
-
-      graphene_point3d_t position = {
-        -1, //i / 2.0f - 1,
-        1, //(float) i / 3.0f + 1,
-        -(float) i / 3.0f
-      };
-
-      XrdSceneObject *obj = XRD_SCENE_OBJECT (self->windows[i]);
-      xrd_scene_object_set_position (obj, &position);
-      xrd_scene_object_set_scale (obj, (i + 1) * 0.2f);
-
-      graphene_euler_t rotation;
-      graphene_euler_init (&rotation, i * 15.0f, 20.0f, 5.0f);
-      xrd_scene_object_set_rotation_euler (obj, &rotation);
-
-    }
 
   _init_device_models (self);
 
@@ -387,6 +325,13 @@ _init_device_models (XrdSceneClient *self)
 }
 
 void
+xrd_scene_client_add_window (XrdSceneClient *self,
+                             XrdSceneWindow *window)
+{
+  self->windows = g_slist_append (self->windows, window);
+}
+
+void
 _test_intersection (XrdSceneClient *self)
 {
   GList *pointers = g_hash_table_get_values (self->device_manager->pointers);
@@ -399,27 +344,28 @@ _test_intersection (XrdSceneClient *self)
       XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
 
       float lowest_distance = FLT_MAX;
-      int32_t selected_window_id = -1;
+      XrdSceneWindow *selected_window = NULL;
 
-      for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
+      for (GSList *l = self->windows; l != NULL; l = l->next)
         {
+          XrdSceneWindow *window = (XrdSceneWindow *) l->data;
+
           graphene_vec3_t intersection;
           float distance;
           bool intersects = xrd_scene_pointer_get_intersection (pointer,
-                                                                self->windows[i],
+                                                                window,
                                                                 &distance,
                                                                 &intersection);
           if (intersects && distance < lowest_distance)
             {
-              selected_window_id = i;
+              selected_window = window;
               lowest_distance = distance;
             }
         }
 
-      if (selected_window_id != -1)
+      if (selected_window != NULL)
         {
-          XrdSceneObject *window_obj =
-            XRD_SCENE_OBJECT (self->windows[selected_window_id]);
+          XrdSceneObject *window_obj = XRD_SCENE_OBJECT (selected_window);
           graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
                                                 &window_obj->model_matrix);
           selection_obj->visible = TRUE;
@@ -562,11 +508,14 @@ _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
 
       graphene_matrix_t vp = _get_view_projection_matrix (self, eye);
 
-      for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-        xrd_scene_window_draw (self->windows[i], eye,
-                               self->pipelines[PIPELINE_WINDOWS],
-                               self->pipeline_layout,
-                               cmd_buffer, &vp);
+      for (GSList *l = self->windows; l != NULL; l = l->next)
+        {
+          XrdSceneWindow *window = (XrdSceneWindow *) l->data;
+          xrd_scene_window_draw (window, eye,
+                                 self->pipelines[PIPELINE_WINDOWS],
+                                 self->pipeline_layout,
+                                 cmd_buffer, &vp);
+        }
 
       xrd_scene_device_manager_render_pointers (self->device_manager, eye,
                                                 cmd_buffer,
