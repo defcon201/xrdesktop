@@ -128,7 +128,10 @@ XrdInputSynth *
 xrd_client_get_input_synth (XrdClient *self);
 
 gboolean
-xrd_client_poll_events (XrdClient *self);
+xrd_client_poll_runtime_events (XrdClient *self);
+
+gboolean
+xrd_client_poll_input_events (XrdClient *self);
 
 XrdDesktopCursor *
 xrd_client_get_cursor (XrdClient *self);

@@ -43,8 +43,9 @@ typedef struct _XrdClientPrivate
   guint keyboard_press_signal;
   guint keyboard_close_signal;
 
-  int poll_rate_ms;
-  guint poll_event_source_id;
+  guint poll_runtime_event_source_id;
+  guint poll_input_source_id;
+  int poll_input_rate_ms;
 
   double analog_threshold;
 
@@ -272,7 +273,8 @@ xrd_client_finalize (GObject *gobject)
   XrdClient *self = XRD_CLIENT (gobject);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  g_source_remove (priv->poll_event_source_id);
+  g_source_remove (priv->poll_runtime_event_source_id);
+  g_source_remove (priv->poll_input_source_id);
 
   g_object_unref (priv->manager);
   g_object_unref (priv->wm_actions);
@@ -356,7 +358,7 @@ xrd_client_get_input_synth (XrdClient *self)
 }
 
 gboolean
-xrd_client_poll_events (XrdClient *self)
+xrd_client_poll_runtime_events (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
@@ -364,6 +366,16 @@ xrd_client_poll_events (XrdClient *self)
     return FALSE;
 
   openvr_context_poll_event (priv->context);
+  return TRUE;
+}
+
+gboolean
+xrd_client_poll_input_events (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  if (!priv->context)
+    return FALSE;
 
   if (!openvr_action_set_poll (priv->wm_actions))
     return FALSE;
@@ -428,7 +440,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
     {
       float factor = x_state * priv->scroll_to_scale_ratio;
       xrd_window_manager_scale (priv->manager, grab_state, factor,
-                                priv->poll_rate_ms);
+                                priv->poll_input_rate_ms);
     }
 
   float y_state = graphene_vec3_get_y (&event->state);
@@ -440,7 +452,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
         priv->scroll_to_push_ratio *
         hover_state->distance *
         graphene_vec3_get_y (&event->state) *
-        (priv->poll_rate_ms / 1000.);
+        (priv->poll_input_rate_ms / 1000.);
 
       XrdPointer *pointer_ray = priv->pointer_ray[controller->index];
       xrd_pointer_set_length (pointer_ray, hover_state->distance);
@@ -844,18 +856,19 @@ _manager_no_hover_cb (XrdWindowManager *manager,
 }
 
 static void
-_update_poll_rate (GSettings *settings, gchar *key, gpointer _self)
+_update_input_poll_rate (GSettings *settings, gchar *key, gpointer _self)
 {
   XrdClient *self = _self;
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  if (priv->poll_event_source_id != 0)
-    g_source_remove (priv->poll_event_source_id);
-  priv->poll_rate_ms = g_settings_get_int (settings, key);
+  if (priv->poll_input_source_id != 0)
+    g_source_remove (priv->poll_input_source_id);
+  priv->poll_input_rate_ms = g_settings_get_int (settings, key);
 
-  priv->poll_event_source_id = g_timeout_add (priv->poll_rate_ms,
-                                              (GSourceFunc) xrd_client_poll_events,
-                                              XRD_CLIENT (self));
+  priv->poll_input_source_id =
+      g_timeout_add (priv->poll_input_rate_ms,
+      (GSourceFunc) xrd_client_poll_input_events,
+      self);
 }
 
 static void
@@ -1030,7 +1043,8 @@ xrd_client_init (XrdClient *self)
   xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
                                   "analog-threshold", &priv->analog_threshold);
 
-  priv->poll_event_source_id = 0;
+  priv->poll_runtime_event_source_id = 0;
+  priv->poll_input_source_id = 0;
   priv->keyboard_window = NULL;
   priv->keyboard_press_signal = 0;
   priv->keyboard_close_signal = 0;
@@ -1138,8 +1152,14 @@ xrd_client_post_openvr_init (XrdClient *self)
   g_signal_connect (priv->manager, "no-hover-event",
                     (GCallback) _manager_no_hover_cb, self);
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_poll_rate),
-                                  "event-update-rate-ms", self);
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_input_poll_rate),
+                                  "input-poll-rate-ms", self);
+
+  priv->poll_runtime_event_source_id =
+      g_timeout_add (20,
+                     (GSourceFunc) xrd_client_poll_runtime_events,
+                     self);
+
 
   g_signal_connect (priv->input_synth, "click-event",
                     (GCallback) _synth_click_cb, self);

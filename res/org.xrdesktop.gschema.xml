@@ -4,9 +4,9 @@
 
   <schema path="/org/xrdesktop/" id="org.xrdesktop">
 
-    <key name='event-update-rate-ms' type='i'>
-      <default>20</default>
-      <summary>How often XR related events should be processed</summary>
+    <key name='input-poll-rate-ms' type='i'>
+      <default>3</default>
+      <summary>How often XR input events should be polled and processed</summary>
       <description>
         This affects events like polling the XR runtime for updated tracked device poses,
         determining if a controller points at an overlay, and performing window management.
@@ -25,7 +25,7 @@
     </key>
 
     <key name='scroll-to-push-ratio' type='d'>
-      <default>2.0</default>
+      <default>3.0</default>
       <summary>How much the push/pull gesture should be amplified</summary>
       <description>
         While dragging a window, the touchpad's or thumbstick's y axis can push/pull a window away or nearer.
@@ -34,7 +34,7 @@
     </key>
 
     <key name='scroll-to-scale-ratio' type='d'>
-      <default>0.75</default>
+      <default>1.0</default>
       <summary>How much the scale gesture should be amplified</summary>
       <description>
         While dragging a window, the touchpad's or thumbstick's x axis can scale a window's size.
