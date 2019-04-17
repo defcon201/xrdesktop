@@ -117,8 +117,6 @@ xrd_scene_background_render (XrdSceneBackground *self,
     return;
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  if (!obj->visible)
-    return;
 
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 

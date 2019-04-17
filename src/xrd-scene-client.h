@@ -27,6 +27,7 @@
 #include "xrd-scene-pointer.h"
 #include "xrd-scene-selection.h"
 #include "xrd-scene-vector.h"
+#include "xrd-scene-background.h"
 
 #define DEBUG_GEOMETRY 0
 
@@ -95,6 +96,8 @@ struct _XrdSceneClient
   GSList *windows;
 
   GHashTable *pointers; // int -> XrdScenePointer
+
+  XrdSceneBackground *background;
 };
 
 XrdSceneClient *xrd_scene_client_new (void);

@@ -89,6 +89,8 @@ xrd_scene_client_init (XrdSceneClient *self)
 
   self->device_manager = xrd_scene_device_manager_new ();
 
+  self->background = xrd_scene_background_new ();
+
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     self->debug_vectors[i] = xrd_scene_vector_new ();
@@ -130,6 +132,8 @@ xrd_scene_client_finalize (GObject *gobject)
   g_hash_table_unref (self->pointers);
 
   g_slist_free_full (self->windows, g_object_unref);
+
+  g_object_unref (self->background);
 
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
@@ -335,6 +339,9 @@ _init_vulkan (XrdSceneClient *self)
     return false;
 
   _init_device_models (self);
+
+  xrd_scene_background_initialize (self->background, client->device,
+                                   &self->descriptor_set_layout);
 
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
@@ -614,6 +621,10 @@ _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
       xrd_scene_device_manager_render (self->device_manager, eye, cmd_buffer,
                                        self->pipelines[PIPELINE_DEVICE_MODELS],
                                        self->pipeline_layout, &vp);
+
+      xrd_scene_background_render (self->background, eye,
+                                   self->pipelines[PIPELINE_POINTER],
+                                   self->pipeline_layout, cmd_buffer, &vp);
 
 #if DEBUG_GEOMETRY
       for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
