@@ -8,6 +8,7 @@
 #include "xrd-scene-background.h"
 #include "gulkan-geometry.h"
 #include <gulkan-descriptor-set.h>
+#include "graphene-ext.h"
 
 G_DEFINE_TYPE (XrdSceneBackground, xrd_scene_background, XRD_TYPE_SCENE_OBJECT)
 
@@ -45,37 +46,83 @@ xrd_scene_background_finalize (GObject *gobject)
 }
 
 void
-_append_lines (GulkanVertexBuffer *self,
-               float               aspect_ratio,
-               graphene_vec3_t    *color)
+_append_star (GulkanVertexBuffer *self,
+              float               radius,
+              float               y,
+              uint32_t            sections,
+              graphene_vec3_t    *color)
 {
-  float padding = 0.05f;
+  graphene_vec4_t *points = g_malloc (sizeof(graphene_vec4_t) * sections);
 
-  float scale_x = aspect_ratio + padding;
-  float scale_y = 1.0f + padding;
+  graphene_vec4_init (&points[0],  radius, y, 0, 1);
+  graphene_vec4_init (&points[1], -radius, y, 0, 1);
 
-  float offset[2] = {
-    -padding / 2.0f,
-    -padding / 2.0f
-  };
+  graphene_matrix_t rotation;
+  graphene_matrix_init_identity (&rotation);
+  graphene_matrix_rotate_y (&rotation, 360.0f / (float) sections);
 
-  graphene_vec4_t a, b, c, d;
-  graphene_vec4_init (&a,       0 + offset[0],       0 + offset[1], 0, 1);
-  graphene_vec4_init (&b, scale_x + offset[0],       0 + offset[1], 0, 1);
-  graphene_vec4_init (&c, scale_x + offset[0], scale_y + offset[1], 0, 1);
-  graphene_vec4_init (&d,       0 + offset[0], scale_y + offset[1], 0, 1);
+  for (uint32_t i = 0; i < sections / 2 - 1; i++)
+    {
+      uint32_t j = i * 2;
+      graphene_matrix_transform_vec4 (&rotation, &points[j],     &points[j + 2]);
+      graphene_matrix_transform_vec4 (&rotation, &points[j + 1], &points[j + 3]);
+    }
 
-  graphene_vec4_t points[8] = {
-    a, b, b, c, c, d, d, a
-  };
-
-  for (uint32_t i = 0; i < G_N_ELEMENTS (points); i++)
+  for (uint32_t i = 0; i < sections; i++)
     {
       gulkan_vertex_buffer_append_vec4 (self, &points[i]);
       gulkan_vertex_buffer_append_vec3 (self, color);
     }
 
-  self->count += G_N_ELEMENTS (points);
+  self->count += sections;
+
+  g_free(points);
+}
+
+void
+_append_circle (GulkanVertexBuffer *self,
+                float               radius,
+                float               y,
+                uint32_t            edges,
+                graphene_vec3_t    *color)
+{
+  graphene_vec4_t *points = g_malloc (sizeof(graphene_vec4_t) * edges * 2);
+
+  graphene_vec4_init (&points[0], radius, y, 0, 1);
+
+  graphene_matrix_t rotation;
+  graphene_matrix_init_identity (&rotation);
+  graphene_matrix_rotate_y (&rotation, 360.0f / (float) edges);
+
+  for (uint32_t i = 0; i < edges; i++)
+    {
+      uint32_t j = i * 2;
+      if (i != 0)
+        graphene_vec4_init_from_vec4 (&points[j], &points[j - 1]);
+      graphene_matrix_transform_vec4 (&rotation, &points[j], &points[j + 1]);
+    }
+
+  for (uint32_t i = 0; i < edges * 2; i++)
+    {
+      gulkan_vertex_buffer_append_vec4 (self, &points[i]);
+      gulkan_vertex_buffer_append_vec3 (self, color);
+    }
+
+  self->count += edges * 2;
+
+  g_free(points);
+}
+
+void
+_append_floor (GulkanVertexBuffer *self,
+               uint32_t            radius,
+               float               y,
+               graphene_vec3_t    *color)
+{
+  _append_star (self, (float) radius, y, 8, color);
+
+  for (uint32_t i = 1; i <= radius; i++)
+    _append_circle (self, (float) i, y, 128, color);
 }
 
 gboolean
@@ -86,9 +133,10 @@ xrd_scene_background_initialize (XrdSceneBackground    *self,
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_vec3_t color;
-  graphene_vec3_init (&color, .8f, .8f, .8f);
+  graphene_vec3_init (&color, .6f, .6f, .6f);
 
-  _append_lines (self->vertex_buffer, 1.0f, &color);
+  _append_floor (self->vertex_buffer, 20, 0.0f, &color);
+  _append_floor (self->vertex_buffer, 20, 4.0f, &color);
 
   if (!gulkan_vertex_buffer_alloc_empty (self->vertex_buffer, device,
                                          k_unMaxTrackedDeviceCount))
