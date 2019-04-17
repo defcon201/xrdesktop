@@ -367,6 +367,8 @@ _test_intersection (XrdSceneClient *self)
           XrdSceneObject *window_obj = XRD_SCENE_OBJECT (selected_window);
           graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
                                             &window_obj->model_matrix);
+          xrd_scene_selection_set_aspect_ratio (pointer->selection,
+                                                selected_window->aspect_ratio);
           selection_obj->visible = TRUE;
           xrd_scene_pointer_set_length (pointer, lowest_distance);
         }

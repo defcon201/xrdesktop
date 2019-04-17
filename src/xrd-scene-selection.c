@@ -46,11 +46,13 @@ xrd_scene_selection_finalize (GObject *gobject)
 
 void
 _append_lines_quad (GulkanVertexBuffer *self,
+                    float               aspect_ratio,
                     graphene_vec3_t    *color)
 {
   float padding = 0.05f;
 
-  float scale = 1.0f + padding;
+  float scale_x = aspect_ratio + padding;
+  float scale_y = 1.0f + padding;
 
   float offset[2] = {
     -padding / 2.0f,
@@ -58,10 +60,10 @@ _append_lines_quad (GulkanVertexBuffer *self,
   };
 
   graphene_vec4_t a, b, c, d;
-  graphene_vec4_init (&a,     0 + offset[0],     0 + offset[1], 0, 1);
-  graphene_vec4_init (&b, scale + offset[0],     0 + offset[1], 0, 1);
-  graphene_vec4_init (&c, scale + offset[0], scale + offset[1], 0, 1);
-  graphene_vec4_init (&d,     0 + offset[0], scale + offset[1], 0, 1);
+  graphene_vec4_init (&a,       0 + offset[0],       0 + offset[1], 0, 1);
+  graphene_vec4_init (&b, scale_x + offset[0],       0 + offset[1], 0, 1);
+  graphene_vec4_init (&c, scale_x + offset[0], scale_y + offset[1], 0, 1);
+  graphene_vec4_init (&d,       0 + offset[0], scale_y + offset[1], 0, 1);
 
   graphene_vec4_t points[8] = {
     a, b, b, c, c, d, d, a
@@ -76,6 +78,20 @@ _append_lines_quad (GulkanVertexBuffer *self,
   self->count += G_N_ELEMENTS (points);
 }
 
+void
+xrd_scene_selection_set_aspect_ratio (XrdSceneSelection *self,
+                                      float              aspect_ratio)
+{
+  gulkan_vertex_buffer_reset (self->vertex_buffer);
+
+  graphene_vec3_t color;
+  graphene_vec3_init (&color, .8f, .2f, .2f);
+
+  _append_lines_quad (self->vertex_buffer, aspect_ratio, &color);
+
+  gulkan_vertex_buffer_map_array (self->vertex_buffer);
+}
+
 gboolean
 xrd_scene_selection_initialize (XrdSceneSelection     *self,
                                 GulkanDevice          *device,
@@ -83,16 +99,10 @@ xrd_scene_selection_initialize (XrdSceneSelection     *self,
 {
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
-  graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, -0.02f, 1);
-
-  graphene_matrix_t identity;
-  graphene_matrix_init_identity (&identity);
-
   graphene_vec3_t color;
   graphene_vec3_init (&color, .8f, .2f, .2f);
 
-  _append_lines_quad (self->vertex_buffer, &color);
+  _append_lines_quad (self->vertex_buffer, 1.0f, &color);
 
   if (!gulkan_vertex_buffer_alloc_empty (self->vertex_buffer, device,
                                          k_unMaxTrackedDeviceCount))

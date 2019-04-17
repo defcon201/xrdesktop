@@ -44,6 +44,10 @@ xrd_scene_selection_render (XrdSceneSelection *self,
                             VkCommandBuffer    cmd_buffer,
                             graphene_matrix_t *vp);
 
+void
+xrd_scene_selection_set_aspect_ratio (XrdSceneSelection *self,
+                                      float              aspect_ratio);
+
 G_END_DECLS
 
 #endif /* XRD_SCENE_SELECTION_H_ */
