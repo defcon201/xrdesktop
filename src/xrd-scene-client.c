@@ -341,8 +341,6 @@ _test_intersection (XrdSceneClient *self)
       if (pointer == NULL)
         continue;
 
-      XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
-
       float lowest_distance = FLT_MAX;
       XrdSceneWindow *selected_window = NULL;
 
@@ -363,11 +361,12 @@ _test_intersection (XrdSceneClient *self)
             }
         }
 
+      XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
       if (selected_window != NULL)
         {
           XrdSceneObject *window_obj = XRD_SCENE_OBJECT (selected_window);
           graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
-                                                &window_obj->model_matrix);
+                                            &window_obj->model_matrix);
           selection_obj->visible = TRUE;
           xrd_scene_pointer_set_length (pointer, lowest_distance);
         }
