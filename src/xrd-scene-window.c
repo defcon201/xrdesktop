@@ -28,6 +28,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
 {
   self->vertex_buffer = gulkan_vertex_buffer_new ();
   self->sampler = VK_NULL_HANDLE;
+  self->aspect_ratio = 1.0;
 }
 
 XrdSceneWindow *
@@ -62,6 +63,9 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
 
   uint32_t mip_levels;
 
+  self->aspect_ratio = (float) gdk_pixbuf_get_width (pixbuf) /
+                       (float) gdk_pixbuf_get_height (pixbuf);
+
   self->texture = gulkan_texture_new_from_pixbuf_mipmapped (
       device, cmd_buffer, pixbuf,
       &mip_levels, VK_FORMAT_R8G8B8A8_UNORM);
@@ -91,20 +95,12 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
   return true;
 }
 
-void _append_plane (GulkanVertexBuffer *vbo,
-                    float x, float y, float z, float scale)
+void _append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
 {
   graphene_matrix_t mat_scale;
-  graphene_matrix_init_scale (&mat_scale, scale, scale, scale);
+  graphene_matrix_init_scale (&mat_scale, aspect_ratio, 1.0f, 1.0f);
 
-  graphene_point3d_t translation = { x, y, z };
-  graphene_matrix_t mat_translation;
-  graphene_matrix_init_translate (&mat_translation, &translation);
-
-  graphene_matrix_t mat;
-  graphene_matrix_multiply (&mat_scale, &mat_translation, &mat);
-
-  gulkan_geometry_append_plane (vbo, &mat);
+  gulkan_geometry_append_plane (vbo, &mat_scale);
 }
 
 gboolean
@@ -114,7 +110,7 @@ xrd_scene_window_initialize (XrdSceneWindow        *self,
 {
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
 
-  _append_plane (self->vertex_buffer, 0, 0, 0, 1.0f);
+  _append_plane (self->vertex_buffer, self->aspect_ratio);
   if (!gulkan_vertex_buffer_alloc_array (self->vertex_buffer, obj->device))
     return FALSE;
 
