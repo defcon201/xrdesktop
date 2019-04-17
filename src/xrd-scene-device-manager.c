@@ -29,8 +29,6 @@ xrd_scene_device_manager_init (XrdSceneDeviceManager *self)
                                         g_free, g_object_unref);
   self->devices = g_hash_table_new_full (g_int_hash, g_int_equal,
                                          g_free, g_object_unref);
-  self->pointers = g_hash_table_new_full (g_int_hash, g_int_equal,
-                                          g_free, g_object_unref);
 }
 
 XrdSceneDeviceManager *
@@ -45,7 +43,6 @@ xrd_scene_device_manager_finalize (GObject *gobject)
   XrdSceneDeviceManager *self = XRD_SCENE_DEVICE_MANAGER (gobject);
   g_hash_table_unref (self->models);
   g_hash_table_unref (self->devices);
-  g_hash_table_unref (self->pointers);
 }
 
 XrdSceneModel*
@@ -120,13 +117,12 @@ xrd_scene_device_manager_add (XrdSceneDeviceManager *self,
 
   _insert_at_key (self->devices, device_id, device);
 
+  /*
   if (context->system->GetTrackedDeviceClass (device_id) ==
       ETrackedDeviceClass_TrackedDeviceClass_Controller)
     {
-      XrdScenePointer *pointer = xrd_scene_pointer_new ();
-      xrd_scene_pointer_initialize (pointer, client->device, layout);
-      _insert_at_key (self->pointers, device_id, pointer);
     }
+  */
 }
 
 void
@@ -134,7 +130,6 @@ xrd_scene_device_manager_remove (XrdSceneDeviceManager *self,
                                  TrackedDeviceIndex_t   device_id)
 {
   g_hash_table_remove (self->devices, &device_id);
-  g_hash_table_remove (self->pointers, &device_id);
 }
 
 void
@@ -176,13 +171,9 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
       openvr_math_matrix34_to_graphene (&poses[i].mDeviceToAbsoluteTracking,
                                         &obj->model_matrix);
 
-      if (device->is_controller)
-        {
-          XrdScenePointer *pointer = g_hash_table_lookup (self->pointers, &i);
-          XrdSceneObject *obj = XRD_SCENE_OBJECT (pointer);
-          openvr_math_matrix34_to_graphene (&poses[i].mDeviceToAbsoluteTracking,
-                                            &obj->model_matrix);
-        }
+      //if (device->is_controller)
+      //  {
+      //  }
     }
 
   if (poses[k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
@@ -194,20 +185,3 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
     }
 }
 
-void
-xrd_scene_device_manager_render_pointers (XrdSceneDeviceManager *self,
-                                          EVREye                 eye,
-                                          VkCommandBuffer        cmd_buffer,
-                                          VkPipeline             pipeline,
-                                          VkPipelineLayout       pipeline_layout,
-                                          graphene_matrix_t     *vp)
-{
-  OpenVRContext *context = openvr_context_get_instance ();
-  if (!context->system->IsInputAvailable ())
-    return;
-
-  GList *pointers = g_hash_table_get_values (self->pointers);
-  for (GList *l = pointers; l; l = l->next)
-    xrd_scene_pointer_render (l->data, eye, pipeline,
-                              pipeline_layout, cmd_buffer, vp);
-}

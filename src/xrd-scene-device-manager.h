@@ -26,7 +26,6 @@ struct _XrdSceneDeviceManager
 
   GHashTable *models; // char* -> XrdSceneModel
   GHashTable *devices; // int -> XrdSceneDevice
-  GHashTable *pointers; // int -> XrdScenePointer
 };
 
 XrdSceneDeviceManager *xrd_scene_device_manager_new (void);
@@ -52,14 +51,6 @@ xrd_scene_device_manager_render (XrdSceneDeviceManager *self,
 void
 xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
                                        graphene_matrix_t     *mat_head_pose);
-
-void
-xrd_scene_device_manager_render_pointers (XrdSceneDeviceManager *self,
-                                          EVREye                 eye,
-                                          VkCommandBuffer        cmd_buffer,
-                                          VkPipeline             pipeline,
-                                          VkPipelineLayout       pipeline_layout,
-                                          graphene_matrix_t     *vp);
 
 G_END_DECLS
 

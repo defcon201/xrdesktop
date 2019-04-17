@@ -11,6 +11,8 @@
 #include "openvr-context.h"
 #include <glib-object.h>
 
+#include <openvr-action-set.h>
+
 #include <gulkan-client.h>
 #include <gulkan-device.h>
 #include <gulkan-instance.h>
@@ -49,6 +51,12 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneClient, xrd_scene_client,
                       XRD, SCENE_CLIENT, GulkanClient)
 
+typedef struct XrdSceneClientController
+{
+  XrdSceneClient *self;
+  int             index;
+} XrdSceneClientController;
+
 struct _XrdSceneClient
 {
   GulkanClient parent;
@@ -80,7 +88,13 @@ struct _XrdSceneClient
   uint32_t render_width;
   uint32_t render_height;
 
+  XrdSceneClientController left;
+  XrdSceneClientController right;
+  OpenVRActionSet *wm_actions;
+
   GSList *windows;
+
+  GHashTable *pointers; // int -> XrdScenePointer
 };
 
 XrdSceneClient *xrd_scene_client_new (void);

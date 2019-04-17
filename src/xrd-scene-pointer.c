@@ -204,7 +204,7 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
   float f[4];
   graphene_vec4_to_float (&intersection_origin, f);
 
-  /* Test if we are in [0-1, 0-1] plane coordinates */
+  /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
   if (f[0] >= 0 && f[0] <= window->aspect_ratio && f[1] >= 0 && f[1] <= 1.0f)
     return TRUE;
 

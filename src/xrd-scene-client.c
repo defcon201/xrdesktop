@@ -17,6 +17,7 @@
 #include "openvr-compositor.h"
 #include "openvr-system.h"
 #include "openvr-math.h"
+#include "openvr-io.h"
 
 #include <signal.h>
 
@@ -50,11 +51,24 @@ void _update_device_poses (XrdSceneClient *self);
 void _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer);
 
 static void
+_action_hand_pose_cb (OpenVRAction             *action,
+                      OpenVRPoseEvent          *event,
+                      XrdSceneClientController *controller);
+
+static void
 xrd_scene_client_class_init (XrdSceneClientClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = xrd_scene_client_finalize;
+}
+
+void
+_insert_at_key2 (GHashTable *table, uint32_t key, gpointer value)
+{
+  gint *keyp = g_new0 (gint, 1);
+  *keyp = (gint) key;
+  g_hash_table_insert (table, keyp, value);
 }
 
 static void
@@ -81,6 +95,15 @@ xrd_scene_client_init (XrdSceneClient *self)
 #endif
 
   self->windows = NULL;
+
+  self->pointers = g_hash_table_new_full (g_int_hash, g_int_equal,
+                                          g_free, g_object_unref);
+
+  self->left.self = self;
+  self->left.index = 0;
+
+  self->right.self = self;
+  self->right.index = 1;
 }
 
 XrdSceneClient *
@@ -104,6 +127,7 @@ xrd_scene_client_finalize (GObject *gobject)
   g_object_unref (context);
 
   g_object_unref (self->device_manager);
+  g_hash_table_unref (self->pointers);
 
   g_slist_free_full (self->windows, g_object_unref);
 
@@ -132,7 +156,7 @@ xrd_scene_client_finalize (GObject *gobject)
 }
 
 bool
-_init_openvr ()
+_init_openvr (XrdSceneClient *self)
 {
   if (!openvr_context_is_installed ())
     {
@@ -152,6 +176,27 @@ _init_openvr ()
       g_printerr ("Could not load OpenVR function pointers.\n");
       return false;
     }
+
+  if (!openvr_io_load_cached_action_manifest (
+        "xrdesktop",
+        "/res/bindings",
+        "actions.json",
+        "bindings_vive_controller.json",
+        "bindings_knuckles_controller.json",
+        NULL))
+    {
+      g_print ("Failed to load action bindings!\n");
+      return false;
+    }
+
+  self->wm_actions = openvr_action_set_new_from_url ("/actions/wm");
+
+  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
+                             "/actions/wm/in/hand_pose_left",
+                             (GCallback) _action_hand_pose_cb, &self->left);
+  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
+                             "/actions/wm/in/hand_pose_right",
+                             (GCallback) _action_hand_pose_cb, &self->right);
 
   return true;
 }
@@ -176,14 +221,50 @@ _device_deactivate_cb (OpenVRContext          *context,
   XrdSceneClient *self = (XrdSceneClient*) _self;
   g_print ("Device %d deactivated. Removing scene device.\n", event->index);
   xrd_scene_device_manager_remove (self->device_manager, event->index);
+  g_hash_table_remove (self->pointers, &event->index);
+}
+
+static void
+_action_hand_pose_cb (OpenVRAction             *action,
+                      OpenVRPoseEvent          *event,
+                      XrdSceneClientController *controller)
+{
+  (void) action;
+  XrdSceneClient *self = controller->self;
+
+  XrdScenePointer *pointer = g_hash_table_lookup (self->pointers,
+                                                  &controller->index);
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (pointer);
+  graphene_matrix_init_from_matrix (&obj->model_matrix, &event->pose);
+}
+
+void
+_render_pointers (XrdSceneClient    *self,
+                  EVREye             eye,
+                  VkCommandBuffer    cmd_buffer,
+                  VkPipeline         pipeline,
+                  VkPipelineLayout   pipeline_layout,
+                  graphene_matrix_t *vp)
+{
+  OpenVRContext *context = openvr_context_get_instance ();
+  if (!context->system->IsInputAvailable ())
+    return;
+
+  GList *pointers = g_hash_table_get_values (self->pointers);
+  for (GList *l = pointers; l; l = l->next)
+    xrd_scene_pointer_render (l->data, eye, pipeline,
+                              pipeline_layout, cmd_buffer, vp);
 }
 
 gboolean
-_poll_events_cb (gpointer unused)
+_poll_events_cb (gpointer _self)
 {
-  (void) unused;
+  XrdSceneClient *self = _self;
   OpenVRContext *context = openvr_context_get_instance ();
   openvr_context_poll_event (context);
+
+  if (!openvr_action_set_poll (self->wm_actions))
+    return FALSE;
 
   return TRUE;
 }
@@ -191,7 +272,7 @@ _poll_events_cb (gpointer unused)
 bool
 xrd_scene_client_initialize (XrdSceneClient *self)
 {
-  if (!_init_openvr ())
+  if (!_init_openvr (self))
     {
       g_printerr ("Could not init OpenVR.\n");
       return false;
@@ -209,7 +290,7 @@ xrd_scene_client_initialize (XrdSceneClient *self)
   g_signal_connect (context, "device-deactivate-event",
                     (GCallback) _device_deactivate_cb, self);
 
-  g_timeout_add (20, _poll_events_cb, &self);
+  g_timeout_add (20, _poll_events_cb, self);
 
   return true;
 }
@@ -266,6 +347,14 @@ _init_vulkan (XrdSceneClient *self)
     {
       g_printerr ("Could not submit command buffer.\n");
       return false;
+    }
+
+  for (int i = 0; i < 2; i++)
+    {
+      XrdScenePointer *pointer = xrd_scene_pointer_new ();
+      xrd_scene_pointer_initialize (pointer, client->device,
+                                    &self->descriptor_set_layout);
+      _insert_at_key2 (self->pointers, i, pointer);
     }
 
   vkQueueWaitIdle (client->device->queue);
@@ -334,7 +423,7 @@ xrd_scene_client_add_window (XrdSceneClient *self,
 void
 _test_intersection (XrdSceneClient *self)
 {
-  GList *pointers = g_hash_table_get_values (self->device_manager->pointers);
+  GList *pointers = g_hash_table_get_values (self->pointers);
   for (GList *l = pointers; l; l = l->next)
     {
       XrdScenePointer *pointer = l->data;
@@ -518,10 +607,9 @@ _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
                                  cmd_buffer, &vp);
         }
 
-      xrd_scene_device_manager_render_pointers (self->device_manager, eye,
-                                                cmd_buffer,
-                                                self->pipelines[PIPELINE_POINTER],
-                                                self->pipeline_layout, &vp);
+      _render_pointers (self, eye, cmd_buffer,
+                        self->pipelines[PIPELINE_POINTER],
+                        self->pipeline_layout, &vp);
 
       xrd_scene_device_manager_render (self->device_manager, eye, cmd_buffer,
                                        self->pipelines[PIPELINE_DEVICE_MODELS],
