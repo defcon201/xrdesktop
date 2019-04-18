@@ -8,7 +8,7 @@
 #include "xrd-overlay-window.h"
 
 #include <glib/gprintf.h>
-#include <openvr-overlay.h>
+
 #include <openvr-overlay-uploader.h>
 #include "xrd-math.h"
 #include "graphene-ext.h"
@@ -22,13 +22,85 @@ struct _XrdOverlayWindow
   gboolean       flip_y;
 };
 
-G_DEFINE_TYPE (XrdOverlayWindow, xrd_overlay_window, XRD_TYPE_WINDOW)
+enum
+{
+  PROP_TITLE = 1,
+  PROP_PPM,
+  PROP_SCALING,
+  PROP_NATIVE,
+  N_PROPERTIES
+};
+
+static void
+xrd_overlay_window_window_interface_init (XrdWindowInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (XrdOverlayWindow, xrd_overlay_window, OPENVR_TYPE_OVERLAY,
+                         G_IMPLEMENT_INTERFACE (XRD_TYPE_WINDOW,
+                                                xrd_overlay_window_window_interface_init))
 
 static struct VRTextureBounds_t defaultBounds = { 0., 0., 1., 1. };
 static struct VRTextureBounds_t flippedBounds = { 0., 1., 1., 0. };
 
 static void
 _scale_move_child (XrdOverlayWindow *self);
+
+
+static void
+xrd_overlay_window_set_property (GObject      *object,
+                                 guint         property_id,
+                                 const GValue *value,
+                                 GParamSpec   *pspec)
+{
+  XrdWindow *self = XRD_WINDOW (object);
+  switch (property_id)
+    {
+    case PROP_TITLE:
+      if (self->window_title)
+        g_string_free (self->window_title, TRUE);
+      self->window_title = g_string_new (g_value_get_string (value));
+      break;
+    case PROP_PPM:
+      self->ppm = g_value_get_float (value);
+      break;
+    case PROP_SCALING:
+      self->scaling_factor = g_value_get_float (value);
+      break;
+    case PROP_NATIVE:
+      self->native = g_value_get_pointer (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
+
+static void
+xrd_overlay_window_get_property (GObject    *object,
+                                 guint       property_id,
+                                 GValue     *value,
+                                 GParamSpec *pspec)
+{
+  XrdWindow *self = XRD_WINDOW (object);
+
+  switch (property_id)
+    {
+    case PROP_TITLE:
+      g_value_set_string (value, self->window_title->str);
+      break;
+    case PROP_PPM:
+      g_value_set_float (value, self->ppm);
+      break;
+    case PROP_SCALING:
+      g_value_set_float (value, self->scaling_factor);
+      break;
+    case PROP_NATIVE:
+      g_value_set_pointer (value, self->native);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+    }
+}
 
 static void
 notify_property_scale_changed (GObject *object,
@@ -63,22 +135,32 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   object_class->finalize = xrd_overlay_window_finalize;
   object_class->constructed = xrd_overlay_window_constructed;
 
-  XrdWindowClass *xrd_window_class = XRD_WINDOW_CLASS (klass);
+  object_class->set_property = xrd_overlay_window_set_property;
+  object_class->get_property = xrd_overlay_window_get_property;
 
-  xrd_window_class->set_transformation_matrix =
+  g_object_class_override_property (object_class, PROP_TITLE, "window-title");
+  g_object_class_override_property (object_class, PROP_PPM, "ppm");
+  g_object_class_override_property (object_class, PROP_SCALING, "scaling-factor");
+  g_object_class_override_property (object_class, PROP_NATIVE, "native");
+}
+
+static void
+xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
+{
+  iface->set_transformation_matrix =
       (void*)xrd_overlay_window_set_transformation_matrix;
-  xrd_window_class->get_transformation_matrix =
+  iface->get_transformation_matrix =
       (void*)xrd_overlay_window_get_transformation_matrix;
-  xrd_window_class->submit_texture = (void*)xrd_overlay_window_submit_texture;
-  xrd_window_class->poll_event = (void*)xrd_overlay_window_poll_event;
-  xrd_window_class->intersects = (void*)xrd_overlay_window_intersects;
-  xrd_window_class->intersection_to_pixels =
+  iface->submit_texture = (void*)xrd_overlay_window_submit_texture;
+  iface->poll_event = (void*)xrd_overlay_window_poll_event;
+  iface->intersects = (void*)xrd_overlay_window_intersects;
+  iface->intersection_to_pixels =
       (void*)xrd_overlay_window_intersection_to_pixels;
-  xrd_window_class->intersection_to_2d_offset_meter =
+  iface->intersection_to_2d_offset_meter =
       (void*)xrd_overlay_window_intersection_to_2d_offset_meter;
-  xrd_window_class->add_child = (void*)xrd_overlay_window_add_child;
-  xrd_window_class->set_color = (void*)xrd_overlay_window_set_color;
-  xrd_window_class->set_flip_y = (void*)xrd_overlay_window_set_flip_y;
+  iface->add_child = (void*)xrd_overlay_window_add_child;
+  iface->set_color = (void*)xrd_overlay_window_set_color;
+  iface->set_flip_y = (void*)xrd_overlay_window_set_flip_y;
 }
 
 static void
@@ -272,10 +354,10 @@ xrd_overlay_window_constructed (GObject *gobject)
 
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (gobject);
   XrdWindow *xrd_window = XRD_WINDOW (self);
-  XrdWindowClass *parent_klass = XRD_WINDOW_GET_CLASS (xrd_window);
+  XrdWindowInterface *iface = XRD_WINDOW_GET_IFACE (xrd_window);
 
   gchar overlay_id_str [25];
-  g_sprintf (overlay_id_str, "xrd-window-%d", parent_klass->windows_created);
+  g_sprintf (overlay_id_str, "xrd-window-%d", iface->windows_created);
 
   self->overlay = openvr_overlay_new ();
   openvr_overlay_create (self->overlay, overlay_id_str,
@@ -291,7 +373,7 @@ xrd_overlay_window_constructed (GObject *gobject)
 
   openvr_overlay_show (self->overlay);
 
-  parent_klass->windows_created++;
+  iface->windows_created++;
 
   g_signal_connect(xrd_window, "notify::scaling-factor",
                    (GCallback)notify_property_scale_changed, NULL);

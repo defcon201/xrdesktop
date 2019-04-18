@@ -43,21 +43,11 @@ typedef struct XrdControllerIndexEvent
 G_BEGIN_DECLS
 
 #define XRD_TYPE_WINDOW xrd_window_get_type()
+G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
 
-#define XRD_WINDOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), XRD_TYPE_WINDOW, XrdWindow))
-#define XRD_WINDOW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), XRD_TYPE_WINDOW, XrdWindowClass))
-#define XRD_IS_WINDOW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), XRD_TYPE_WINDOW))
-#define XRD_IS_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), XRD_TYPE_WINDOW))
-#define XRD_WINDOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), XRD_TYPE_WINDOW, XrdWindowClass))
-
-typedef struct _XrdWindow      XrdWindow;
-typedef struct _XrdWindowClass XrdWindowClass;
-
-G_DEFINE_AUTOPTR_CLEANUP_FUNC(XrdWindow, g_object_unref)
-
-struct _XrdWindowClass
+struct _XrdWindowInterface
 {
-  GObjectClass parent;
+  GTypeInterface parent;
 
   gboolean
   (*set_transformation_matrix) (XrdWindow *self,
@@ -135,7 +125,7 @@ struct _XrdWindowClass
   guint windows_created;
 };
 
-GType xrd_window_get_type (void) G_GNUC_CONST;
+//GType xrd_window_get_type (void) G_GNUC_CONST;
 
 struct _XrdWindow
 {

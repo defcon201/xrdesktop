@@ -11,13 +11,14 @@
 #include <glib-object.h>
 
 #include <gulkan-texture.h>
+#include <openvr-overlay.h>
 #include "xrd-window.h"
 
 G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_WINDOW xrd_overlay_window_get_type()
 G_DECLARE_FINAL_TYPE (XrdOverlayWindow, xrd_overlay_window,
-                      XRD, OVERLAY_WINDOW, XrdWindow)
+                      XRD, OVERLAY_WINDOW, OpenVROverlay)
 
 struct _XrdOverlayWindow;
 
