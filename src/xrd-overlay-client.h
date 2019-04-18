@@ -13,6 +13,8 @@
 
 #include <openvr-action-set.h>
 
+#include "xrd-client.h"
+
 #include "xrd-overlay-pointer.h"
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"
@@ -23,7 +25,7 @@ G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_CLIENT xrd_overlay_client_get_type()
 G_DECLARE_FINAL_TYPE (XrdOverlayClient, xrd_overlay_client,
-                      XRD, OVERLAY_CLIENT, XrdWindow)
+                      XRD, OVERLAY_CLIENT, XrdClient)
 
 typedef struct XrdClientController
 {
