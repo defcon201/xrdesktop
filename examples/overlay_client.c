@@ -71,12 +71,12 @@ _make_texture (GulkanClient *gc, const gchar *resource)
 }
 
 void
-_head_follow_press_cb (XrdOverlayWindow        *window,
+_head_follow_press_cb (XrdOverlayWindow        *button,
                        XrdControllerIndexEvent *event,
                        gpointer                 _self)
 {
   (void) event;
-  (void) window;
+  (void) button;
   Example *self = _self;
   if (self->head_follow_window == NULL)
     {
@@ -172,7 +172,6 @@ _init_windows (Example *self)
     .y =  -0.3f,
     .z = -1.0f
   };
-
   xrd_client_add_button (self->client, &self->head_follow_button,
                          "Tracked",
                          &button_position,

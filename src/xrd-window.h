@@ -120,6 +120,13 @@ struct _XrdWindowInterface
                  gboolean flip_y);
 
   void
+  (*set_hidden) (XrdWindow *self,
+                 gboolean hidden);
+
+  gboolean
+  (*get_hidden) (XrdWindow *self);
+
+  void
   (*constructed) (GObject *object);
 
   guint windows_created;
@@ -230,6 +237,13 @@ xrd_window_get_scaling_factor (XrdWindow *self);
 
 float
 xrd_window_get_ppm (XrdWindow *self);
+
+void
+xrd_window_set_hidden (XrdWindow *self,
+                       gboolean hidden);
+
+gboolean
+xrd_window_get_hidden (XrdWindow *self);
 
 uint32_t
 xrd_window_get_texture_width (XrdWindow *self);

@@ -70,6 +70,13 @@ void
 xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
                                gboolean flip_y);
 
+void
+xrd_overlay_window_set_hidden (XrdOverlayWindow *self,
+                               gboolean hidden);
+
+gboolean
+xrd_overlay_window_get_hidden (XrdOverlayWindow *self);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_WINDOW_H_ */

@@ -454,3 +454,11 @@ xrd_window_set_flip_y (XrdWindow *self,
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   return iface->set_flip_y (self, flip_y);
 }
+
+void
+xrd_window_set_hidden (XrdWindow *self,
+                       gboolean hidden)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  return iface->set_hidden (self, hidden);
+}

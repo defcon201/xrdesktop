@@ -18,6 +18,7 @@ struct _XrdOverlayWindow
   OpenVROverlay parent;
   gboolean      recreate;
   gboolean      flip_y;
+  gboolean       hidden;
 
   XrdWindowData window_data;
 };
@@ -177,6 +178,8 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->add_child = (void*)xrd_overlay_window_add_child;
   iface->set_color = (void*)xrd_overlay_window_set_color;
   iface->set_flip_y = (void*)xrd_overlay_window_set_flip_y;
+  iface->set_hidden = (void*)xrd_overlay_window_set_hidden;
+  iface->get_hidden = (void*)xrd_overlay_window_get_hidden;
 }
 
 static void
@@ -323,6 +326,7 @@ static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
   self->flip_y = false;
+  self->hidden = false;
   self->window_data.child_window = NULL;
   self->window_data.parent_window = NULL;
   self->window_data.native = NULL;
@@ -365,6 +369,26 @@ xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
 
       self->flip_y = flip_y;
     }
+}
+
+void
+xrd_overlay_window_set_hidden (XrdOverlayWindow *self,
+                               gboolean hidden)
+{
+  if (self->hidden == hidden)
+    return;
+
+  self->hidden = hidden;
+  if (hidden)
+    openvr_overlay_hide (OPENVR_OVERLAY (self));
+  else
+    openvr_overlay_show (OPENVR_OVERLAY (self));
+}
+
+gboolean
+xrd_overlay_window_get_hidden (XrdOverlayWindow *self)
+{
+  return self->hidden;
 }
 
 static void

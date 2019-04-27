@@ -131,6 +131,24 @@ xrd_window_manager_get_grab_state (XrdWindowManager *self,
 HoverState *
 xrd_window_manager_get_hover_state (XrdWindowManager *self,
                                     int controller_index);
+
+void
+xrd_window_manager_set_pin (XrdWindowManager *self,
+                            XrdWindow *win,
+                            gboolean pin);
+
+gboolean
+xrd_window_manager_is_pinned (XrdWindowManager *self,
+                              XrdWindow *win);
+
+GSList *
+xrd_window_manager_get_windows (XrdWindowManager *self);
+
+void
+xrd_window_manager_show_pinned_only (XrdWindowManager *self,
+                                     gboolean pinned_only);
+
+
 G_END_DECLS
 
 #endif /* XRD_WINDOW_MANAGER_H_ */

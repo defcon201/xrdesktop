@@ -122,6 +122,15 @@ OpenVRActionSet *
 xrd_client_get_wm_actions (XrdClient *self);
 
 void
+xrd_client_set_pin (XrdClient *self,
+                    XrdWindow *win,
+                    gboolean pin);
+
+void
+xrd_client_show_pinned_only (XrdClient *self,
+                             gboolean pinned_only);
+
+void
 xrd_client_post_openvr_init (XrdClient *self);
 
 XrdInputSynth *

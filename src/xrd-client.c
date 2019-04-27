@@ -37,6 +37,13 @@ typedef struct _XrdClientPrivate
 
   XrdWindow *button_reset;
   XrdWindow *button_sphere;
+
+  gboolean pinned_only;
+  XrdWindow *pinned_button;
+
+  gboolean selection_mode;
+  XrdWindow *select_pinned_button;
+
   XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
   XrdWindow *keyboard_window;
 
@@ -167,6 +174,24 @@ xrd_client_add_button (XrdClient          *self,
   return klass->add_button (self, button, label, position,
                             press_callback, press_callback_data);
 }
+
+void
+xrd_client_set_pin (XrdClient *self,
+                    XrdWindow *win,
+                    gboolean pin)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  xrd_window_manager_set_pin (priv->manager, win, pin);
+}
+
+void
+xrd_client_show_pinned_only (XrdClient *self,
+                             gboolean pinned_only)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  xrd_window_manager_show_pinned_only (priv->manager, pinned_only);
+}
+
 
 /**
  * xrd_client_get_keyboard_window
@@ -513,6 +538,9 @@ _action_rotate_cb (OpenVRAction        *action,
   g_free (event);
 }
 
+static void
+_mark_windows_for_selection_mode (XrdClient *self);
+
 void
 _window_grab_start_cb (XrdWindow               *window,
                        XrdControllerIndexEvent *event,
@@ -522,6 +550,16 @@ _window_grab_start_cb (XrdWindow               *window,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   /* don't grab if this window is already grabbed */
+  if (priv->selection_mode)
+    {
+      gboolean pinned =
+          xrd_window_manager_is_pinned (priv->manager, XRD_WINDOW (window));
+      xrd_window_manager_set_pin (priv->manager, XRD_WINDOW (window), !pinned);
+      _mark_windows_for_selection_mode (self);
+      return;
+    }
+
+
   if (xrd_window_manager_is_grabbed (priv->manager, XRD_WINDOW (window)))
     {
       g_free (event);
@@ -571,6 +609,42 @@ xrd_window_mark_color (XrdWindow *self, float r, float g, float b)
   xrd_window_set_color (self, &marked_color);
 }
 
+static void
+_mark_windows_for_selection_mode (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+  if (priv->selection_mode)
+    {
+      GSList *all = xrd_window_manager_get_windows (manager);
+      for (GSList *l = all; l != NULL; l = l->next)
+        {
+          XrdWindow *win = l->data;
+
+          if (xrd_window_manager_is_pinned (manager, win))
+            xrd_window_mark_color (win, 0.0, 0.0, 1.0);
+          else
+            xrd_window_mark_color (win, 0.1, 0.1, 0.1);
+
+          xrd_window_set_hidden (win, FALSE);
+        }
+    }
+  else
+    {
+      GSList *all = xrd_window_manager_get_windows (manager);
+      for (GSList *l = all; l != NULL; l = l->next)
+        {
+          XrdWindow *win = l->data;
+
+          xrd_window_unmark (win);
+
+          if (priv->pinned_only &&
+              !xrd_window_manager_is_pinned (manager, win))
+            xrd_window_set_hidden (win, TRUE);
+        }
+    }
+}
+
 void
 _button_hover_cb (XrdWindow     *window,
                   XrdHoverEvent *event,
@@ -579,7 +653,8 @@ _button_hover_cb (XrdWindow     *window,
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  xrd_window_mark_color (window, .8f, .4f, .2f);
+  if (!priv->selection_mode)
+    xrd_window_mark_color (window, .8f, .4f, .2f);
 
   XrdPointer *pointer =
       priv->pointer_ray[event->controller_index];
@@ -636,8 +711,9 @@ _button_hover_end_cb (XrdWindow               *window,
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  /* unmark if no controller is hovering over this overlay */
-  if (!xrd_window_manager_is_hovered (priv->manager, window))
+  /* unmark if no controller is hovering over this button */
+  if (!xrd_window_manager_is_hovered (priv->manager, window) &&
+      !priv->selection_mode)
     xrd_window_unmark (window);
 
   _window_hover_end_cb (window, event, _self);
@@ -666,6 +742,35 @@ _button_reset_press_cb (XrdWindow               *window,
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   xrd_window_manager_arrange_reset (priv->manager);
+  g_free (event);
+}
+
+void
+_button_pinned_press_cb (XrdWindow               *button,
+                         XrdControllerIndexEvent *event,
+                         gpointer                 _self)
+{
+  (void) event;
+  (void) button;
+  XrdClient *self = _self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  priv->pinned_only = !priv->pinned_only;
+  xrd_client_show_pinned_only (self, priv->pinned_only);
+  g_free (event);
+}
+
+
+void
+_button_select_pinned_press_cb (XrdOverlayWindow        *button,
+                                XrdControllerIndexEvent *event,
+                                gpointer                 _self)
+{
+  (void) event;
+  (void) button;
+  XrdClient *self = _self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  priv->selection_mode = !priv->selection_mode;
+  _mark_windows_for_selection_mode (self);
   g_free (event);
 }
 
@@ -702,6 +807,34 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_sphere_press_cb,
                               self))
     return FALSE;
+
+  button_x += reset_width_meter;
+
+  graphene_point3d_t position_pinned = {
+    .x =  button_x,
+    .y =  0.0f,
+    .z = -1.0f
+  };
+  if (!xrd_client_add_button (self, &priv->pinned_button,
+                              "Pinned",
+                              &position_pinned,
+                              (GCallback) _button_pinned_press_cb,
+                              self))
+      return FALSE;
+
+  button_x += reset_width_meter;
+
+  graphene_point3d_t select_pinned = {
+    .x =  button_x,
+    .y =  0.0f,
+    .z = -1.0f
+  };
+  if (!xrd_client_add_button (self, &priv->select_pinned_button,
+                              "Select",
+                              &select_pinned,
+                              (GCallback) _button_select_pinned_press_cb,
+                              self))
+      return FALSE;
 
   return TRUE;
 }
@@ -1048,6 +1181,8 @@ xrd_client_init (XrdClient *self)
   priv->keyboard_window = NULL;
   priv->keyboard_press_signal = 0;
   priv->keyboard_close_signal = 0;
+  priv->pinned_only = FALSE;
+  priv->selection_mode = FALSE;
 
   priv->context = openvr_context_get_instance ();
   priv->manager = xrd_window_manager_new ();

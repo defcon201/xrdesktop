@@ -22,6 +22,9 @@ struct _XrdOverlayClient
 {
   XrdClient parent;
 
+  gboolean pinned_only;
+  XrdOverlayWindow *pinned_button;
+
   OpenVROverlayUploader *uploader;
 };
 
@@ -135,6 +138,8 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   xrd_client_add_button_callbacks (XRD_CLIENT (self),
                                    XRD_WINDOW (overlay_window));
 
+  xrd_window_manager_set_pin (manager, XRD_WINDOW (overlay_window), TRUE);
+
   return TRUE;
 }
 
@@ -173,6 +178,8 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
+
+  self->pinned_only = FALSE;
   OpenVRContext *openvr_context =
     xrd_client_get_openvr_context (XRD_CLIENT (self));
 
