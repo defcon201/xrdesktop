@@ -166,6 +166,26 @@ xrd_window_default_init (XrdWindowInterface *iface)
                           G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_interface_install_property (iface, pspec);
 
+  pspec =
+    g_param_spec_uint ("texture-width",
+                       "Texture width",
+                       "The width of the set texture.",
+                       0,
+                       32768,
+                       0,
+                       G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  g_object_interface_install_property (iface, pspec);
+
+  pspec =
+    g_param_spec_uint ("texture-height",
+                       "Texture height",
+                       "The height of the set texture.",
+                       0,
+                       32768,
+                       0,
+                       G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  g_object_interface_install_property (iface, pspec);
+
   iface->windows_created = 0;
 }
 

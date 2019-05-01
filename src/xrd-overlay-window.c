@@ -26,6 +26,8 @@ enum
   PROP_PPM,
   PROP_SCALING,
   PROP_NATIVE,
+  PROP_TEXTURE_WIDTH,
+  PROP_TEXTURE_HEIGHT,
   N_PROPERTIES
 };
 
@@ -49,22 +51,28 @@ xrd_overlay_window_set_property (GObject      *object,
                                  const GValue *value,
                                  GParamSpec   *pspec)
 {
-  XrdWindow *self = XRD_WINDOW (object);
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (object);
   switch (property_id)
     {
     case PROP_TITLE:
-      if (self->window_title)
-        g_string_free (self->window_title, TRUE);
-      self->window_title = g_string_new (g_value_get_string (value));
+      if (self->window_data.window_title)
+        g_string_free (self->window_data.window_title, TRUE);
+      self->window_data.window_title = g_string_new (g_value_get_string (value));
       break;
     case PROP_PPM:
-      self->ppm = g_value_get_float (value);
+      self->window_data.ppm = g_value_get_float (value);
       break;
     case PROP_SCALING:
-      self->scaling_factor = g_value_get_float (value);
+      self->window_data.scaling_factor = g_value_get_float (value);
       break;
     case PROP_NATIVE:
-      self->native = g_value_get_pointer (value);
+      self->window_data.native = g_value_get_pointer (value);
+      break;
+    case PROP_TEXTURE_WIDTH:
+      self->window_data.texture_width = g_value_get_uint (value);
+      break;
+    case PROP_TEXTURE_HEIGHT:
+      self->window_data.texture_height = g_value_get_uint (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -78,21 +86,27 @@ xrd_overlay_window_get_property (GObject    *object,
                                  GValue     *value,
                                  GParamSpec *pspec)
 {
-  XrdWindow *self = XRD_WINDOW (object);
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (object);
 
   switch (property_id)
     {
     case PROP_TITLE:
-      g_value_set_string (value, self->window_title->str);
+      g_value_set_string (value, self->window_data.window_title->str);
       break;
     case PROP_PPM:
-      g_value_set_float (value, self->ppm);
+      g_value_set_float (value, self->window_data.ppm);
       break;
     case PROP_SCALING:
-      g_value_set_float (value, self->scaling_factor);
+      g_value_set_float (value, self->window_data.scaling_factor);
       break;
     case PROP_NATIVE:
-      g_value_set_pointer (value, self->native);
+      g_value_set_pointer (value, self->window_data.native);
+      break;
+    case PROP_TEXTURE_WIDTH:
+      g_value_set_uint (value, self->window_data.texture_width);
+      break;
+    case PROP_TEXTURE_HEIGHT:
+      g_value_set_uint (value, self->window_data.texture_height);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -140,6 +154,8 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   g_object_class_override_property (object_class, PROP_PPM, "ppm");
   g_object_class_override_property (object_class, PROP_SCALING, "scaling-factor");
   g_object_class_override_property (object_class, PROP_NATIVE, "native");
+  g_object_class_override_property (object_class, PROP_TEXTURE_WIDTH, "texture-width");
+  g_object_class_override_property (object_class, PROP_TEXTURE_HEIGHT, "texture-height");
 }
 
 static void
