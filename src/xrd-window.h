@@ -127,7 +127,7 @@ struct _XrdWindowInterface
 
 //GType xrd_window_get_type (void) G_GNUC_CONST;
 
-struct _XrdWindow
+typedef struct XrdWindowData
 {
   GObject parent;
   gpointer native;
@@ -146,7 +146,7 @@ struct _XrdWindow
   XrdWindow *parent_window;
 
   graphene_point_t child_offset_center;
-};
+} XrdWindowData;
 
 gboolean
 xrd_window_set_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat);

@@ -317,7 +317,9 @@ xrd_window_get_texture_height (XrdWindow *self)
 float
 xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
 {
-  return (float)pixel / self->ppm * self->scaling_factor;
+  float ppm = xrd_window_get_ppm (self);
+  float scaling_factor = xrd_window_get_scaling_factor (self);
+  return (float) pixel / ppm * scaling_factor;
 }
 
 /**
@@ -330,7 +332,8 @@ xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
 gboolean
 xrd_window_get_width_meter (XrdWindow *self, float *meters)
 {
-  *meters = xrd_window_pixel_to_meter (self, self->texture_width);
+  *meters = xrd_window_pixel_to_meter (self,
+                                       xrd_window_get_texture_width (self));
   return TRUE;
 }
 
@@ -344,7 +347,8 @@ xrd_window_get_width_meter (XrdWindow *self, float *meters)
 gboolean
 xrd_window_get_height_meter (XrdWindow *self, float *meters)
 {
-  *meters = xrd_window_pixel_to_meter (self, self->texture_height);
+  *meters = xrd_window_pixel_to_meter (self,
+                                       xrd_window_get_texture_height (self));
   return TRUE;
 }
 

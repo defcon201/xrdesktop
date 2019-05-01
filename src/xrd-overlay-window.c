@@ -18,6 +18,8 @@ struct _XrdOverlayWindow
   OpenVROverlay parent;
   gboolean      recreate;
   gboolean      flip_y;
+
+  XrdWindowData window_data;
 };
 
 enum
@@ -126,11 +128,11 @@ notify_property_scale_changed (GObject *object,
   XrdWindow *xrd_window = XRD_WINDOW (object);
 
   float width_meter =
-      xrd_window_pixel_to_meter (xrd_window, xrd_window->texture_width);
+      xrd_window_pixel_to_meter (xrd_window, self->window_data.texture_width);
 
   openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width_meter);
 
-  if (xrd_window->child_window)
+  if (self->window_data.child_window)
     _scale_move_child (self);
 }
 
@@ -180,15 +182,13 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
 static void
 _scale_move_child (XrdOverlayWindow *self)
 {
+  XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (self->window_data.child_window);
 
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (xrd_window->child_window);
-
-  g_object_set (G_OBJECT(child), "scaling-factor", xrd_window->scaling_factor, NULL);
+  g_object_set (G_OBJECT(child), "scaling-factor", self->window_data.scaling_factor, NULL);
 
   graphene_point_t scaled_offset;
-  graphene_point_scale (&xrd_window->child_offset_center,
-                        xrd_window->scaling_factor / xrd_window->ppm,
+  graphene_point_scale (&self->window_data.child_offset_center,
+                        self->window_data.scaling_factor / self->window_data.ppm,
                         &scaled_offset);
 
   graphene_point3d_t scaled_offset3d = {
@@ -213,11 +213,9 @@ gboolean
 xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
                                               graphene_matrix_t *mat)
 {
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-
   gboolean res =
     openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), mat);
-  if (xrd_window->child_window)
+  if (self->window_data.child_window)
     _scale_move_child (self);
   return res;
 }
@@ -238,20 +236,20 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
 
   OpenVROverlayUploader *uploader = OPENVR_OVERLAY_UPLOADER (client);
 
-  if (xrd_window->texture_width != texture->width ||
-      xrd_window->texture_height != texture->height)
+  if (self->window_data.texture_width != texture->width ||
+      self->window_data.texture_height != texture->height)
     {
       float new_width_meter =
         xrd_window_pixel_to_meter (xrd_window, texture->width);
 
       openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), new_width_meter);
 
-      xrd_window->texture_width = texture->width;
-      xrd_window->texture_height = texture->height;
+      self->window_data.texture_width = texture->width;
+      self->window_data.texture_height = texture->height;
       /* Mouse scale is required for the intersection test */
       openvr_overlay_set_mouse_scale (OPENVR_OVERLAY (self),
-                                      xrd_window->texture_width,
-                                      xrd_window->texture_height);
+                                      self->window_data.texture_width,
+                                      self->window_data.texture_height);
     }
 
   openvr_overlay_uploader_submit_frame(uploader,
@@ -263,15 +261,14 @@ xrd_overlay_window_add_child (XrdOverlayWindow *self,
                               XrdOverlayWindow *child,
                               graphene_point_t *offset_center)
 {
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-  xrd_window->child_window = XRD_WINDOW (child);
-  graphene_point_init_from_point (&xrd_window->child_offset_center,
+  self->window_data.child_window = XRD_WINDOW (child);
+  graphene_point_init_from_point (&self->window_data.child_offset_center,
                                   offset_center);
 
   if (child)
     {
       _scale_move_child (self);
-      XRD_WINDOW (child)->parent_window = XRD_WINDOW (self);
+      XRD_OVERLAY_WINDOW (child)->window_data.parent_window = XRD_WINDOW (self);
       /* TODO: sort order hierarchy instead od ad hoc values*/
       openvr_overlay_set_sort_order (OPENVR_OVERLAY (child), 1);
     }
@@ -326,6 +323,11 @@ static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
   self->flip_y = false;
+  self->window_data.child_window = NULL;
+  self->window_data.parent_window = NULL;
+  self->window_data.native = NULL;
+  self->window_data.texture_width = 0;
+  self->window_data.texture_height = 0;
 }
 
 /** xrd_overlay_window_new:
@@ -378,7 +380,7 @@ xrd_overlay_window_constructed (GObject *gobject)
   g_sprintf (overlay_id_str, "xrd-window-%d", iface->windows_created);
 
   openvr_overlay_create (OPENVR_OVERLAY (self), overlay_id_str,
-                         xrd_window->window_title->str);
+                         self->window_data.window_title->str);
 
   /* g_print ("Created overlay %s\n", overlay_id_str); */
 
@@ -403,17 +405,20 @@ static void
 xrd_overlay_window_finalize (GObject *gobject)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (gobject);
-  XrdWindow *xrd_window = XRD_WINDOW (self);
 
-  /* TODO: find a better solution to clean up */
-  if (xrd_window->parent_window)
-    xrd_window->parent_window->child_window = NULL;
+  XrdOverlayWindow *parent =
+    XRD_OVERLAY_WINDOW (self->window_data.parent_window);
+
+  if (parent != NULL)
+    parent->window_data.child_window = NULL;
 
   /* TODO: a child window should not exist without a parent window anyway,
    * but it will be cleaned up already because the child window on the desktop
    * will most likely close already. */
-  if (xrd_window->child_window)
-    xrd_window->child_window->parent_window = NULL;
+
+  XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (self->window_data.child_window);
+  if (child)
+    child->window_data.parent_window = NULL;
 
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }
