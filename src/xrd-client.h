@@ -10,9 +10,6 @@
 
 #include <glib-object.h>
 #include "xrd-window.h"
-#include "xrd-overlay-window.h"
-#include "xrd-scene-window.h"
-#include "xrd-scene-client.h"
 #include "xrd-input-synth.h"
 
 #include <gdk/gdk.h>

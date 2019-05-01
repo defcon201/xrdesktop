@@ -25,7 +25,7 @@
 
 static bool use_validation = true;
 
-G_DEFINE_TYPE (XrdSceneClient, xrd_scene_client, GULKAN_TYPE_CLIENT)
+G_DEFINE_TYPE (XrdSceneClient, xrd_scene_client, XRD_TYPE_CLIENT)
 
 static void xrd_scene_client_finalize (GObject *gobject);
 
@@ -61,6 +61,24 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = xrd_scene_client_finalize;
+
+  XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
+  xrd_client_class->add_window =
+      (void*) xrd_scene_client_add_window;
+  xrd_client_class->add_button =
+      (void*) xrd_scene_client_add_button;
+  xrd_client_class->remove_window =
+      (void*) xrd_scene_client_remove_window;
+  xrd_client_class->save_reset_transform =
+      (void*) xrd_scene_client_save_reset_transform;
+  xrd_client_class->get_keyboard_window =
+      (void*) xrd_scene_client_get_keyboard_window;
+  xrd_client_class->get_uploader =
+      (void*) xrd_scene_client_get_uploader;
+  xrd_client_class->get_synth_hovered =
+      (void*) xrd_scene_client_get_synth_hovered;
+  xrd_client_class->submit_cursor_texture =
+      (void*) xrd_scene_client_submit_cursor_texture;
 }
 
 void
@@ -74,6 +92,7 @@ _insert_at_key2 (GHashTable *table, uint32_t key, gpointer value)
 static void
 xrd_scene_client_init (XrdSceneClient *self)
 {
+  self->gulkan_client = gulkan_client_new ();
   self->msaa_sample_count = VK_SAMPLE_COUNT_4_BIT;
   self->super_sample_scale = 1.0f;
 
@@ -119,8 +138,7 @@ xrd_scene_client_finalize (GObject *gobject)
 {
   XrdSceneClient *self = XRD_SCENE_CLIENT (gobject);
 
-  GulkanClient *client = GULKAN_CLIENT (gobject);
-  VkDevice device = client->device->device;
+  VkDevice device = self->gulkan_client->device->device;
 
   if (device != VK_NULL_HANDLE)
     vkDeviceWaitIdle (device);
@@ -308,20 +326,18 @@ _init_vulkan (XrdSceneClient *self)
   if (!_init_vulkan_device (self))
     return false;
 
-  GulkanClient *client = GULKAN_CLIENT (self);
-  if (!gulkan_client_init_command_pool (client))
+  if (!gulkan_client_init_command_pool (self->gulkan_client))
     {
       g_printerr ("Could not create command pool.\n");
       return false;
     }
 
   FencedCommandBuffer cmd_buffer;
-  if (!gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer))
+  if (!gulkan_client_begin_res_cmd_buffer (self->gulkan_client, &cmd_buffer))
     {
       g_printerr ("Could not begin command buffer.\n");
       return false;
     }
-
 
   _update_matrices (self);
   _init_framebuffers (self, cmd_buffer.cmd_buffer);
@@ -340,7 +356,8 @@ _init_vulkan (XrdSceneClient *self)
 
   _init_device_models (self);
 
-  xrd_scene_background_initialize (self->background, client->device,
+  xrd_scene_background_initialize (self->background,
+                                   self->gulkan_client->device,
                                    &self->descriptor_set_layout);
 
 #if DEBUG_GEOMETRY
@@ -350,7 +367,7 @@ _init_vulkan (XrdSceneClient *self)
                                 &self->descriptor_set_layout);
 #endif
 
-  if (!gulkan_client_submit_res_cmd_buffer (client, &cmd_buffer))
+  if (!gulkan_client_submit_res_cmd_buffer (self->gulkan_client, &cmd_buffer))
     {
       g_printerr ("Could not submit command buffer.\n");
       return false;
@@ -359,12 +376,12 @@ _init_vulkan (XrdSceneClient *self)
   for (int i = 0; i < 2; i++)
     {
       XrdScenePointer *pointer = xrd_scene_pointer_new ();
-      xrd_scene_pointer_initialize (pointer, client->device,
+      xrd_scene_pointer_initialize (pointer, self->gulkan_client->device,
                                     &self->descriptor_set_layout);
       _insert_at_key2 (self->pointers, i, pointer);
     }
 
-  vkQueueWaitIdle (client->device->queue);
+  vkQueueWaitIdle (self->gulkan_client->device->queue);
 
   return true;
 }
@@ -373,27 +390,27 @@ bool
 _init_vulkan_instance (XrdSceneClient *self)
 {
   GSList *extensions = NULL;
-  GulkanClient *client = GULKAN_CLIENT (self);
   openvr_compositor_get_instance_extensions (&extensions);
-  return gulkan_instance_create (client->instance, use_validation, extensions);
+  return gulkan_instance_create (self->gulkan_client->instance,
+                                 use_validation, extensions);
 }
 
 bool
 _init_vulkan_device (XrdSceneClient *self)
 {
   /* Query OpenVR for a physical device */
-  GulkanClient *client = GULKAN_CLIENT (self);
   uint64_t physical_device = 0;
   OpenVRContext *context = openvr_context_get_instance ();
   context->system->GetOutputDevice (
       &physical_device, ETextureType_TextureType_Vulkan,
-      (struct VkInstance_T *) client->instance->instance);
+      (struct VkInstance_T *) self->gulkan_client->instance->instance);
 
   GSList *extensions = NULL;
   openvr_compositor_get_device_extensions ((VkPhysicalDevice)physical_device,
                                            &extensions);
 
-  return gulkan_device_create (client->device, client->instance,
+  return gulkan_device_create (self->gulkan_client->device,
+                               self->gulkan_client->instance,
                                (VkPhysicalDevice)physical_device, extensions);
 }
 
@@ -401,8 +418,8 @@ void
 _init_device_model (XrdSceneClient *self,
                     TrackedDeviceIndex_t device_id)
 {
-  GulkanClient *client = GULKAN_CLIENT (self);
-  xrd_scene_device_manager_add (self->device_manager, client, device_id,
+  xrd_scene_device_manager_add (self->device_manager, self->gulkan_client,
+                                device_id,
                                &self->descriptor_set_layout);
 }
 
@@ -421,8 +438,8 @@ _init_device_models (XrdSceneClient *self)
 }
 
 void
-xrd_scene_client_add_window (XrdSceneClient *self,
-                             XrdSceneWindow *window)
+xrd_scene_client_add_scene_window (XrdSceneClient *self,
+                                   XrdSceneWindow *window)
 {
   self->windows = g_slist_append (self->windows, window);
 }
@@ -481,10 +498,8 @@ xrd_scene_client_render (XrdSceneClient *self)
 {
   _test_intersection (self);
 
-  GulkanClient *client = GULKAN_CLIENT (self);
-
   FencedCommandBuffer cmd_buffer;
-  gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer);
+  gulkan_client_begin_res_cmd_buffer (self->gulkan_client, &cmd_buffer);
 
   _render_stereo (self, cmd_buffer.cmd_buffer);
 
@@ -499,21 +514,23 @@ xrd_scene_client_render (XrdSceneClient *self)
     .signalSemaphoreCount = 0
   };
 
-  vkQueueSubmit (client->device->queue, 1, &submit_info, cmd_buffer.fence);
+  vkQueueSubmit (self->gulkan_client->device->queue, 1,
+                &submit_info, cmd_buffer.fence);
 
-  vkQueueWaitIdle (client->device->queue);
+  vkQueueWaitIdle (self->gulkan_client->device->queue);
 
-  vkFreeCommandBuffers (client->device->device, client->command_pool,
+  vkFreeCommandBuffers (self->gulkan_client->device->device,
+                        self->gulkan_client->command_pool,
                         1, &cmd_buffer.cmd_buffer);
-  vkDestroyFence (client->device->device, cmd_buffer.fence, NULL);
+  vkDestroyFence (self->gulkan_client->device->device, cmd_buffer.fence, NULL);
 
-  GulkanDevice *device = client->device;
+  GulkanDevice *device = self->gulkan_client->device;
 
   VRVulkanTextureData_t openvr_texture_data = {
     .m_nImage = (uint64_t)self->framebuffer[EVREye_Eye_Left]->color_image,
     .m_pDevice = (struct VkDevice_T *) device->device,
     .m_pPhysicalDevice = (struct VkPhysicalDevice_T *) device->physical_device,
-    .m_pInstance = (struct VkInstance_T *) client->instance->instance,
+    .m_pInstance = (struct VkInstance_T *) self->gulkan_client->instance->instance,
     .m_pQueue = (struct VkQueue_T *) device->queue,
     .m_nQueueFamilyIndex = device->queue_family_index,
     .m_nWidth = self->render_width,
@@ -552,7 +569,6 @@ bool
 _init_framebuffers (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
 {
   OpenVRContext *context = openvr_context_get_instance ();
-  GulkanClient *client = GULKAN_CLIENT (self);
 
   context->system->GetRecommendedRenderTargetSize (&self->render_width,
                                                    &self->render_height);
@@ -563,7 +579,7 @@ _init_framebuffers (XrdSceneClient *self, VkCommandBuffer cmd_buffer)
 
   for (uint32_t eye = 0; eye < 2; eye++)
     gulkan_frame_buffer_initialize (self->framebuffer[eye],
-                                    client->device,
+                                    self->gulkan_client->device,
                                     cmd_buffer,
                                     self->render_width, self->render_height,
                                     self->msaa_sample_count,
@@ -660,8 +676,6 @@ _get_view_projection_matrix (XrdSceneClient *self, EVREye eye)
 bool
 _init_shaders (XrdSceneClient *self)
 {
-  GulkanClient *client = GULKAN_CLIENT (self);
-
   const char *shader_names[PIPELINE_COUNT] = {
     "window", "pointer", "device_model"
   };
@@ -674,7 +688,7 @@ _init_shaders (XrdSceneClient *self)
         sprintf (path, "/shaders/%s.%s.spv", shader_names[i], stage_names[j]);
 
         if (!gulkan_renderer_create_shader_module (
-            client->device->device, path,
+            self->gulkan_client->device->device, path,
            &self->shader_modules[i * 2 + j]))
           return false;
       }
@@ -685,8 +699,6 @@ _init_shaders (XrdSceneClient *self)
 bool
 _init_descriptor_layout (XrdSceneClient *self)
 {
-  GulkanClient *client = GULKAN_CLIENT (self);
-
   VkDescriptorSetLayoutCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
     .bindingCount = 2,
@@ -706,7 +718,7 @@ _init_descriptor_layout (XrdSceneClient *self)
     }
   };
 
-  VkResult res = vkCreateDescriptorSetLayout (client->device->device,
+  VkResult res = vkCreateDescriptorSetLayout (self->gulkan_client->device->device,
                                              &info, NULL,
                                              &self->descriptor_set_layout);
   vk_check_error ("vkCreateDescriptorSetLayout", res);
@@ -717,8 +729,6 @@ _init_descriptor_layout (XrdSceneClient *self)
 bool
 _init_pipeline_layout (XrdSceneClient *self)
 {
-  GulkanClient *client = GULKAN_CLIENT (self);
-
   VkPipelineLayoutCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     .setLayoutCount = 1,
@@ -727,7 +737,7 @@ _init_pipeline_layout (XrdSceneClient *self)
     .pPushConstantRanges = NULL
   };
 
-  VkResult res = vkCreatePipelineLayout (client->device->device,
+  VkResult res = vkCreatePipelineLayout (self->gulkan_client->device->device,
                                         &info, NULL, &self->pipeline_layout);
   vk_check_error ("vkCreatePipelineLayout", res);
 
@@ -737,12 +747,10 @@ _init_pipeline_layout (XrdSceneClient *self)
 bool
 _init_pipeline_cache (XrdSceneClient *self)
 {
-  GulkanClient *client = GULKAN_CLIENT (self);
-
   VkPipelineCacheCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO
   };
-  VkResult res = vkCreatePipelineCache (client->device->device,
+  VkResult res = vkCreatePipelineCache (self->gulkan_client->device->device,
                                        &info, NULL, &self->pipeline_cache);
   vk_check_error ("vkCreatePipelineCache", res);
 
@@ -759,8 +767,6 @@ typedef struct __attribute__((__packed__)) PipelineConfig {
 bool
 _init_graphics_pipelines (XrdSceneClient *self)
 {
-  GulkanClient *client = GULKAN_CLIENT (self);
-
   PipelineConfig config[PIPELINE_COUNT] = {
     // PIPELINE_WINDOWS
     {
@@ -883,7 +889,7 @@ _init_graphics_pipelines (XrdSceneClient *self)
         .subpass = VK_NULL_HANDLE
       };
 
-      VkResult res = vkCreateGraphicsPipelines (client->device->device,
+      VkResult res = vkCreateGraphicsPipelines (self->gulkan_client->device->device,
                                                 self->pipeline_cache, 1,
                                                &pipeline_info,
                                                 NULL, &self->pipelines[i]);
@@ -891,5 +897,97 @@ _init_graphics_pipelines (XrdSceneClient *self)
     }
 
   return true;
+}
+
+/* Inheritance overwrites from XrdClient */
+
+XrdOverlayWindow *
+xrd_scene_client_add_window (XrdSceneClient *self,
+                             const char     *title,
+                             gpointer        native,
+                             float           ppm,
+                             gboolean        is_child,
+                             gboolean        follow_head)
+{
+  (void) self;
+  (void) title;
+  (void) native;
+  (void) ppm;
+  (void) is_child;
+  (void) follow_head;
+
+  g_warning ("stub: xrd_scene_client_add_window\n");
+  return NULL;
+}
+
+gboolean
+xrd_scene_client_add_button (XrdSceneClient     *self,
+                             XrdWindow         **button,
+                             gchar              *label,
+                             graphene_point3d_t *position,
+                             GCallback           press_callback,
+                             gpointer            press_callback_data)
+{
+  (void) self;
+  (void) button;
+  (void) label;
+  (void) position;
+  (void) press_callback;
+  (void) press_callback_data;
+
+  g_warning ("stub: xrd_scene_client_add_button\n");
+  return TRUE;
+}
+
+void
+xrd_scene_client_remove_window (XrdSceneClient   *self,
+                                XrdOverlayWindow *window)
+{
+  g_warning ("stub: xrd_scene_client_remove_window\n");
+}
+
+void
+xrd_scene_client_save_reset_transform (XrdSceneClient *self,
+                                       XrdWindow      *window)
+{
+  g_warning ("stub: xrd_scene_client_save_reset_transform\n");
+}
+
+XrdWindow *
+xrd_scene_client_get_keyboard_window (XrdSceneClient *self)
+{
+  (void) self;
+  g_warning ("stub: xrd_scene_client_get_keyboard_window\n");
+  return NULL;
+}
+
+GulkanClient *
+xrd_scene_client_get_uploader (XrdSceneClient *self)
+{
+  return self->gulkan_client;
+}
+
+XrdWindow *
+xrd_scene_client_get_synth_hovered (XrdSceneClient *self)
+{
+  (void) self;
+  g_warning ("stub: xrd_scene_client_get_synth_hovered\n");
+  return NULL;
+}
+
+void
+xrd_scene_client_submit_cursor_texture (XrdSceneClient *self,
+                                        GulkanClient   *client,
+                                        GulkanTexture  *texture,
+                                        int             hotspot_x,
+                                        int             hotspot_y)
+{
+  (void) self;
+  (void) client;
+  (void) texture;
+  (void) hotspot_x;
+  (void) hotspot_y;
+
+  g_warning ("stub: xrd_scene_client_submit_cursor_texture\n");
 }
 

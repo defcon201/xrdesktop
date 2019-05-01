@@ -8,6 +8,8 @@
 #ifndef XRD_SCENE_CLIENT_H_
 #define XRD_SCENE_CLIENT_H_
 
+#include "xrd-client.h"
+
 #include "openvr-context.h"
 #include <glib-object.h>
 
@@ -20,6 +22,7 @@
 #include <gulkan-frame-buffer.h>
 #include <gulkan-vertex-buffer.h>
 #include <gulkan-uniform-buffer.h>
+
 
 #include "xrd-scene-device.h"
 #include "xrd-scene-device-manager.h"
@@ -50,7 +53,7 @@ G_BEGIN_DECLS
 
 #define XRD_TYPE_SCENE_CLIENT xrd_scene_client_get_type ()
 G_DECLARE_FINAL_TYPE (XrdSceneClient, xrd_scene_client,
-                      XRD, SCENE_CLIENT, GulkanClient)
+                      XRD, SCENE_CLIENT, XrdClient)
 
 typedef struct XrdSceneClientController
 {
@@ -60,7 +63,7 @@ typedef struct XrdSceneClientController
 
 struct _XrdSceneClient
 {
-  GulkanClient parent;
+  GObject parent;
 
   VkSampleCountFlagBits msaa_sample_count;
   float super_sample_scale;
@@ -98,6 +101,8 @@ struct _XrdSceneClient
   GHashTable *pointers; // int -> XrdScenePointer
 
   XrdSceneBackground *background;
+
+  GulkanClient *gulkan_client;
 };
 
 XrdSceneClient *xrd_scene_client_new (void);
@@ -107,8 +112,50 @@ bool xrd_scene_client_initialize (XrdSceneClient *self);
 void xrd_scene_client_render (XrdSceneClient *self);
 
 void
+xrd_scene_client_add_scene_window (XrdSceneClient *self,
+                                   XrdSceneWindow *window);
+
+/* Inheritance overwrites from XrdClient */
+
+XrdOverlayWindow *
 xrd_scene_client_add_window (XrdSceneClient *self,
-                             XrdSceneWindow *window);
+                             const char     *title,
+                             gpointer        native,
+                             float           ppm,
+                             gboolean        is_child,
+                             gboolean        follow_head);
+
+gboolean
+xrd_scene_client_add_button (XrdSceneClient     *self,
+                             XrdWindow         **button,
+                             gchar              *label,
+                             graphene_point3d_t *position,
+                             GCallback           press_callback,
+                             gpointer            press_callback_data);
+
+void
+xrd_scene_client_remove_window (XrdSceneClient   *self,
+                                XrdOverlayWindow *window);
+
+void
+xrd_scene_client_save_reset_transform (XrdSceneClient *self,
+                                       XrdWindow      *window);
+
+XrdWindow *
+xrd_scene_client_get_keyboard_window (XrdSceneClient *self);
+
+GulkanClient *
+xrd_scene_client_get_uploader (XrdSceneClient *self);
+
+XrdWindow *
+xrd_scene_client_get_synth_hovered (XrdSceneClient *self);
+
+void
+xrd_scene_client_submit_cursor_texture (XrdSceneClient *self,
+                                        GulkanClient   *client,
+                                        GulkanTexture  *texture,
+                                        int             hotspot_x,
+                                        int             hotspot_y);
 
 G_END_DECLS
 

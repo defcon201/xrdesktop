@@ -78,7 +78,7 @@ _init_windows (Example *self)
     if (!pixbufs[i])
       return FALSE;
 
-  GulkanClient *client = GULKAN_CLIENT (self->client);
+  GulkanClient *client = self->client->gulkan_client;
 
   FencedCommandBuffer cmd_buffer;
   if (!gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer))
@@ -116,7 +116,7 @@ _init_windows (Example *self)
       graphene_euler_init (&rotation, i * 15.0f, 20.0f, 5.0f);
       xrd_scene_object_set_rotation_euler (obj, &rotation);
 
-      xrd_scene_client_add_window (self->client, self->windows[i]);
+      xrd_scene_client_add_scene_window (self->client, self->windows[i]);
     }
 
   if (!gulkan_client_submit_res_cmd_buffer (client, &cmd_buffer))
