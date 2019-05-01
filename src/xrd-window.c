@@ -270,6 +270,42 @@ xrd_window_submit_texture (XrdWindow *self,
   return iface->submit_texture (self, client, texture);
 }
 
+float
+xrd_window_get_scaling_factor (XrdWindow *self)
+{
+  GValue val = G_VALUE_INIT;
+  g_value_init (&val, G_TYPE_FLOAT);
+  g_object_get_property (G_OBJECT (self), "scaling-factor", &val);
+  return g_value_get_float (&val);
+}
+
+float
+xrd_window_get_ppm (XrdWindow *self)
+{
+  GValue val = G_VALUE_INIT;
+  g_value_init (&val, G_TYPE_FLOAT);
+  g_object_get_property (G_OBJECT (self), "ppm", &val);
+  return g_value_get_float (&val);
+}
+
+uint32_t
+xrd_window_get_texture_width (XrdWindow *self)
+{
+  GValue val = G_VALUE_INIT;
+  g_value_init (&val, G_TYPE_UINT);
+  g_object_get_property (G_OBJECT (self), "texture-width", &val);
+  return g_value_get_uint (&val);
+}
+
+uint32_t
+xrd_window_get_texture_height (XrdWindow *self)
+{
+  GValue val = G_VALUE_INIT;
+  g_value_init (&val, G_TYPE_UINT);
+  g_object_get_property (G_OBJECT (self), "texture-height", &val);
+  return g_value_get_uint (&val);
+}
+
 /**
  * xrd_window_pixel_to_meter:
  * @self: The #XrdWindow

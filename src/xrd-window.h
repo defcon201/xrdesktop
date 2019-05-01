@@ -225,6 +225,18 @@ void
 xrd_window_set_flip_y (XrdWindow *self,
                        gboolean flip_y);
 
+float
+xrd_window_get_scaling_factor (XrdWindow *self);
+
+float
+xrd_window_get_ppm (XrdWindow *self);
+
+uint32_t
+xrd_window_get_texture_width (XrdWindow *self);
+
+uint32_t
+xrd_window_get_texture_height (XrdWindow *self);
+
 G_END_DECLS
 
 #endif /* XRD_WINDOW_H_ */
