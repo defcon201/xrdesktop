@@ -17,6 +17,7 @@
 #include <gulkan-uniform-buffer.h>
 
 #include "xrd-scene-object.h"
+#include "xrd-window.h"
 
 G_BEGIN_DECLS
 
@@ -32,6 +33,8 @@ struct _XrdSceneWindow
   GulkanTexture *texture;
   VkSampler sampler;
   float aspect_ratio;
+
+  XrdWindowData window_data;
 };
 
 XrdSceneWindow *xrd_scene_window_new (void);
@@ -63,6 +66,53 @@ xrd_scene_window_get_normal (XrdSceneWindow  *self,
 void
 xrd_scene_window_get_plane (XrdSceneWindow   *self,
                             graphene_plane_t *res);
+
+/* XrdWindow Interface functions */
+
+gboolean
+xrd_scene_window_set_transformation_matrix (XrdSceneWindow    *self,
+                                            graphene_matrix_t *mat);
+
+gboolean
+xrd_scene_window_get_transformation_matrix (XrdSceneWindow    *self,
+                                            graphene_matrix_t *mat);
+
+void
+xrd_scene_window_submit_texture (XrdSceneWindow *self,
+                                 GulkanClient   *client,
+                                 GulkanTexture  *texture);
+
+void
+xrd_scene_window_poll_event (XrdSceneWindow *self);
+
+gboolean
+xrd_scene_window_intersects (XrdSceneWindow     *self,
+                             graphene_matrix_t  *pointer_transformation_matrix,
+                             graphene_point3d_t *intersection_point);
+
+gboolean
+xrd_scene_window_intersection_to_pixels (XrdSceneWindow     *self,
+                                         graphene_point3d_t *intersection_point,
+                                         XrdPixelSize       *size_pixels,
+                                         graphene_point_t   *window_coords);
+
+gboolean
+xrd_scene_window_intersection_to_2d_offset_meter (XrdSceneWindow     *self,
+                                                  graphene_point3d_t *intersection_point,
+                                                  graphene_point_t   *offset_center);
+
+void
+xrd_scene_window_add_child (XrdSceneWindow   *self,
+                            XrdSceneWindow   *child,
+                            graphene_point_t *offset_center);
+
+void
+xrd_scene_window_set_color (XrdSceneWindow  *self,
+                            graphene_vec3_t *color);
+
+void
+xrd_scene_window_set_flip_y (XrdSceneWindow *self,
+                             gboolean        flip_y);
 
 G_END_DECLS
 
