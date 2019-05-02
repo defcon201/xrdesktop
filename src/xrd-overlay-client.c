@@ -23,8 +23,7 @@ struct _XrdOverlayClient
   XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
   XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
 
-  XrdClientController left;
-  XrdClientController right;
+  XrdClientController controllers[2];
 
   XrdWindow *button_reset;
   XrdWindow *button_sphere;
@@ -146,7 +145,7 @@ _action_hand_pose_cb (OpenVRAction            *action,
                       XrdClientController     *controller)
 {
   (void) action;
-  XrdOverlayClient *self = controller->self;
+  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
   xrd_window_manager_update_pose (manager, &event->pose,
@@ -172,7 +171,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
                             XrdClientController *controller)
 {
   (void) action;
-  XrdOverlayClient *self = controller->self;
+  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
   GrabState *grab_state =
@@ -210,7 +209,7 @@ _action_grab_cb (OpenVRAction        *action,
                  XrdClientController *controller)
 {
   (void) action;
-  XrdOverlayClient *self = controller->self;
+  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
   if (event->changed)
@@ -230,7 +229,7 @@ _action_rotate_cb (OpenVRAction        *action,
                    XrdClientController *controller)
 {
   (void) action;
-  XrdOverlayClient *self = controller->self;
+  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
   GrabState *grab_state =
@@ -906,11 +905,11 @@ xrd_overlay_client_init (XrdOverlayClient *self)
 
   _init_buttons (self);
 
-  self->left.self = self;
-  self->left.index = 0;
-
-  self->right.self = self;
-  self->right.index = 1;
+  for (uint32_t i = 0; i < 2; i++)
+    {
+      self->controllers[i].self = XRD_CLIENT (self);
+      self->controllers[i].index = i;
+    }
 
   if (!openvr_io_load_cached_action_manifest (
         "xrdesktop",
@@ -930,42 +929,48 @@ xrd_overlay_client_init (XrdOverlayClient *self)
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_left",
-                             (GCallback) _action_hand_pose_cb, &self->left);
+                             (GCallback) _action_hand_pose_cb,
+                             &self->controllers[0]);
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_right",
-                             (GCallback) _action_hand_pose_cb, &self->right);
+                             (GCallback) _action_hand_pose_cb,
+                             &self->controllers[1]);
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window_left",
-                             (GCallback) _action_grab_cb, &self->left);
+                             (GCallback) _action_grab_cb,
+                             &self->controllers[0]);
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window_right",
-                             (GCallback) _action_grab_cb, &self->right);
+                             (GCallback) _action_grab_cb,
+                             &self->controllers[1]);
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/rotate_window_left",
-                             (GCallback) _action_rotate_cb, &self->left);
+                             (GCallback) _action_rotate_cb,
+                             &self->controllers[0]);
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/rotate_window_right",
-                             (GCallback) _action_rotate_cb, &self->right);
+                             (GCallback) _action_rotate_cb,
+                             &self->controllers[1]);
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_scale_left",
                              (GCallback) _action_push_pull_scale_cb,
-                            &self->left);
+                            &self->controllers[0]);
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_scale_right",
                              (GCallback) _action_push_pull_scale_cb,
-                            &self->right);
+                            &self->controllers[1]);
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_left",
                              (GCallback) _action_push_pull_scale_cb,
-                            &self->left);
+                            &self->controllers[0]);
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_right",
                              (GCallback) _action_push_pull_scale_cb,
-                            &self->right);
+                            &self->controllers[1]);
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/show_keyboard_left",
