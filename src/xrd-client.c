@@ -17,7 +17,13 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE (XrdClient, xrd_client, G_TYPE_OBJECT)
+typedef struct _XrdClientPrivate
+{
+  GObject parent;
+  guint foo;
+} XrdClientPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
 
 static void
 xrd_client_finalize (GObject *gobject);
@@ -61,7 +67,8 @@ xrd_client_class_init (XrdClientClass *klass)
 static void
 xrd_client_init (XrdClient *self)
 {
-  (void) self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  priv->foo = 0;
 }
 
 /**
