@@ -44,7 +44,7 @@ typedef struct VertexDataScene
 
 struct _XrdSceneClient
 {
-  GObject parent;
+  XrdClient parent;
 
   VkSampleCountFlagBits msaa_sample_count;
   float super_sample_scale;
