@@ -30,6 +30,7 @@
 #include "xrd-pointer.h"
 
 #include "xrd-overlay-window.h"
+#include "xrd-pointer-tip.h"
 
 typedef struct Example
 {
@@ -175,9 +176,8 @@ _paint_hover_cb (XrdOverlayWindow *window,
 {
   Example *self = (Example*) _self;
 
-  xrd_overlay_pointer_tip_update (self->intersection_overlay,
-                             &event->pose,
-                             &event->point);
+  xrd_pointer_tip_update (XRD_POINTER_TIP (self->intersection_overlay),
+                         &event->pose, &event->point);
 
   XrdPixelSize size_pixels = {
     .width = (guint) gdk_pixbuf_get_width (self->draw_pixbuf),

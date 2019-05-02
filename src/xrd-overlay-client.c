@@ -16,6 +16,7 @@
 #include "xrd-client.h"
 #include "graphene-ext.h"
 #include "xrd-pointer.h"
+#include "xrd-pointer-tip.h"
 
 struct _XrdOverlayClient
 {
@@ -43,7 +44,7 @@ struct _XrdOverlayClient
 
   OpenVROverlayUploader *uploader;
   XrdPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
-  XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
+  XrdPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
   XrdOverlayDesktopCursor *cursor;
 };
 
@@ -268,11 +269,11 @@ _window_grab_cb (XrdOverlayWindow *window,
   (void) window;
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
 
-  XrdOverlayPointerTip *pointer_tip =
+  XrdPointerTip *pointer_tip =
     self->pointer_tip[event->controller_index];
-  xrd_overlay_pointer_tip_set_transformation_matrix (pointer_tip, &event->pose);
+  xrd_pointer_tip_set_transformation_matrix (pointer_tip, &event->pose);
 
-  xrd_overlay_pointer_tip_set_constant_width (pointer_tip);
+  xrd_pointer_tip_set_constant_width (pointer_tip);
   g_free (event);
 }
 
@@ -305,14 +306,14 @@ _button_hover_cb (XrdWindow     *window,
 
   XrdPointer *pointer =
       self->pointer_ray[event->controller_index];
-  XrdOverlayPointerTip *pointer_tip =
+  XrdPointerTip *pointer_tip =
       self->pointer_tip[event->controller_index];
 
   /* update pointer length and intersection overlay */
   graphene_matrix_t window_pose;
   xrd_window_get_transformation_matrix (window, &window_pose);
 
-  xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
+  xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
   xrd_pointer_set_length (pointer, event->distance);
 
   g_free (event);
@@ -337,8 +338,8 @@ _window_hover_end_cb (XrdWindow               *window,
       xrd_window_manager_get_hover_state (manager, event->index)->window
           != NULL;
 
-  XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
-  xrd_overlay_pointer_tip_set_active (pointer_tip, active);
+  XrdPointerTip *pointer_tip = self->pointer_tip[event->index];
+  xrd_pointer_tip_set_active (pointer_tip, active);
 
   XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
   xrd_input_synth_reset_press_state (input_synth);
@@ -603,12 +604,12 @@ _window_hover_cb (XrdWindow *window,
                   XrdOverlayClient *self)
 {
   /* update pointer length and intersection overlay */
-  XrdOverlayPointerTip *pointer_tip =
+  XrdPointerTip *pointer_tip =
     self->pointer_tip[event->controller_index];
 
   graphene_matrix_t window_pose;
   xrd_window_get_transformation_matrix (window, &window_pose);
-  xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
+  xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
 
   XrdPointer *pointer = self->pointer_ray[event->controller_index];
   xrd_pointer_set_length (pointer, event->distance);
@@ -637,8 +638,8 @@ _window_hover_start_cb (XrdOverlayWindow        *window,
   (void) window;
   (void) event;
 
-  XrdOverlayPointerTip *pointer_tip = self->pointer_tip[event->index];
-  xrd_overlay_pointer_tip_set_active (pointer_tip, TRUE);
+  XrdPointerTip *pointer_tip = self->pointer_tip[event->index];
+  xrd_pointer_tip_set_active (pointer_tip, TRUE);
 
   g_free (event);
 }
@@ -650,7 +651,7 @@ _manager_no_hover_cb (XrdWindowManager *manager,
 {
   (void) manager;
 
-  XrdOverlayPointerTip *pointer_tip =
+  XrdPointerTip *pointer_tip =
     self->pointer_tip[event->controller_index];
 
   XrdPointer *pointer_ray = self->pointer_ray[event->controller_index];
@@ -675,11 +676,11 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   graphene_matrix_rotate_quaternion (&tip_pose, &controller_rotation);
   graphene_matrix_translate (&tip_pose, &controller_translation_point);
 
-  xrd_overlay_pointer_tip_set_transformation_matrix (pointer_tip, &tip_pose);
+  xrd_pointer_tip_set_transformation_matrix (pointer_tip, &tip_pose);
 
-  xrd_overlay_pointer_tip_set_constant_width (pointer_tip);
+  xrd_pointer_tip_set_constant_width (pointer_tip);
 
-  xrd_overlay_pointer_tip_set_active (pointer_tip, FALSE);
+  xrd_pointer_tip_set_active (pointer_tip, FALSE);
 
   g_free (event);
 
@@ -770,9 +771,9 @@ _synth_click_cb (XrdInputSynth    *synth,
                   (manager, event->controller_index);
           if (hover_state->window != NULL && event->state)
             {
-              XrdOverlayPointerTip *pointer_tip =
+              XrdPointerTip *pointer_tip =
                   self->pointer_tip[event->controller_index];
-              xrd_overlay_pointer_tip_animate_pulse (pointer_tip);
+              xrd_pointer_tip_animate_pulse (pointer_tip);
             }
         }
     }
@@ -855,15 +856,16 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       if (self->pointer_ray[i] == NULL)
         return;
 
-      self->pointer_tip[i] = xrd_overlay_pointer_tip_new (i, self->uploader);
+      self->pointer_tip[i] =
+        XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (i, self->uploader));
       if (self->pointer_tip[i] == NULL)
         return;
 
       self->hover_window[i] = NULL;
 
-      xrd_overlay_pointer_tip_init_vulkan (self->pointer_tip[i]);
-      xrd_overlay_pointer_tip_set_active (self->pointer_tip[i], FALSE);
-      xrd_overlay_pointer_tip_show (self->pointer_tip[i]);
+      xrd_pointer_tip_init_vulkan (self->pointer_tip[i]);
+      xrd_pointer_tip_set_active (self->pointer_tip[i], FALSE);
+      xrd_pointer_tip_show (self->pointer_tip[i]);
     }
 
   _init_buttons (self);

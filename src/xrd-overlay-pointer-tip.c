@@ -11,6 +11,7 @@
 #include "xrd-settings.h"
 #include "xrd-math.h"
 #include "graphene-ext.h"
+#include "xrd-pointer-tip.h"
 
 struct _XrdOverlayPointerTip
 {
@@ -47,10 +48,43 @@ struct _XrdOverlayPointerTip
   int texture_size_factor;
 };
 
-G_DEFINE_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, OPENVR_TYPE_OVERLAY)
+static void
+xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, OPENVR_TYPE_OVERLAY,
+                         G_IMPLEMENT_INTERFACE (XRD_TYPE_POINTER_TIP,
+                                                xrd_overlay_pointer_tip_pointer_tip_interface_init))
 
 static void
 xrd_overlay_pointer_tip_finalize (GObject *gobject);
+
+void
+xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self);
+
+void
+xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
+                                graphene_matrix_t    *pose,
+                                graphene_point3d_t   *intersection_point);
+
+void
+xrd_overlay_pointer_tip_set_active (XrdOverlayPointerTip  *self,
+                                    gboolean               active);
+
+void
+xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip  *self);
+
+void
+xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip  *self);
+
+void
+xrd_overlay_pointer_tip_set_transformation_matrix (XrdOverlayPointerTip *self,
+                                                   graphene_matrix_t *matrix);
+
+void
+xrd_overlay_pointer_tip_show (XrdOverlayPointerTip *self);
+
+void
+xrd_overlay_pointer_tip_hide (XrdOverlayPointerTip *self);
 
 static void
 xrd_overlay_pointer_tip_class_init (XrdOverlayPointerTipClass *klass)
@@ -58,6 +92,19 @@ xrd_overlay_pointer_tip_class_init (XrdOverlayPointerTipClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = xrd_overlay_pointer_tip_finalize;
+}
+
+static void
+xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *iface)
+{
+  iface->set_constant_width = (void*) xrd_overlay_pointer_tip_set_constant_width;
+  iface->update = (void*) xrd_overlay_pointer_tip_update;
+  iface->set_active = (void*) xrd_overlay_pointer_tip_set_active;
+  iface->init_vulkan = (void*) xrd_overlay_pointer_tip_init_vulkan;
+  iface->animate_pulse = (void*) xrd_overlay_pointer_tip_animate_pulse;
+  iface->set_transformation_matrix = (void*) xrd_overlay_pointer_tip_set_transformation_matrix;
+  iface->show = (void*) xrd_overlay_pointer_tip_show;
+  iface->hide = (void*) xrd_overlay_pointer_tip_hide;
 }
 
 static void
