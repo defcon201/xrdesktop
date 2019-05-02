@@ -6,6 +6,7 @@
  */
 
 #include "xrd-overlay-pointer.h"
+#include "xrd-pointer.h"
 
 struct _XrdOverlayPointer
 {
@@ -15,7 +16,12 @@ struct _XrdOverlayPointer
   float length;
 };
 
-G_DEFINE_TYPE (XrdOverlayPointer, xrd_overlay_pointer, XRD_TYPE_OVERLAY_MODEL)
+static void
+xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (XrdOverlayPointer, xrd_overlay_pointer, XRD_TYPE_OVERLAY_MODEL,
+                         G_IMPLEMENT_INTERFACE (XRD_TYPE_POINTER,
+                                                xrd_overlay_pointer_pointer_interface_init))
 
 static void
 xrd_overlay_pointer_finalize (GObject *gobject);
@@ -60,8 +66,9 @@ xrd_overlay_pointer_new (int controller_index)
     .a = 1.0f
   };
 
-  if (!xrd_overlay_model_set_model (XRD_OVERLAY_MODEL (self), "{system}laser_pointer",
-                              &color))
+  if (!xrd_overlay_model_set_model (XRD_OVERLAY_MODEL (self),
+                                    "{system}laser_pointer",
+                                    &color))
     return NULL;
 
   if (!openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), 0.01f))
@@ -82,9 +89,10 @@ xrd_overlay_pointer_finalize (GObject *gobject)
 }
 
 void
-xrd_overlay_pointer_move (XrdOverlayPointer     *self,
-                     graphene_matrix_t *transform)
+xrd_overlay_pointer_move (XrdPointer        *pointer,
+                          graphene_matrix_t *transform)
 {
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
   graphene_matrix_t scale_matrix;
   graphene_matrix_init_scale (&scale_matrix, 1.0f, 1.0f, self->length);
   graphene_matrix_t scaled;
@@ -93,20 +101,32 @@ xrd_overlay_pointer_move (XrdOverlayPointer     *self,
 }
 
 void
-xrd_overlay_pointer_set_length (XrdOverlayPointer *self,
-                           float          length)
+xrd_overlay_pointer_set_length (XrdPointer *pointer,
+                                float       length)
 {
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
   self->length = length;
 }
 
 void
-xrd_overlay_pointer_reset_length (XrdOverlayPointer *self)
+xrd_overlay_pointer_reset_length (XrdPointer *pointer)
 {
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
   self->length = self->default_length;
 }
 
 float
-xrd_overlay_pointer_get_default_length (XrdOverlayPointer *self)
+xrd_overlay_pointer_get_default_length (XrdPointer *pointer)
 {
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
   return self->default_length;
+}
+
+static void
+xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
+{
+  iface->move = xrd_overlay_pointer_move;
+  iface->set_length = xrd_overlay_pointer_set_length;
+  iface->get_default_length = xrd_overlay_pointer_get_default_length;
+  iface->reset_length = xrd_overlay_pointer_reset_length;
 }

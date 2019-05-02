@@ -27,6 +27,7 @@
 #include "xrd-overlay-pointer.h"
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"
+#include "xrd-pointer.h"
 
 #include "xrd-overlay-window.h"
 
@@ -204,7 +205,7 @@ _paint_hover_cb (XrdOverlayWindow *window,
 
   _draw_at_2d_position (self, &size_pixels, &position_2d, &color, 5);
 
-  xrd_overlay_pointer_set_length (self->pointer_overlay, event->distance);
+  xrd_pointer_set_length (XRD_POINTER (self->pointer_overlay), event->distance);
 
   free (event);
 }
@@ -282,7 +283,7 @@ _right_hand_pose_cb (OpenVRAction    *action,
   ActionCallbackData *data = _self;
   Example *self = data->self;
 
-  xrd_overlay_pointer_move (self->pointer_overlay, &event->pose);
+  xrd_pointer_move (XRD_POINTER (self->pointer_overlay), &event->pose);
   xrd_window_manager_update_pose (self->manager, &event->pose, 1);
 
   /* update intersection */
@@ -300,7 +301,7 @@ _no_hover_cb (XrdWindowManager           *manager,
 
   Example *self = (Example*) _self;
   openvr_overlay_hide (OPENVR_OVERLAY (self->intersection_overlay));
-  xrd_overlay_pointer_reset_length (self->pointer_overlay);
+  xrd_pointer_reset_length (XRD_POINTER (self->pointer_overlay));
   g_free (event);
 }
 

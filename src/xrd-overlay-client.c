@@ -15,6 +15,7 @@
 #include "xrd-math.h"
 #include "xrd-client.h"
 #include "graphene-ext.h"
+#include "xrd-pointer.h"
 
 struct _XrdOverlayClient
 {
@@ -41,7 +42,7 @@ struct _XrdOverlayClient
   double pixel_per_meter;
 
   OpenVROverlayUploader *uploader;
-  XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
+  XrdPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
   XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
   XrdOverlayDesktopCursor *cursor;
 };
@@ -130,8 +131,8 @@ _action_hand_pose_cb (OpenVRAction            *action,
   xrd_window_manager_update_pose (manager, &event->pose,
                                           controller->index);
 
-  XrdOverlayPointer *pointer = self->pointer_ray[controller->index];
-  xrd_overlay_pointer_move (pointer, &event->pose);
+  XrdPointer *pointer = self->pointer_ray[controller->index];
+  xrd_pointer_move (pointer, &event->pose);
 
   /* show cursor while synth controller hovers window, but doesn't grab */
   XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
@@ -176,8 +177,8 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
         graphene_vec3_get_y (&event->state) *
         (self->poll_rate_ms / 1000.);
 
-      XrdOverlayPointer *pointer_ray = self->pointer_ray[controller->index];
-      xrd_overlay_pointer_set_length (pointer_ray, hover_state->distance);
+      XrdPointer *pointer_ray = self->pointer_ray[controller->index];
+      xrd_pointer_set_length (pointer_ray, hover_state->distance);
     }
 
   g_free (event);
@@ -302,7 +303,7 @@ _button_hover_cb (XrdWindow     *window,
 
   xrd_window_mark_color (window, .8f, .4f, .2f);
 
-  XrdOverlayPointer *pointer =
+  XrdPointer *pointer =
       self->pointer_ray[event->controller_index];
   XrdOverlayPointerTip *pointer_tip =
       self->pointer_tip[event->controller_index];
@@ -312,7 +313,7 @@ _button_hover_cb (XrdWindow     *window,
   xrd_window_get_transformation_matrix (window, &window_pose);
 
   xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
-  xrd_overlay_pointer_set_length (pointer, event->distance);
+  xrd_pointer_set_length (pointer, event->distance);
 
   g_free (event);
 }
@@ -327,8 +328,8 @@ _window_hover_end_cb (XrdWindow               *window,
   XrdOverlayClient *self = (XrdOverlayClient*) _self;
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
-  XrdOverlayPointer *pointer_ray = self->pointer_ray[event->index];
-  xrd_overlay_pointer_reset_length (pointer_ray);
+  XrdPointer *pointer_ray = self->pointer_ray[event->index];
+  xrd_pointer_reset_length (pointer_ray);
 
   /* When leaving this window but now hovering another, the tip should
    * still be active because it is now hovering another window. */
@@ -609,8 +610,8 @@ _window_hover_cb (XrdWindow *window,
   xrd_window_get_transformation_matrix (window, &window_pose);
   xrd_overlay_pointer_tip_update (pointer_tip, &window_pose, &event->point);
 
-  XrdOverlayPointer *pointer = self->pointer_ray[event->controller_index];
-  xrd_overlay_pointer_set_length (pointer, event->distance);
+  XrdPointer *pointer = self->pointer_ray[event->controller_index];
+  xrd_pointer_set_length (pointer, event->distance);
 
   self->hover_window[event->controller_index] = window;
 
@@ -652,13 +653,13 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   XrdOverlayPointerTip *pointer_tip =
     self->pointer_tip[event->controller_index];
 
-  XrdOverlayPointer *pointer_ray = self->pointer_ray[event->controller_index];
+  XrdPointer *pointer_ray = self->pointer_ray[event->controller_index];
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,
                          0.f,
                          0.f,
-                         -xrd_overlay_pointer_get_default_length (pointer_ray));
+                         -xrd_pointer_get_default_length (pointer_ray));
 
   graphene_matrix_t tip_pose;
 
@@ -850,7 +851,7 @@ xrd_overlay_client_init (XrdOverlayClient *self)
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
-      self->pointer_ray[i] = xrd_overlay_pointer_new (i);
+      self->pointer_ray[i] = XRD_POINTER (xrd_overlay_pointer_new (i));
       if (self->pointer_ray[i] == NULL)
         return;
 
