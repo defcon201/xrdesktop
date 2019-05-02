@@ -18,7 +18,7 @@
 
 struct _XrdOverlayClient
 {
-  GObject parent;
+  XrdClient parent;
 
   OpenVRContext *context;
 
