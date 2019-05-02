@@ -25,6 +25,66 @@
 
 static bool use_validation = true;
 
+#define DEBUG_GEOMETRY 0
+
+// Pipeline state objects
+enum PipelineType
+{
+  PIPELINE_WINDOWS = 0,
+  PIPELINE_POINTER,
+  PIPELINE_DEVICE_MODELS,
+  PIPELINE_COUNT
+};
+
+typedef struct VertexDataScene
+{
+  graphene_point3d_t position;
+  graphene_point_t   uv;
+} VertexDataScene;
+
+struct _XrdSceneClient
+{
+  GObject parent;
+
+  VkSampleCountFlagBits msaa_sample_count;
+  float super_sample_scale;
+
+  XrdSceneDeviceManager *device_manager;
+
+  float near_clip;
+  float far_clip;
+
+  VkShaderModule shader_modules[PIPELINE_COUNT * 2];
+  VkPipeline pipelines[PIPELINE_COUNT];
+  VkDescriptorSetLayout descriptor_set_layout;
+  VkPipelineLayout pipeline_layout;
+  VkPipelineCache pipeline_cache;
+
+  graphene_matrix_t mat_head_pose;
+  graphene_matrix_t mat_eye_pos[2];
+  graphene_matrix_t mat_projection[2];
+
+#if DEBUG_GEOMETRY
+  XrdSceneVector *debug_vectors[4];
+#endif
+
+  GulkanFrameBuffer *framebuffer[2];
+
+  uint32_t render_width;
+  uint32_t render_height;
+
+  XrdClientController controllers[2];
+  OpenVRActionSet *wm_actions;
+
+  GSList *windows;
+
+  GHashTable *pointers; // int -> XrdScenePointer
+
+  XrdSceneBackground *background;
+
+  GulkanClient *gulkan_client;
+};
+
 G_DEFINE_TYPE (XrdSceneClient, xrd_scene_client, XRD_TYPE_CLIENT)
 
 static void xrd_scene_client_finalize (GObject *gobject);
@@ -973,3 +1033,8 @@ xrd_scene_client_submit_cursor_texture (XrdSceneClient *self,
   g_warning ("stub: xrd_scene_client_submit_cursor_texture\n");
 }
 
+VkDescriptorSetLayout*
+xrd_scene_client_get_descriptor_set_layout (XrdSceneClient *self)
+{
+  return &self->descriptor_set_layout;
+}

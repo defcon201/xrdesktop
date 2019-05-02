@@ -78,7 +78,7 @@ _init_windows (Example *self)
     if (!pixbufs[i])
       return FALSE;
 
-  GulkanClient *client = self->client->gulkan_client;
+  GulkanClient *client = xrd_client_get_uploader (XRD_CLIENT (self->client));
 
   FencedCommandBuffer cmd_buffer;
   if (!gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer))
@@ -100,7 +100,7 @@ _init_windows (Example *self)
     {
       xrd_scene_window_initialize (self->windows[i],
                                    client->device,
-                                   &self->client->descriptor_set_layout);
+                                   xrd_scene_client_get_descriptor_set_layout (self->client));
 
       graphene_point3d_t position = {
         -1, //i / 2.0f - 1,
