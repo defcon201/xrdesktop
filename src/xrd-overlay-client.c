@@ -17,6 +17,7 @@
 #include "graphene-ext.h"
 #include "xrd-pointer.h"
 #include "xrd-pointer-tip.h"
+#include "xrd-overlay-desktop-cursor.h"
 
 struct _XrdOverlayClient
 {
@@ -45,7 +46,7 @@ struct _XrdOverlayClient
   OpenVROverlayUploader *uploader;
   XrdPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
   XrdPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
-  XrdOverlayDesktopCursor *cursor;
+  XrdDesktopCursor *cursor;
 };
 
 G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, XRD_TYPE_CLIENT)
@@ -108,7 +109,7 @@ xrd_overlay_client_get_uploader (XrdOverlayClient *self)
   return GULKAN_CLIENT (self->uploader);
 }
 
-XrdOverlayDesktopCursor *
+XrdDesktopCursor *
 xrd_overlay_client_get_cursor (XrdOverlayClient *self)
 {
   return self->cursor;
@@ -142,7 +143,7 @@ _action_hand_pose_cb (OpenVRAction            *action,
       self->hover_window[controller->index] != NULL &&
       xrd_window_manager_get_grab_state
           (manager, controller->index)->window == NULL)
-    xrd_overlay_desktop_cursor_show (self->cursor);
+    xrd_desktop_cursor_show (self->cursor);
 
   g_free (event);
 }
@@ -256,7 +257,7 @@ _window_grab_start_cb (XrdOverlayWindow        *window,
 
   XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
   if (event->index == xrd_input_synth_synthing_controller (input_synth))
-    xrd_overlay_desktop_cursor_hide (self->cursor);
+    xrd_desktop_cursor_hide (self->cursor);
 
   g_free (event);
 }
@@ -345,7 +346,7 @@ _window_hover_end_cb (XrdWindow               *window,
   xrd_input_synth_reset_press_state (input_synth);
 
   if (event->index == xrd_input_synth_synthing_controller (input_synth))
-    xrd_overlay_desktop_cursor_hide (self->cursor);
+    xrd_desktop_cursor_hide (self->cursor);
 
   g_free (event);
 }
@@ -622,8 +623,7 @@ _window_hover_cb (XrdWindow *window,
     {
       xrd_input_synth_move_cursor (input_synth, window, &event->point);
 
-      XrdOverlayWindow *owindow = XRD_OVERLAY_WINDOW (window);
-      xrd_overlay_desktop_cursor_update (self->cursor, owindow, &event->point);
+      xrd_desktop_cursor_update (self->cursor, window, &event->point);
 
       if (self->hover_window[event->controller_index] != window)
         xrd_input_synth_reset_scroll (input_synth);
@@ -805,8 +805,8 @@ xrd_overlay_client_submit_cursor_texture (XrdOverlayClient *self,
                                           int hotspot_x,
                                           int hotspot_y)
 {
-  xrd_overlay_desktop_cursor_submit_texture (self->cursor, client, texture,
-                                             hotspot_x, hotspot_y);
+  xrd_desktop_cursor_submit_texture (self->cursor, client, texture,
+                                     hotspot_x, hotspot_y);
 }
 
 static void
@@ -876,7 +876,8 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       self->controllers[i].index = i;
     }
 
-  self->cursor = xrd_overlay_desktop_cursor_new (self->uploader);
+  self->cursor =
+    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->uploader));
 
   OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
 

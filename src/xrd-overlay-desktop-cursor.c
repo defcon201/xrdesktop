@@ -11,6 +11,7 @@
 #include "xrd-settings.h"
 #include "xrd-math.h"
 #include "graphene-ext.h"
+#include "xrd-desktop-cursor.h"
 
 struct _XrdOverlayDesktopCursor
 {
@@ -30,7 +31,34 @@ struct _XrdOverlayDesktopCursor
   int texture_height;
 };
 
-G_DEFINE_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, OPENVR_TYPE_OVERLAY)
+static void
+xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, OPENVR_TYPE_OVERLAY,
+                         G_IMPLEMENT_INTERFACE (XRD_TYPE_DESKTOP_CURSOR,
+                                                xrd_overlay_desktop_cursor_interface_init))
+
+void
+xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
+                                           GulkanClient *uploader,
+                                           GulkanTexture *texture,
+                                           int hotspot_x,
+                                           int hotspot_y);
+
+void
+xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
+                                   XrdWindow               *window,
+                                   graphene_point3d_t      *intersection);
+
+void
+xrd_overlay_desktop_cursor_show (XrdOverlayDesktopCursor *self);
+
+void
+xrd_overlay_desktop_cursor_hide (XrdOverlayDesktopCursor *self);
+
+void
+xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
+                                               graphene_point3d_t *cursor_point);
 
 static void
 xrd_overlay_desktop_cursor_finalize (GObject *gobject);
@@ -133,7 +161,7 @@ xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
 
 void
 xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
-                                   XrdOverlayWindow        *window,
+                                   XrdWindow               *window,
                                    graphene_point3d_t      *intersection)
 {
   if (self->texture_width == 0 || self->texture_height == 0)
@@ -156,8 +184,7 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
    *    This places exactly the hotspot at the target point. */
 
   graphene_point_t offset_2d;
-  xrd_window_intersection_to_2d_offset_meter (XRD_WINDOW (window),
-                                              intersection, &offset_2d);
+  xrd_window_intersection_to_2d_offset_meter (window, intersection, &offset_2d);
 
   graphene_point3d_t offset_3d;
   graphene_point3d_init (&offset_3d, offset_2d.x, offset_2d.y, 0);
@@ -184,8 +211,7 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
   graphene_matrix_translate (&transform, &cursor_hotspot);
 
   graphene_matrix_t overlay_transform;
-  xrd_window_get_transformation_matrix (XRD_WINDOW (window),
-                                        &overlay_transform);
+  xrd_window_get_transformation_matrix (window, &overlay_transform);
   graphene_matrix_multiply(&transform, &overlay_transform, &transform);
 
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);
@@ -263,4 +289,14 @@ xrd_overlay_desktop_cursor_finalize (GObject *gobject)
 {
   XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (gobject);
   openvr_overlay_destroy (OPENVR_OVERLAY (self));
+}
+
+static void
+xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
+{
+  iface->submit_texture = (void*) xrd_overlay_desktop_cursor_submit_texture;
+  iface->update = (void*) xrd_overlay_desktop_cursor_update;
+  iface->show = (void*) xrd_overlay_desktop_cursor_show;
+  iface->hide = (void*) xrd_overlay_desktop_cursor_hide;
+  iface->set_constant_width = (void*) xrd_overlay_desktop_cursor_set_constant_width;
 }

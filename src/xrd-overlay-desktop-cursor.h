@@ -25,28 +25,6 @@ struct _XrdOverlayDesktopCursor;
 XrdOverlayDesktopCursor *
 xrd_overlay_desktop_cursor_new ();
 
-void
-xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
-                                           GulkanClient *uploader,
-                                           GulkanTexture *texture,
-                                           int hotspot_x,
-                                           int hotspot_y);
-
-void
-xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
-                                   XrdOverlayWindow        *window,
-                                   graphene_point3d_t      *intersection);
-
-void
-xrd_overlay_desktop_cursor_show (XrdOverlayDesktopCursor *self);
-
-void
-xrd_overlay_desktop_cursor_hide (XrdOverlayDesktopCursor *self);
-
-void
-xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
-                                               graphene_point3d_t *cursor_point);
-
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_DESKTOP_CURSOR_H_ */

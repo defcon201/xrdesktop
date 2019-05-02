@@ -19,7 +19,7 @@
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"
 #include "xrd-input-synth.h"
-#include "xrd-overlay-desktop-cursor.h"
+#include "xrd-desktop-cursor.h"
 
 G_BEGIN_DECLS
 
@@ -49,7 +49,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
 GulkanClient *
 xrd_overlay_client_get_uploader (XrdOverlayClient *self);
 
-XrdOverlayDesktopCursor *
+XrdDesktopCursor *
 xrd_overlay_client_get_cursor (XrdOverlayClient *self);
 
 XrdWindow *
