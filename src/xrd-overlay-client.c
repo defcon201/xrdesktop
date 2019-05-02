@@ -20,20 +20,15 @@ struct _XrdOverlayClient
 {
   XrdClient parent;
 
-  XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
-  XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
+  OpenVRActionSet *wm_actions;
 
   XrdClientController controllers[2];
 
   XrdWindow *button_reset;
   XrdWindow *button_sphere;
-
-  OpenVROverlayUploader *uploader;
-
-  OpenVRActionSet *wm_actions;
-
   XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
   XrdWindow *keyboard_window;
+
   guint keyboard_press_signal;
   guint keyboard_close_signal;
 
@@ -48,7 +43,9 @@ struct _XrdOverlayClient
   double pixel_per_meter;
 
   XrdInputSynth *input_synth;
-
+  OpenVROverlayUploader *uploader;
+  XrdOverlayPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
+  XrdOverlayPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
   XrdOverlayDesktopCursor *cursor;
 };
 
