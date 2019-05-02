@@ -133,14 +133,6 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
                              GCallback           press_callback,
                              gpointer            press_callback_data);
 
-void
-xrd_scene_client_remove_window (XrdSceneClient   *self,
-                                XrdOverlayWindow *window);
-
-void
-xrd_scene_client_save_reset_transform (XrdSceneClient *self,
-                                       XrdWindow      *window);
-
 XrdWindow *
 xrd_scene_client_get_keyboard_window (XrdSceneClient *self);
 

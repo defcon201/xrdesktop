@@ -9,10 +9,13 @@
 #define XRD_GLIB_CLIENT_H_
 
 #include <glib-object.h>
+#include <gdk/gdk.h>
+
+#include <openvr-context.h>
+
 #include "xrd-window.h"
 #include "xrd-input-synth.h"
-
-#include <gdk/gdk.h>
+#include "xrd-window-manager.h"
 
 G_BEGIN_DECLS
 
@@ -30,9 +33,6 @@ struct _XrdClientClass
                  float        ppm,
                  gboolean    is_child,
                  gboolean    follow_head);
-  void
-  (*remove_window) (XrdClient *self,
-                    XrdWindow *window);
 
   gboolean
   (*add_button) (XrdClient          *self,
@@ -44,10 +44,6 @@ struct _XrdClientClass
 
   XrdWindow *
   (*get_keyboard_window) (XrdClient *self);
-
-  void
-  (*save_reset_transform) (XrdClient *self,
-                           XrdWindow *window);
 
   GulkanClient *
   (*get_uploader) (XrdClient *self);
@@ -119,6 +115,12 @@ xrd_client_submit_cursor_texture (XrdClient *self,
                                   GulkanTexture *texture,
                                   int hotspot_x,
                                   int hotspot_y);
+
+OpenVRContext *
+xrd_client_get_openvr_context (XrdClient *self);
+
+XrdWindowManager *
+xrd_client_get_manager (XrdClient *self);
 
 G_END_DECLS
 

@@ -45,10 +45,6 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
                                gboolean          is_child,
                                gboolean          follow_head);
 
-void
-xrd_overlay_client_remove_window (XrdOverlayClient *self,
-                                  XrdOverlayWindow *window);
-
 gboolean
 xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                XrdWindow         **button,
@@ -58,9 +54,6 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                gpointer            press_callback_data);
 GulkanClient *
 xrd_overlay_client_get_uploader (XrdOverlayClient *self);
-
-XrdWindowManager *
-xrd_overlay_client_get_manager (XrdOverlayClient *self);
 
 XrdOverlayDesktopCursor *
 xrd_overlay_client_get_cursor (XrdOverlayClient *self);

@@ -67,10 +67,6 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
       (void*) xrd_scene_client_add_window;
   xrd_client_class->add_button =
       (void*) xrd_scene_client_add_button;
-  xrd_client_class->remove_window =
-      (void*) xrd_scene_client_remove_window;
-  xrd_client_class->save_reset_transform =
-      (void*) xrd_scene_client_save_reset_transform;
   xrd_client_class->get_keyboard_window =
       (void*) xrd_scene_client_get_keyboard_window;
   xrd_client_class->get_uploader =
@@ -937,20 +933,6 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
 
   g_warning ("stub: xrd_scene_client_add_button\n");
   return TRUE;
-}
-
-void
-xrd_scene_client_remove_window (XrdSceneClient   *self,
-                                XrdOverlayWindow *window)
-{
-  g_warning ("stub: xrd_scene_client_remove_window\n");
-}
-
-void
-xrd_scene_client_save_reset_transform (XrdSceneClient *self,
-                                       XrdWindow      *window)
-{
-  g_warning ("stub: xrd_scene_client_save_reset_transform\n");
 }
 
 XrdWindow *

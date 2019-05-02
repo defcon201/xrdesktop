@@ -20,7 +20,10 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct _XrdClientPrivate
 {
   GObject parent;
-  guint foo;
+
+  OpenVRContext *context;
+  XrdWindowManager *manager;
+
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -68,7 +71,8 @@ static void
 xrd_client_init (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  priv->foo = 0;
+  priv->context = openvr_context_get_instance ();
+  priv->manager = xrd_window_manager_new ();
 }
 
 /**
@@ -103,24 +107,8 @@ xrd_client_add_window (XrdClient  *self,
                             is_child, follow_head);
 }
 
-/**
- * xrd_client_remove_window:
- * @self: The #XrdClient
- * @window: The #XrdWindow to remove.
- *
- * Removes an #XrdWindow from the management of the #XrdClient and the
- * #XrdWindowManager.
- * Note that the #XrdWindow will not be destroyed by this function.
- */
-void
-xrd_client_remove_window (XrdClient *self,
-                          XrdWindow *window)
-{
-  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
-  if (klass->remove_window == NULL)
-      return;
-  return klass->remove_window (self, window);
-}
+
+
 
 /**
  * xrd_client_add_button:
@@ -159,23 +147,6 @@ xrd_client_get_keyboard_window (XrdClient *self)
   if (klass->get_keyboard_window == NULL)
       return FALSE;
   return klass->get_keyboard_window (self);
-}
-
-/**
- * xrd_client_save_reset_transform:
- * @self: The #XrdClient
- * @window: The #XrdWindow to save the current transform for. The reset
- * functionality of #XrdWindowManager will reset the transform of this window
- * to the transform the window has when this function is called.
- */
-void
-xrd_client_save_reset_transform (XrdClient *self,
-                                 XrdWindow *window)
-{
-  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
-  if (klass->save_reset_transform == NULL)
-      return;
-  return klass->save_reset_transform (self, window);
 }
 
 GulkanClient *
@@ -267,5 +238,56 @@ xrd_client_new (void)
 static void
 xrd_client_finalize (GObject *gobject)
 {
+  XrdClient *self = XRD_CLIENT (gobject);
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  g_object_unref (priv->manager);
+  g_clear_object (&priv->context);
+
   G_OBJECT_CLASS (xrd_client_parent_class)->finalize (gobject);
+}
+
+OpenVRContext *
+xrd_client_get_openvr_context (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->context;
+}
+
+XrdWindowManager *
+xrd_client_get_manager (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->manager;
+}
+
+/**
+ * xrd_client_save_reset_transform:
+ * @self: The #XrdClient
+ * @window: The #XrdWindow to save the current transform for. The reset
+ * functionality of #XrdWindowManager will reset the transform of this window
+ * to the transform the window has when this function is called.
+ */
+void
+xrd_client_save_reset_transform (XrdClient *self,
+                                 XrdWindow *window)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  xrd_window_manager_save_reset_transform (priv->manager, window);
+}
+
+/**
+ * xrd_client_remove_window:
+ * @self: The #XrdClient
+ * @window: The #XrdWindow to remove.
+ *
+ * Removes an #XrdWindow from the management of the #XrdClient and the
+ * #XrdWindowManager.
+ * Note that the #XrdWindow will not be destroyed by this function.
+ */
+void
+xrd_client_remove_window (XrdClient *self,
+                          XrdWindow *window)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  xrd_window_manager_remove_window (priv->manager, window);
 }

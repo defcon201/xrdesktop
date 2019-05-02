@@ -116,7 +116,7 @@ _init_windows (Example *self)
           xrd_overlay_window_set_transformation_matrix (window, &transform);
 
           XrdWindowManager *manager =
-              xrd_overlay_client_get_manager (self->client);
+              xrd_client_get_manager (XRD_CLIENT (self->client));
           xrd_window_manager_save_reset_transform (manager,
                                                    XRD_WINDOW (window));
 
