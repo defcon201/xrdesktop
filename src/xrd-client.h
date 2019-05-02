@@ -22,6 +22,12 @@ G_BEGIN_DECLS
 #define XRD_TYPE_CLIENT xrd_client_get_type()
 G_DECLARE_DERIVABLE_TYPE (XrdClient, xrd_client, XRD, CLIENT, GObject)
 
+typedef struct _XrdClientController
+{
+  XrdClient *self;
+  int        index;
+} XrdClientController;
+
 struct _XrdClientClass
 {
   GObjectClass parent;
