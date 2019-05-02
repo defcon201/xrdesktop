@@ -10,7 +10,6 @@
 #include <gdk/gdk.h>
 #include <openvr-io.h>
 #include <glib/gprintf.h>
-#include "xrd-settings.h"
 #include <openvr-math.h>
 #include "xrd-math.h"
 #include "xrd-client.h"
@@ -23,36 +22,32 @@ struct _XrdOverlayClient
 {
   XrdClient parent;
 
-  XrdClientController controllers[2];
-
-  XrdWindow *button_reset;
-  XrdWindow *button_sphere;
-  XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
-  XrdWindow *keyboard_window;
-
-  guint keyboard_press_signal;
-  guint keyboard_close_signal;
-
-  int poll_rate_ms;
-  guint poll_event_source_id;
-
-  double analog_threshold;
-
-  double scroll_to_push_ratio;
-  double scroll_to_scale_ratio;
-
-  double pixel_per_meter;
-
   OpenVROverlayUploader *uploader;
-  XrdPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
-  XrdPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
-  XrdDesktopCursor *cursor;
 };
 
 G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, XRD_TYPE_CLIENT)
 
 static void
 xrd_overlay_client_finalize (GObject *gobject);
+
+XrdOverlayWindow *
+xrd_overlay_client_add_window (XrdOverlayClient *self,
+                               const char       *title,
+                               gpointer          native,
+                               float             ppm,
+                               gboolean          is_child,
+                               gboolean          follow_head);
+
+gboolean
+xrd_overlay_client_add_button (XrdOverlayClient   *self,
+                               XrdWindow         **button,
+                               gchar              *label,
+                               graphene_point3d_t *position,
+                               GCallback           press_callback,
+                               gpointer            press_callback_data);
+
+GulkanClient *
+xrd_overlay_client_get_uploader (XrdOverlayClient *self);
 
 static void
 xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
@@ -66,12 +61,8 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
       (void*) xrd_overlay_client_add_window;
   xrd_client_class->add_button =
       (void*) xrd_overlay_client_add_button;
-  xrd_client_class->get_keyboard_window =
-      (void*) xrd_overlay_client_get_keyboard_window;
   xrd_client_class->get_uploader =
       (void*) xrd_overlay_client_get_uploader;
-  xrd_client_class->submit_cursor_texture =
-      (void*) xrd_overlay_client_submit_cursor_texture;
 }
 
 XrdOverlayClient *
@@ -85,18 +76,6 @@ xrd_overlay_client_finalize (GObject *gobject)
 {
   XrdOverlayClient *self = XRD_OVERLAY_CLIENT (gobject);
 
-  g_source_remove (self->poll_event_source_id);
-
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    {
-      g_object_unref (self->pointer_ray[i]);
-      g_object_unref (self->pointer_tip[i]);
-    }
-
-  g_object_unref (self->cursor);
-
-  xrd_settings_destroy_instance ();
-
   G_OBJECT_CLASS (xrd_overlay_client_parent_class)->finalize (gobject);
 
   /* Uploader needs to be freed after context! */
@@ -107,330 +86,6 @@ GulkanClient *
 xrd_overlay_client_get_uploader (XrdOverlayClient *self)
 {
   return GULKAN_CLIENT (self->uploader);
-}
-
-XrdDesktopCursor *
-xrd_overlay_client_get_cursor (XrdOverlayClient *self)
-{
-  return self->cursor;
-}
-
-XrdWindow *
-xrd_overlay_client_get_keyboard_window (XrdOverlayClient *self)
-{
-  return self->keyboard_window;
-}
-
-static void
-_action_hand_pose_cb (OpenVRAction            *action,
-                      OpenVRPoseEvent         *event,
-                      XrdClientController     *controller)
-{
-  (void) action;
-  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  xrd_window_manager_update_pose (manager, &event->pose,
-                                          controller->index);
-
-  XrdPointer *pointer = self->pointer_ray[controller->index];
-  xrd_pointer_move (pointer, &event->pose);
-
-  /* show cursor while synth controller hovers window, but doesn't grab */
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
-  if (controller->index ==
-          xrd_input_synth_synthing_controller (input_synth) &&
-      self->hover_window[controller->index] != NULL &&
-      xrd_window_manager_get_grab_state
-          (manager, controller->index)->window == NULL)
-    xrd_desktop_cursor_show (self->cursor);
-
-  g_free (event);
-}
-
-static void
-_action_push_pull_scale_cb (OpenVRAction        *action,
-                            OpenVRAnalogEvent   *event,
-                            XrdClientController *controller)
-{
-  (void) action;
-  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  GrabState *grab_state =
-      xrd_window_manager_get_grab_state (manager, controller->index);
-
-  float x_state = graphene_vec3_get_x (&event->state);
-  if (grab_state->window && fabs (x_state) > self->analog_threshold)
-    {
-      float factor = x_state * self->scroll_to_scale_ratio;
-      xrd_window_manager_scale (manager, grab_state, factor,
-                                        self->poll_rate_ms);
-    }
-
-  float y_state = graphene_vec3_get_y (&event->state);
-  if (grab_state->window && fabs (y_state) > self->analog_threshold)
-    {
-      HoverState *hover_state =
-        xrd_window_manager_get_hover_state (manager, controller->index);
-      hover_state->distance +=
-        self->scroll_to_push_ratio *
-        hover_state->distance *
-        graphene_vec3_get_y (&event->state) *
-        (self->poll_rate_ms / 1000.);
-
-      XrdPointer *pointer_ray = self->pointer_ray[controller->index];
-      xrd_pointer_set_length (pointer_ray, hover_state->distance);
-    }
-
-  g_free (event);
-}
-
-static void
-_action_grab_cb (OpenVRAction        *action,
-                 OpenVRDigitalEvent  *event,
-                 XrdClientController *controller)
-{
-  (void) action;
-  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  if (event->changed)
-    {
-      if (event->state == 1)
-        xrd_window_manager_check_grab (manager, controller->index);
-      else
-        xrd_window_manager_check_release (manager, controller->index);
-    }
-
-  g_free (event);
-}
-
-static void
-_action_rotate_cb (OpenVRAction        *action,
-                   OpenVRAnalogEvent  *event,
-                   XrdClientController *controller)
-{
-  (void) action;
-  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (controller->self);
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  GrabState *grab_state =
-      xrd_window_manager_get_grab_state (manager, controller->index);
-
-  float force = graphene_vec3_get_x (&event->state);
-
-  /* Start rotating when pressed with some force, not just touched. */
-  float threshold = 0.5;
-  float slerp_factor = .05 * (((force - threshold) / (1 - threshold)));
-
-  if (force > threshold && grab_state->window != NULL)
-    {
-      graphene_quaternion_t id;
-      graphene_quaternion_init_identity (&id);
-      graphene_quaternion_slerp (&grab_state->window_transformed_rotation_neg,
-                                 &id, slerp_factor,
-                                 &grab_state->window_transformed_rotation_neg);
-      graphene_quaternion_slerp (&grab_state->window_rotation,
-                                 &id, slerp_factor,
-                                 &grab_state->window_rotation);
-    }
-  g_free (event);
-}
-
-void
-_window_grab_start_cb (XrdOverlayWindow        *window,
-                       XrdControllerIndexEvent *event,
-                       gpointer                 _self)
-{
-  XrdOverlayClient *self = _self;
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  /* don't grab if this overlay is already grabbed */
-  if (xrd_window_manager_is_grabbed (manager, XRD_WINDOW (window)))
-    {
-      g_free (event);
-      return;
-    }
-
-  xrd_window_manager_drag_start (manager, event->index);
-
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
-  if (event->index == xrd_input_synth_synthing_controller (input_synth))
-    xrd_desktop_cursor_hide (self->cursor);
-
-  g_free (event);
-}
-
-void
-_window_grab_cb (XrdOverlayWindow *window,
-                 XrdGrabEvent     *event,
-                 gpointer          _self)
-{
-  (void) window;
-  XrdOverlayClient *self = (XrdOverlayClient*) _self;
-
-  XrdPointerTip *pointer_tip =
-    self->pointer_tip[event->controller_index];
-  xrd_pointer_tip_set_transformation_matrix (pointer_tip, &event->pose);
-
-  xrd_pointer_tip_set_constant_width (pointer_tip);
-  g_free (event);
-}
-
-/* TODO: class hierarchie*/
-void
-xrd_window_unmark (XrdWindow *self)
-{
-  graphene_vec3_t unmarked_color;
-  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
-  xrd_window_set_color (self, &unmarked_color);
-}
-
-void
-xrd_window_mark_color (XrdWindow *self, float r, float g, float b)
-{
-  graphene_vec3_t marked_color;
-  //graphene_vec3_init (&marked_color, .8f, .4f, .2f);
-  graphene_vec3_init (&marked_color, r, g, b);
-  xrd_window_set_color (self, &marked_color);
-}
-
-void
-_button_hover_cb (XrdWindow     *window,
-                  XrdHoverEvent *event,
-                  gpointer       _self)
-{
-  XrdOverlayClient *self = _self;
-
-  xrd_window_mark_color (window, .8f, .4f, .2f);
-
-  XrdPointer *pointer =
-      self->pointer_ray[event->controller_index];
-  XrdPointerTip *pointer_tip =
-      self->pointer_tip[event->controller_index];
-
-  /* update pointer length and intersection overlay */
-  graphene_matrix_t window_pose;
-  xrd_window_get_transformation_matrix (window, &window_pose);
-
-  xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
-  xrd_pointer_set_length (pointer, event->distance);
-
-  g_free (event);
-}
-
-void
-_window_hover_end_cb (XrdWindow               *window,
-                      XrdControllerIndexEvent *event,
-                      gpointer                 _self)
-{
-  (void) event;
-  (void) window;
-  XrdOverlayClient *self = (XrdOverlayClient*) _self;
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  XrdPointer *pointer_ray = self->pointer_ray[event->index];
-  xrd_pointer_reset_length (pointer_ray);
-
-  /* When leaving this window but now hovering another, the tip should
-   * still be active because it is now hovering another window. */
-  gboolean active =
-      xrd_window_manager_get_hover_state (manager, event->index)->window
-          != NULL;
-
-  XrdPointerTip *pointer_tip = self->pointer_tip[event->index];
-  xrd_pointer_tip_set_active (pointer_tip, active);
-
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
-  xrd_input_synth_reset_press_state (input_synth);
-
-  if (event->index == xrd_input_synth_synthing_controller (input_synth))
-    xrd_desktop_cursor_hide (self->cursor);
-
-  g_free (event);
-}
-
-void
-_button_hover_end_cb (XrdWindow               *window,
-                      XrdControllerIndexEvent *event,
-                      gpointer                 _self)
-{
-  (void) event;
-  XrdOverlayClient *self = (XrdOverlayClient*) _self;
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-  /* unmark if no controller is hovering over this overlay */
-  if (!xrd_window_manager_is_hovered (manager, window))
-    xrd_window_unmark (window);
-
-  _window_hover_end_cb (window, event, _self);
-}
-
-/* 3DUI buttons */
-
-static cairo_surface_t*
-_create_cairo_surface (unsigned char *image, uint32_t width,
-                       uint32_t height, const gchar *text)
-{
-  cairo_surface_t *surface =
-    cairo_image_surface_create_for_data (image,
-                                         CAIRO_FORMAT_ARGB32,
-                                         width, height,
-                                         width * 4);
-
-  cairo_t *cr = cairo_create (surface);
-
-  cairo_rectangle (cr, 0, 0, width, height);
-  cairo_set_source_rgba (cr, 1, 1, 1, 1);
-  cairo_fill (cr);
-
-  double r0;
-  if (width < height)
-    r0 = (double) width / 3.0;
-  else
-    r0 = (double) height / 3.0;
-
-  double radius = r0 * 4.0;
-  double r1 = r0 * 5.0;
-
-  double center_x = (double) width / 2.0;
-  double center_y = (double) height / 2.0;
-
-  double cx0 = center_x - r0 / 2.0;
-  double cy0 = center_y - r0;
-  double cx1 = center_x - r0;
-  double cy1 = center_y - r0;
-
-  cairo_pattern_t *pat = cairo_pattern_create_radial (cx0, cy0, r0,
-                                                      cx1, cy1, r1);
-  cairo_pattern_add_color_stop_rgba (pat, 0, .3, .3, .3, 1);
-  cairo_pattern_add_color_stop_rgba (pat, 1, 0, 0, 0, 1);
-  cairo_set_source (cr, pat);
-  cairo_arc (cr, center_x, center_y, radius, 0, 2 * M_PI);
-  cairo_fill (cr);
-  cairo_pattern_destroy (pat);
-
-  cairo_select_font_face (cr, "Sans",
-      CAIRO_FONT_SLANT_NORMAL,
-      CAIRO_FONT_WEIGHT_NORMAL);
-
-  float font_size = 52.0;
-
-  cairo_set_font_size (cr, font_size);
-
-  cairo_text_extents_t extents;
-  cairo_text_extents (cr, text, &extents);
-
-  cairo_move_to (cr,
-                 center_x - extents.width / 2,
-                 center_y  - extents.height / 2 + extents.height / 2);
-  cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
-  cairo_show_text (cr, text);
-
-  cairo_destroy (cr);
-
-  return surface;
 }
 
 gboolean
@@ -450,7 +105,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
 
   unsigned char image[4 * width * height];
   cairo_surface_t* surface =
-      _create_cairo_surface (image, width, height, label);
+      xrd_client_create_button_surface (image, width, height, label);
 
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
   GulkanTexture *texture =
@@ -477,217 +132,10 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   g_signal_connect (overlay_window, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);
 
-  g_signal_connect (overlay_window, "hover-event",
-                    (GCallback) _button_hover_cb, self);
-
-  g_signal_connect (overlay_window, "hover-end-event",
-                    (GCallback)_button_hover_end_cb, self);
+  xrd_client_add_button_callbacks (XRD_CLIENT (self),
+                                   XRD_WINDOW (overlay_window));
 
   return TRUE;
-}
-
-void
-_button_sphere_press_cb (XrdOverlayWindow        *window,
-                         XrdControllerIndexEvent *event,
-                         gpointer                 _self)
-{
-  (void) event;
-  (void) window;
-  XrdOverlayClient *self = _self;
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-  xrd_window_manager_arrange_sphere (manager);
-  g_free (event);
-}
-
-void
-_button_reset_press_cb (XrdOverlayWindow        *window,
-                        XrdControllerIndexEvent *event,
-                        gpointer                 _self)
-{
-  (void) event;
-  (void) window;
-  XrdOverlayClient *self = _self;
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-  xrd_window_manager_arrange_reset (manager);
-  g_free (event);
-}
-
-gboolean
-_init_buttons (XrdOverlayClient *self)
-{
-  float button_x = 0.0f;
-  graphene_point3d_t position_reset = {
-    .x =  button_x,
-    .y =  0.0f,
-    .z = -1.0f
-  };
-  if (!xrd_overlay_client_add_button (self, &self->button_reset, "Reset",
-                                      &position_reset,
-                                      (GCallback) _button_reset_press_cb,
-                                      self))
-    return FALSE;
-
-  float reset_width_meter;
-  xrd_window_get_width_meter (XRD_WINDOW (self->button_reset),
-                              &reset_width_meter);
-
-  button_x += reset_width_meter;
-
-  graphene_point3d_t position_sphere = {
-    .x =  button_x,
-    .y =  0.0f,
-    .z = -1.0f
-  };
-  if (!xrd_overlay_client_add_button (self, &self->button_sphere, "Sphere",
-                                      &position_sphere,
-                                      (GCallback) _button_sphere_press_cb,
-                                      self))
-    return FALSE;
-
-  return TRUE;
-}
-
-static void
-_keyboard_press_cb (OpenVRContext    *context,
-                    GdkEventKey      *event,
-                    XrdOverlayClient *self)
-{
-  (void) context;
-  xrd_client_emit_keyboard_press (XRD_CLIENT (self), event);
-}
-
-static void
-_keyboard_close_cb (OpenVRContext    *context,
-                    XrdOverlayClient *self)
-{
-  self->keyboard_window = NULL;
-
-  g_signal_handler_disconnect(context, self->keyboard_press_signal);
-  g_signal_handler_disconnect(context, self->keyboard_close_signal);
-  self->keyboard_press_signal = 0;
-  self->keyboard_close_signal = 0;
-
-  g_print ("Keyboard closed\n");
-}
-
-static void
-_action_show_keyboard_cb (OpenVRAction       *action,
-                          OpenVRDigitalEvent *event,
-                          XrdOverlayClient   *self)
-{
-  (void) action;
-  if (!event->state && event->changed)
-    {
-      OpenVRContext *context = openvr_context_get_instance ();
-      openvr_context_show_system_keyboard (context);
-
-      /* TODO: Perhaps there is a better way to get the window that should
-               receive keyboard input */
-      XrdInputSynth *input_synth =
-        xrd_client_get_input_synth (XRD_CLIENT (self));
-      int controller = xrd_input_synth_synthing_controller (input_synth);
-      XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-      self->keyboard_window = xrd_window_manager_get_hover_state
-          (manager, controller)->window;
-
-      self->keyboard_press_signal =
-          g_signal_connect (context, "keyboard-press-event",
-                            (GCallback) _keyboard_press_cb, self);
-      self->keyboard_close_signal =
-          g_signal_connect (context, "keyboard-close-event",
-                            (GCallback) _keyboard_close_cb, self);
-    }
-}
-
-void
-_window_hover_cb (XrdWindow *window,
-                  XrdHoverEvent    *event,
-                  XrdOverlayClient *self)
-{
-  /* update pointer length and intersection overlay */
-  XrdPointerTip *pointer_tip =
-    self->pointer_tip[event->controller_index];
-
-  graphene_matrix_t window_pose;
-  xrd_window_get_transformation_matrix (window, &window_pose);
-  xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
-
-  XrdPointer *pointer = self->pointer_ray[event->controller_index];
-  xrd_pointer_set_length (pointer, event->distance);
-
-  self->hover_window[event->controller_index] = window;
-
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
-  if (event->controller_index ==
-      xrd_input_synth_synthing_controller (input_synth))
-    {
-      xrd_input_synth_move_cursor (input_synth, window, &event->point);
-
-      xrd_desktop_cursor_update (self->cursor, window, &event->point);
-
-      if (self->hover_window[event->controller_index] != window)
-        xrd_input_synth_reset_scroll (input_synth);
-    }
-}
-
-void
-_window_hover_start_cb (XrdOverlayWindow        *window,
-                        XrdControllerIndexEvent *event,
-                        XrdOverlayClient        *self)
-{
-  (void) window;
-  (void) event;
-
-  XrdPointerTip *pointer_tip = self->pointer_tip[event->index];
-  xrd_pointer_tip_set_active (pointer_tip, TRUE);
-
-  g_free (event);
-}
-
-void
-_manager_no_hover_cb (XrdWindowManager *manager,
-                      XrdNoHoverEvent  *event,
-                      XrdOverlayClient *self)
-{
-  (void) manager;
-
-  XrdPointerTip *pointer_tip =
-    self->pointer_tip[event->controller_index];
-
-  XrdPointer *pointer_ray = self->pointer_ray[event->controller_index];
-
-  graphene_point3d_t distance_translation_point;
-  graphene_point3d_init (&distance_translation_point,
-                         0.f,
-                         0.f,
-                         -xrd_pointer_get_default_length (pointer_ray));
-
-  graphene_matrix_t tip_pose;
-
-  graphene_quaternion_t controller_rotation;
-  graphene_quaternion_init_from_matrix (&controller_rotation, &event->pose);
-
-  graphene_point3d_t controller_translation_point;
-  graphene_matrix_get_translation_point3d (&event->pose,
-                                           &controller_translation_point);
-
-  graphene_matrix_init_identity (&tip_pose);
-  graphene_matrix_translate (&tip_pose, &distance_translation_point);
-  graphene_matrix_rotate_quaternion (&tip_pose, &controller_rotation);
-  graphene_matrix_translate (&tip_pose, &controller_translation_point);
-
-  xrd_pointer_tip_set_transformation_matrix (pointer_tip, &tip_pose);
-
-  xrd_pointer_tip_set_constant_width (pointer_tip);
-
-  xrd_pointer_tip_set_active (pointer_tip, FALSE);
-
-  g_free (event);
-
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
-  xrd_input_synth_reset_scroll (input_synth);
-
-  self->hover_window[event->controller_index] = NULL;
 }
 
 XrdOverlayWindow *
@@ -716,113 +164,15 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
   xrd_window_manager_add_window (manager, XRD_WINDOW (window), flags);
-  g_signal_connect (window, "grab-start-event",
-                    (GCallback) _window_grab_start_cb, self);
-  g_signal_connect (window, "grab-event",
-                    (GCallback) _window_grab_cb, self);
-  // g_signal_connect (window, "release-event",
-  //                   (GCallback) _overlay_release_cb, self);
-  g_signal_connect (window, "hover-start-event",
-                    (GCallback) _window_hover_start_cb, self);
-  g_signal_connect (window, "hover-event",
-                    (GCallback) _window_hover_cb, self);
-  g_signal_connect (window, "hover-end-event",
-                    (GCallback) _window_hover_end_cb, self);
+
+  xrd_client_add_window_callbacks (XRD_CLIENT (self), XRD_WINDOW (window));
 
   return window;
 }
 
 static void
-_update_double_val (GSettings *settings, gchar *key, gpointer user_data)
-{
-  double *val = user_data;
-  *val = g_settings_get_double (settings, key);
-}
-
-static void
-_update_poll_rate (GSettings *settings, gchar *key, gpointer user_data)
-{
-  XrdOverlayClient *self = user_data;
-  if (self->poll_event_source_id != 0)
-    g_source_remove (self->poll_event_source_id);
-  self->poll_rate_ms = g_settings_get_int (settings, key);
-
-  self->poll_event_source_id = g_timeout_add (self->poll_rate_ms,
-                                              (GSourceFunc) xrd_client_poll_events,
-                                              XRD_CLIENT (self));
-}
-
-static void
-_synth_click_cb (XrdInputSynth    *synth,
-                 XrdClickEvent    *event,
-                 XrdOverlayClient *self)
-{
-  (void) synth;
-  if (self->hover_window[event->controller_index])
-    {
-      event->window = self->hover_window[event->controller_index];
-      xrd_client_emit_click (XRD_CLIENT (self), event);
-
-      if (event->button == 1)
-        {
-          XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-          HoverState *hover_state =
-              xrd_window_manager_get_hover_state
-                  (manager, event->controller_index);
-          if (hover_state->window != NULL && event->state)
-            {
-              XrdPointerTip *pointer_tip =
-                  self->pointer_tip[event->controller_index];
-              xrd_pointer_tip_animate_pulse (pointer_tip);
-            }
-        }
-    }
-}
-
-static void
-_synth_move_cursor_cb (XrdInputSynth      *synth,
-                       XrdMoveCursorEvent *event,
-                       XrdOverlayClient   *self)
-{
-  (void) synth;
-  xrd_client_emit_move_cursor (XRD_CLIENT (self), event);
-}
-
-static void _system_quit_cb (OpenVRContext *context,
-                             GdkEvent *event,
-                             XrdOverlayClient *self)
-{
-  (void) event;
-  /* g_print("Handling VR quit event\n"); */
-  openvr_context_acknowledge_quit (context);
-  xrd_client_emit_system_quit (XRD_CLIENT (self), event);
-}
-
-void
-xrd_overlay_client_submit_cursor_texture (XrdOverlayClient *self,
-                                          GulkanClient *client,
-                                          GulkanTexture *texture,
-                                          int hotspot_x,
-                                          int hotspot_y)
-{
-  xrd_desktop_cursor_submit_texture (self->cursor, client, texture,
-                                     hotspot_x, hotspot_y);
-}
-
-static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
-                                  "scroll-to-push-ratio",
-                                  &self->scroll_to_push_ratio);
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
-                                  "scroll-to-scale-ratio",
-                                  &self->scroll_to_scale_ratio);
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
-                                  "analog-threshold", &self->analog_threshold);
-
-  self->poll_event_source_id = 0;
-
   OpenVRContext *openvr_context =
     xrd_client_get_openvr_context (XRD_CLIENT (self));
 
@@ -837,112 +187,39 @@ xrd_overlay_client_init (XrdOverlayClient *self)
       return;
     }
 
-  g_signal_connect (openvr_context, "quit-event",
-                    (GCallback) _system_quit_cb, self);
-
-  xrd_client_post_openvr_init (XRD_CLIENT (self));
-
   self->uploader = openvr_overlay_uploader_new ();
   if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))
     g_printerr ("Unable to initialize Vulkan!\n");
 
-  self->keyboard_window = NULL;
-  self->keyboard_press_signal = 0;
-  self->keyboard_close_signal = 0;
+  xrd_client_post_openvr_init (XRD_CLIENT (self));
 
   for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
-      self->pointer_ray[i] = XRD_POINTER (xrd_overlay_pointer_new (i));
-      if (self->pointer_ray[i] == NULL)
-        return;
+      XrdPointer *pointer = XRD_POINTER (xrd_overlay_pointer_new (i));
+      if (pointer == NULL)
+        {
+          g_printerr ("Error: Could not init pointer %d\n", i);
+          return;
+        }
+      xrd_client_set_pointer (XRD_CLIENT (self), pointer, i);
 
-      self->pointer_tip[i] =
+
+      XrdPointerTip *pointer_tip =
         XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (i, self->uploader));
-      if (self->pointer_tip[i] == NULL)
-        return;
+      if (pointer == NULL)
+        {
+          g_printerr ("Error: Could not init pointer tip %d\n", i);
+          return;
+        }
+      xrd_client_set_pointer_tip (XRD_CLIENT (self), pointer_tip, i);
 
-      self->hover_window[i] = NULL;
-
-      xrd_pointer_tip_init_vulkan (self->pointer_tip[i]);
-      xrd_pointer_tip_set_active (self->pointer_tip[i], FALSE);
-      xrd_pointer_tip_show (self->pointer_tip[i]);
+      xrd_pointer_tip_init_vulkan (pointer_tip);
+      xrd_pointer_tip_set_active (pointer_tip, FALSE);
+      xrd_pointer_tip_show (pointer_tip);
     }
 
-  _init_buttons (self);
-
-  for (uint32_t i = 0; i < 2; i++)
-    {
-      self->controllers[i].self = XRD_CLIENT (self);
-      self->controllers[i].index = i;
-    }
-
-  self->cursor =
+  XrdDesktopCursor *cursor =
     XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->uploader));
 
-  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_left",
-                             (GCallback) _action_hand_pose_cb,
-                             &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_right",
-                             (GCallback) _action_hand_pose_cb,
-                             &self->controllers[1]);
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/grab_window_left",
-                             (GCallback) _action_grab_cb,
-                             &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/grab_window_right",
-                             (GCallback) _action_grab_cb,
-                             &self->controllers[1]);
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/rotate_window_left",
-                             (GCallback) _action_rotate_cb,
-                             &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/rotate_window_right",
-                             (GCallback) _action_rotate_cb,
-                             &self->controllers[1]);
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_scale_left",
-                             (GCallback) _action_push_pull_scale_cb,
-                            &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_scale_right",
-                             (GCallback) _action_push_pull_scale_cb,
-                            &self->controllers[1]);
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_left",
-                             (GCallback) _action_push_pull_scale_cb,
-                            &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_right",
-                             (GCallback) _action_push_pull_scale_cb,
-                            &self->controllers[1]);
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/show_keyboard_left",
-                             (GCallback) _action_show_keyboard_cb, self);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/show_keyboard_right",
-                             (GCallback) _action_show_keyboard_cb, self);
-
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-  g_signal_connect (manager, "no-hover-event",
-                    (GCallback) _manager_no_hover_cb, self);
-
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_poll_rate),
-                                  "event-update-rate-ms", self);
-
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
-  g_signal_connect (input_synth, "click-event",
-                    (GCallback) _synth_click_cb, self);
-  g_signal_connect (input_synth, "move-cursor-event",
-                    (GCallback) _synth_move_cursor_cb, self);
+  xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 }

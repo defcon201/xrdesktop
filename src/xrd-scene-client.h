@@ -66,21 +66,8 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
                              GCallback           press_callback,
                              gpointer            press_callback_data);
 
-XrdWindow *
-xrd_scene_client_get_keyboard_window (XrdSceneClient *self);
-
 GulkanClient *
 xrd_scene_client_get_uploader (XrdSceneClient *self);
-
-XrdWindow *
-xrd_scene_client_get_synth_hovered (XrdSceneClient *self);
-
-void
-xrd_scene_client_submit_cursor_texture (XrdSceneClient *self,
-                                        GulkanClient   *client,
-                                        GulkanTexture  *texture,
-                                        int             hotspot_x,
-                                        int             hotspot_y);
 
 VkDescriptorSetLayout*
 xrd_scene_client_get_descriptor_set_layout (XrdSceneClient *self);

@@ -75,11 +75,11 @@ _make_texture (GulkanClient *gc, const gchar *resource,
 gboolean
 _init_windows (Example *self)
 {
-  GulkanClient *gc = GULKAN_CLIENT (xrd_overlay_client_get_uploader (self->client));
+  GulkanClient *gc =
+    GULKAN_CLIENT (xrd_client_get_uploader (XRD_CLIENT (self->client)));
   float texture_width, texture_height;
   GulkanTexture *hawk_big = _make_texture (gc, "/res/hawk.jpg",
                                            &texture_width, &texture_height);
-
 
   float window_x = 0;
   float window_y = 0;
@@ -90,12 +90,12 @@ _init_windows (Example *self)
         {
           // a window should have ~0.5 meter
           float ppm = texture_width / 0.5;
-          XrdOverlayWindow *window =
-            xrd_overlay_client_add_window (self->client, "A window.", NULL,
-                                           ppm, FALSE, FALSE);
+          XrdWindow *window =
+            xrd_client_add_window (XRD_CLIENT (self->client), "A window.", NULL,
+                                   ppm, FALSE, FALSE);
           self->windows = g_slist_append (self->windows, window);
 
-          xrd_overlay_window_submit_texture (window, gc, hawk_big);
+          xrd_window_submit_texture (window, gc, hawk_big);
 
           float window_width;
           xrd_window_get_width_meter (XRD_WINDOW (window), &window_width);
@@ -113,7 +113,7 @@ _init_windows (Example *self)
           };
           graphene_matrix_t transform;
           graphene_matrix_init_translate (&transform, &point);
-          xrd_overlay_window_set_transformation_matrix (window, &transform);
+          xrd_window_set_transformation_matrix (window, &transform);
 
           XrdWindowManager *manager =
               xrd_client_get_manager (XRD_CLIENT (self->client));
@@ -127,16 +127,15 @@ _init_windows (Example *self)
                                                          &texture_width,
                                                          &texture_height);
               float ppm = texture_width / 0.25;
-              XrdOverlayWindow *child =
-                xrd_overlay_client_add_window (self->client, "A child.", NULL,
-                                               ppm, TRUE, FALSE);
+              XrdWindow *child =
+                xrd_client_add_window (XRD_CLIENT (self->client), "A child.",
+                                       NULL, ppm, TRUE, FALSE);
               self->windows = g_slist_append (self->windows, child);
 
-              xrd_overlay_window_submit_texture (child, gc,
-                                                 cat_small);
+              xrd_window_submit_texture (child, gc, cat_small);
 
               graphene_point_t offset = { .x = 25, .y = 25 };
-              xrd_overlay_window_add_child (window, child, &offset);
+              xrd_window_add_child (window, child, &offset);
 
               /*
               graphene_point3d_t point = {
@@ -156,18 +155,18 @@ _init_windows (Example *self)
 
   {
     float ppm = texture_width / 0.5;
-    XrdOverlayWindow *tracked_window =
-        xrd_overlay_client_add_window (self->client, "Head Tracked window.",
-                                       NULL, ppm,  FALSE, TRUE);
+    XrdWindow *tracked_window =
+        xrd_client_add_window (XRD_CLIENT (self->client),
+                               "Head Tracked window.",
+                               NULL, ppm,  FALSE, TRUE);
     self->windows = g_slist_append (self->windows, tracked_window);
 
-    xrd_overlay_window_submit_texture (tracked_window, gc, hawk_big);
+    xrd_window_submit_texture (tracked_window, gc, hawk_big);
     graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
     graphene_matrix_t transform;
     graphene_matrix_init_translate (&transform, &point);
-    xrd_overlay_window_set_transformation_matrix (tracked_window, &transform);
+    xrd_window_set_transformation_matrix (tracked_window, &transform);
   }
-
 
   GdkPixbuf *cursor_pixbuf = load_gdk_pixbuf ("/res/cursor.png");
   if (cursor_pixbuf == NULL)
@@ -180,10 +179,10 @@ _init_windows (Example *self)
       gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
 
-  xrd_overlay_client_submit_cursor_texture (
-      self->client, xrd_overlay_client_get_uploader (self->client),
+  xrd_client_submit_cursor_texture (
+      XRD_CLIENT (self->client),
+      xrd_client_get_uploader (XRD_CLIENT (self->client)),
       texture, 3, 3);
-
 
   return TRUE;
 }

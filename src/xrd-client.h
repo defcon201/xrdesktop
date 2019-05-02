@@ -16,6 +16,9 @@
 #include "xrd-window.h"
 #include "xrd-input-synth.h"
 #include "xrd-window-manager.h"
+#include "xrd-desktop-cursor.h"
+#include "xrd-pointer.h"
+#include "xrd-pointer-tip.h"
 
 G_BEGIN_DECLS
 
@@ -48,18 +51,8 @@ struct _XrdClientClass
                  GCallback           press_callback,
                  gpointer            press_callback_data);
 
-  XrdWindow *
-  (*get_keyboard_window) (XrdClient *self);
-
   GulkanClient *
   (*get_uploader) (XrdClient *self);
-
-  void
-  (*submit_cursor_texture) (XrdClient *self,
-                            GulkanClient *client,
-                            GulkanTexture *texture,
-                            int hotspot_x,
-                            int hotspot_y);
 };
 
 XrdClient *xrd_client_new (void);
@@ -136,6 +129,42 @@ xrd_client_get_input_synth (XrdClient *self);
 
 gboolean
 xrd_client_poll_events (XrdClient *self);
+
+XrdDesktopCursor *
+xrd_client_get_cursor (XrdClient *self);
+
+void
+xrd_client_submit_cursor_texture (XrdClient     *self,
+                                  GulkanClient  *client,
+                                  GulkanTexture *texture,
+                                  int            hotspot_x,
+                                  int            hotspot_y);
+
+void
+xrd_client_add_button_callbacks (XrdClient *self,
+                                 XrdWindow *button);
+
+void
+xrd_client_add_window_callbacks (XrdClient *self,
+                                 XrdWindow *window);
+
+void
+xrd_client_set_pointer (XrdClient  *self,
+                        XrdPointer *pointer,
+                        uint32_t    id);
+
+void
+xrd_client_set_pointer_tip (XrdClient     *self,
+                            XrdPointerTip *pointer,
+                            uint32_t       id);
+
+void
+xrd_client_set_desktop_cursor (XrdClient        *self,
+                               XrdDesktopCursor *cursor);
+
+cairo_surface_t*
+xrd_client_create_button_surface (unsigned char *image, uint32_t width,
+                                  uint32_t height, const gchar *text);
 
 G_END_DECLS
 

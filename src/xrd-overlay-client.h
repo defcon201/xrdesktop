@@ -31,41 +31,6 @@ struct _XrdOverlayClient;
 
 XrdOverlayClient *xrd_overlay_client_new (void);
 
-XrdOverlayWindow *
-xrd_overlay_client_add_window (XrdOverlayClient *self,
-                               const char       *title,
-                               gpointer          native,
-                               float             ppm,
-                               gboolean          is_child,
-                               gboolean          follow_head);
-
-gboolean
-xrd_overlay_client_add_button (XrdOverlayClient   *self,
-                               XrdWindow         **button,
-                               gchar              *label,
-                               graphene_point3d_t *position,
-                               GCallback           press_callback,
-                               gpointer            press_callback_data);
-GulkanClient *
-xrd_overlay_client_get_uploader (XrdOverlayClient *self);
-
-XrdDesktopCursor *
-xrd_overlay_client_get_cursor (XrdOverlayClient *self);
-
-XrdWindow *
-xrd_overlay_client_get_keyboard_window (XrdOverlayClient *self);
-
-void
-xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
-                                         XrdWindow *window);
-
-void
-xrd_overlay_client_submit_cursor_texture (XrdOverlayClient *self,
-                                          GulkanClient *client,
-                                          GulkanTexture *texture,
-                                          int hotspot_x,
-                                          int hotspot_y);
-
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_CLIENT_H_ */

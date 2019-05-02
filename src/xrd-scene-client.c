@@ -126,12 +126,8 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
       (void*) xrd_scene_client_add_window;
   xrd_client_class->add_button =
       (void*) xrd_scene_client_add_button;
-  xrd_client_class->get_keyboard_window =
-      (void*) xrd_scene_client_get_keyboard_window;
   xrd_client_class->get_uploader =
       (void*) xrd_scene_client_get_uploader;
-  xrd_client_class->submit_cursor_texture =
-      (void*) xrd_scene_client_submit_cursor_texture;
 }
 
 void
@@ -985,42 +981,10 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
   return TRUE;
 }
 
-XrdWindow *
-xrd_scene_client_get_keyboard_window (XrdSceneClient *self)
-{
-  (void) self;
-  g_warning ("stub: xrd_scene_client_get_keyboard_window\n");
-  return NULL;
-}
-
 GulkanClient *
 xrd_scene_client_get_uploader (XrdSceneClient *self)
 {
   return self->gulkan_client;
-}
-
-XrdWindow *
-xrd_scene_client_get_synth_hovered (XrdSceneClient *self)
-{
-  (void) self;
-  g_warning ("stub: xrd_scene_client_get_synth_hovered\n");
-  return NULL;
-}
-
-void
-xrd_scene_client_submit_cursor_texture (XrdSceneClient *self,
-                                        GulkanClient   *client,
-                                        GulkanTexture  *texture,
-                                        int             hotspot_x,
-                                        int             hotspot_y)
-{
-  (void) self;
-  (void) client;
-  (void) texture;
-  (void) hotspot_x;
-  (void) hotspot_y;
-
-  g_warning ("stub: xrd_scene_client_submit_cursor_texture\n");
 }
 
 VkDescriptorSetLayout*
@@ -1028,3 +992,4 @@ xrd_scene_client_get_descriptor_set_layout (XrdSceneClient *self)
 {
   return &self->descriptor_set_layout;
 }
+
