@@ -51,9 +51,9 @@ void _update_device_poses (XrdSceneClient *self);
 void _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer);
 
 static void
-_action_hand_pose_cb (OpenVRAction             *action,
-                      OpenVRPoseEvent          *event,
-                      XrdSceneClientController *controller);
+_action_hand_pose_cb (OpenVRAction        *action,
+                      OpenVRPoseEvent     *event,
+                      XrdClientController *controller);
 
 static void
 xrd_scene_client_class_init (XrdSceneClientClass *klass)
@@ -114,11 +114,11 @@ xrd_scene_client_init (XrdSceneClient *self)
   self->pointers = g_hash_table_new_full (g_int_hash, g_int_equal,
                                           g_free, g_object_unref);
 
-  self->left.self = self;
-  self->left.index = 0;
-
-  self->right.self = self;
-  self->right.index = 1;
+  for (uint32_t i = 0; i < 2; i++)
+    {
+      self->controllers[i].self = XRD_CLIENT (self);
+      self->controllers[i].index = i;
+    }
 }
 
 XrdSceneClient *
@@ -209,10 +209,12 @@ _init_openvr (XrdSceneClient *self)
 
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_left",
-                             (GCallback) _action_hand_pose_cb, &self->left);
+                             (GCallback) _action_hand_pose_cb,
+                             &self->controllers[0]);
   openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_right",
-                             (GCallback) _action_hand_pose_cb, &self->right);
+                             (GCallback) _action_hand_pose_cb,
+                             &self->controllers[1]);
 
   return true;
 }
@@ -241,12 +243,12 @@ _device_deactivate_cb (OpenVRContext          *context,
 }
 
 static void
-_action_hand_pose_cb (OpenVRAction             *action,
-                      OpenVRPoseEvent          *event,
-                      XrdSceneClientController *controller)
+_action_hand_pose_cb (OpenVRAction        *action,
+                      OpenVRPoseEvent     *event,
+                      XrdClientController *controller)
 {
   (void) action;
-  XrdSceneClient *self = controller->self;
+  XrdSceneClient *self = XRD_SCENE_CLIENT (controller->self);
 
   XrdScenePointer *pointer = g_hash_table_lookup (self->pointers,
                                                   &controller->index);

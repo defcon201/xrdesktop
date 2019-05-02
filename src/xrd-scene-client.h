@@ -55,12 +55,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneClient, xrd_scene_client,
                       XRD, SCENE_CLIENT, XrdClient)
 
-typedef struct XrdSceneClientController
-{
-  XrdSceneClient *self;
-  int             index;
-} XrdSceneClientController;
-
 struct _XrdSceneClient
 {
   GObject parent;
@@ -92,8 +86,7 @@ struct _XrdSceneClient
   uint32_t render_width;
   uint32_t render_height;
 
-  XrdSceneClientController left;
-  XrdSceneClientController right;
+  XrdClientController controllers[2];
   OpenVRActionSet *wm_actions;
 
   GSList *windows;
