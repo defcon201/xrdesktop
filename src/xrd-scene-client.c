@@ -74,7 +74,6 @@ struct _XrdSceneClient
   uint32_t render_height;
 
   XrdClientController controllers[2];
-  OpenVRActionSet *wm_actions;
 
   GSList *windows;
 
@@ -253,25 +252,15 @@ _init_openvr (XrdSceneClient *self)
       return false;
     }
 
-  if (!openvr_io_load_cached_action_manifest (
-        "xrdesktop",
-        "/res/bindings",
-        "actions.json",
-        "bindings_vive_controller.json",
-        "bindings_knuckles_controller.json",
-        NULL))
-    {
-      g_print ("Failed to load action bindings!\n");
-      return false;
-    }
+  xrd_client_post_openvr_init (XRD_CLIENT (self));
 
-  self->wm_actions = openvr_action_set_new_from_url ("/actions/wm");
+  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
 
-  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
+  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_left",
                              (GCallback) _action_hand_pose_cb,
                              &self->controllers[0]);
-  openvr_action_set_connect (self->wm_actions, OPENVR_ACTION_POSE,
+  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_right",
                              (GCallback) _action_hand_pose_cb,
                              &self->controllers[1]);
@@ -341,7 +330,8 @@ _poll_events_cb (gpointer _self)
   OpenVRContext *context = openvr_context_get_instance ();
   openvr_context_poll_event (context);
 
-  if (!openvr_action_set_poll (self->wm_actions))
+  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
+  if (!openvr_action_set_poll (wm_actions))
     return FALSE;
 
   return TRUE;
