@@ -26,6 +26,9 @@ xrdesktop_sources = [
   'xrd-input-synth.c',
   'xrd-client.c',
   'xrd-math.c',
+  'xrd-pointer.c',
+  'xrd-pointer-tip.c',
+  'xrd-desktop-cursor.c',
   'graphene-ext.c',
   binding_resources
 ]
@@ -55,6 +58,9 @@ xrdesktop_headers = [
   'xrd-input-synth.h',
   'xrd-client.h',
   'xrd-math.h',
+  'xrd-pointer.h',
+  'xrd-pointer-tip.h',
+  'xrd-desktop-cursor.h',
   'graphene-ext.h',
 ]
 
