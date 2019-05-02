@@ -59,9 +59,6 @@ void
 xrd_overlay_client_save_reset_transform (XrdOverlayClient *self,
                                          XrdWindow *window);
 
-XrdWindow *
-xrd_overlay_client_get_synth_hovered (XrdOverlayClient *self);
-
 void
 xrd_overlay_client_submit_cursor_texture (XrdOverlayClient *self,
                                           GulkanClient *client,

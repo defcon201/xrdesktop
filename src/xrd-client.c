@@ -7,6 +7,8 @@
 
 #include "xrd-client.h"
 
+#include <openvr-io.h>
+
 enum {
   KEYBOARD_PRESS_EVENT,
   CLICK_EVENT,
@@ -23,7 +25,8 @@ typedef struct _XrdClientPrivate
 
   OpenVRContext *context;
   XrdWindowManager *manager;
-
+  OpenVRActionSet *wm_actions;
+  XrdInputSynth *input_synth;
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -75,6 +78,27 @@ xrd_client_init (XrdClient *self)
   priv->manager = xrd_window_manager_new ();
 }
 
+void
+xrd_client_post_openvr_init (XrdClient *self)
+{
+  if (!openvr_io_load_cached_action_manifest (
+        "xrdesktop",
+        "/res/bindings",
+        "actions.json",
+        "bindings_vive_controller.json",
+        "bindings_knuckles_controller.json",
+        NULL))
+    {
+      g_print ("Failed to load action bindings!\n");
+      return;
+    }
+
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  priv->wm_actions = openvr_action_set_new_from_url ("/actions/wm");
+
+  priv->input_synth = xrd_input_synth_new ();
+}
+
 /**
  * xrd_client_add_window:
  * @self: The #XrdClient
@@ -106,9 +130,6 @@ xrd_client_add_window (XrdClient  *self,
   return klass->add_window (self, title, native, ppm,
                             is_child, follow_head);
 }
-
-
-
 
 /**
  * xrd_client_add_button:
@@ -168,10 +189,12 @@ xrd_client_get_uploader (XrdClient *self)
 XrdWindow *
 xrd_client_get_synth_hovered (XrdClient *self)
 {
-  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
-  if (klass->get_synth_hovered == NULL)
-      return NULL;
-  return klass->get_synth_hovered (self);
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  int controller = xrd_input_synth_synthing_controller (priv->input_synth);
+  XrdWindow *parent =
+      xrd_window_manager_get_hover_state (priv->manager, controller)->window;
+  return parent;
 }
 
 /**
@@ -241,6 +264,11 @@ xrd_client_finalize (GObject *gobject)
   XrdClient *self = XRD_CLIENT (gobject);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   g_object_unref (priv->manager);
+  g_object_unref (priv->wm_actions);
+
+  /* TODO: should this be freed? */
+  // g_object_unref (priv->input_synth);
+
   g_clear_object (&priv->context);
 
   G_OBJECT_CLASS (xrd_client_parent_class)->finalize (gobject);
@@ -290,4 +318,41 @@ xrd_client_remove_window (XrdClient *self,
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   xrd_window_manager_remove_window (priv->manager, window);
+}
+
+OpenVRActionSet *
+xrd_client_get_wm_actions (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->wm_actions;
+}
+
+XrdInputSynth *
+xrd_client_get_input_synth (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->input_synth;
+}
+
+gboolean
+xrd_client_poll_events (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  if (!priv->context)
+    return FALSE;
+
+  openvr_context_poll_event (priv->context);
+
+  if (!openvr_action_set_poll (priv->wm_actions))
+    return FALSE;
+
+  if (xrd_window_manager_is_hovering (priv->manager) &&
+      !xrd_window_manager_is_grabbing (priv->manager))
+    if (!xrd_input_synth_poll_events (priv->input_synth))
+      return FALSE;
+
+  xrd_window_manager_poll_window_events (priv->manager);
+
+  return TRUE;
 }

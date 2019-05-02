@@ -54,9 +54,6 @@ struct _XrdClientClass
   GulkanClient *
   (*get_uploader) (XrdClient *self);
 
-  XrdWindow *
-  (*get_synth_hovered) (XrdClient *self);
-
   void
   (*submit_cursor_texture) (XrdClient *self,
                             GulkanClient *client,
@@ -127,6 +124,18 @@ xrd_client_get_openvr_context (XrdClient *self);
 
 XrdWindowManager *
 xrd_client_get_manager (XrdClient *self);
+
+OpenVRActionSet *
+xrd_client_get_wm_actions (XrdClient *self);
+
+void
+xrd_client_post_openvr_init (XrdClient *self);
+
+XrdInputSynth *
+xrd_client_get_input_synth (XrdClient *self);
+
+gboolean
+xrd_client_poll_events (XrdClient *self);
 
 G_END_DECLS
 

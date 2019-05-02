@@ -71,8 +71,6 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
       (void*) xrd_scene_client_get_keyboard_window;
   xrd_client_class->get_uploader =
       (void*) xrd_scene_client_get_uploader;
-  xrd_client_class->get_synth_hovered =
-      (void*) xrd_scene_client_get_synth_hovered;
   xrd_client_class->submit_cursor_texture =
       (void*) xrd_scene_client_submit_cursor_texture;
 }
