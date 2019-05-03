@@ -189,56 +189,6 @@ xrd_window_default_init (XrdWindowInterface *iface)
   iface->windows_created = 0;
 }
 
-void
-_grab_start_cb (gpointer overlay,
-                gpointer event,
-                gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[GRAB_START_EVENT], 0, event);
-}
-
-void
-_grab_cb (gpointer overlay,
-          gpointer event,
-          gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[GRAB_EVENT], 0, event);
-}
-void
-_release_cb (gpointer overlay,
-             gpointer event,
-             gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[RELEASE_EVENT], 0, event);
-}
-void
-_hover_end_cb (gpointer overlay,
-               gpointer event,
-               gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[HOVER_END_EVENT], 0, event);
-}
-void
-_hover_cb (gpointer overlay,
-           gpointer event,
-           gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[HOVER_EVENT], 0, event);
-}
-void
-_hover_start_cb (gpointer overlay,
-                 gpointer event,
-                 gpointer window)
-{
-  (void) overlay;
-  g_signal_emit (window, window_signals[HOVER_START_EVENT], 0, event);
-}
-
 gboolean
 xrd_window_set_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
 {
