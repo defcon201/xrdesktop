@@ -11,8 +11,14 @@
 
 #include "gulkan-geometry.h"
 #include "graphene-ext.h"
+#include "xrd-pointer.h"
 
-G_DEFINE_TYPE (XrdScenePointer, xrd_scene_pointer, XRD_TYPE_SCENE_OBJECT)
+static void
+xrd_scene_pointer_interface_init (XrdPointerInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (XrdScenePointer, xrd_scene_pointer, XRD_TYPE_SCENE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (XRD_TYPE_POINTER,
+                                                xrd_scene_pointer_interface_init))
 
 static void
 xrd_scene_pointer_finalize (GObject *gobject);
@@ -83,33 +89,6 @@ xrd_scene_pointer_initialize (XrdScenePointer       *self,
   xrd_scene_selection_initialize (self->selection, device, layout);
 
   return TRUE;
-}
-
-void
-xrd_scene_pointer_reset_length (XrdScenePointer *self)
-{
-  xrd_scene_pointer_set_length (self, self->default_length);
-}
-
-void
-xrd_scene_pointer_set_length (XrdScenePointer *self,
-                              float            length)
-{
-  if (length == self->length)
-    return;
-
-  self->length = length;
-
-  gulkan_vertex_buffer_reset (self->vertex_buffer);
-
-  graphene_matrix_t identity;
-  graphene_matrix_init_identity (&identity);
-
-  graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
-
-  gulkan_geometry_append_ray (self->vertex_buffer, &start, length, &identity);
-  gulkan_vertex_buffer_map_array (self->vertex_buffer);
 }
 
 void
@@ -209,4 +188,64 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
     return TRUE;
 
   return FALSE;
+}
+
+void
+_move (XrdPointer        *pointer,
+       graphene_matrix_t *transform)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  graphene_matrix_init_from_matrix (&obj->model_matrix, transform);
+}
+
+void
+_set_length (XrdPointer *pointer,
+             float       length)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  if (length == self->length)
+    return;
+
+  self->length = length;
+
+  gulkan_vertex_buffer_reset (self->vertex_buffer);
+
+  graphene_matrix_t identity;
+  graphene_matrix_init_identity (&identity);
+
+  graphene_vec4_t start;
+  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
+
+  gulkan_geometry_append_ray (self->vertex_buffer, &start, length, &identity);
+  gulkan_vertex_buffer_map_array (self->vertex_buffer);
+}
+
+void
+xrd_scene_pointer_reset_length (XrdScenePointer *self)
+{
+  _set_length (XRD_POINTER (self), self->default_length);
+}
+
+void
+_reset_length (XrdPointer *pointer)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  self->length = self->default_length;
+}
+
+float
+_get_default_length (XrdPointer *pointer)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  return self->default_length;
+}
+
+static void
+xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
+{
+  iface->move = _move;
+  iface->set_length = _set_length;
+  iface->get_default_length = _get_default_length;
+  iface->reset_length = _reset_length;
 }

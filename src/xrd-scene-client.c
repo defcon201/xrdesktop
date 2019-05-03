@@ -297,8 +297,8 @@ _action_hand_pose_cb (OpenVRAction        *action,
 
   XrdScenePointer *pointer = g_hash_table_lookup (self->pointers,
                                                   &controller->index);
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (pointer);
-  graphene_matrix_init_from_matrix (&obj->model_matrix, &event->pose);
+
+  xrd_pointer_move (XRD_POINTER (pointer), &event->pose);
 }
 
 void
@@ -525,7 +525,7 @@ _test_intersection (XrdSceneClient *self)
           xrd_scene_selection_set_aspect_ratio (pointer->selection,
                                                 selected_window->aspect_ratio);
           selection_obj->visible = TRUE;
-          xrd_scene_pointer_set_length (pointer, lowest_distance);
+          xrd_pointer_set_length (XRD_POINTER (pointer), lowest_distance);
         }
       else
         {
