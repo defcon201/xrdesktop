@@ -49,14 +49,14 @@ xrd_scene_pointer_tip_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_pointer_tip_parent_class)->finalize (gobject);
 }
 
-void
+static void
 _set_constant_width (XrdScenePointerTip *self)
 {
   (void) self;
   g_warning ("stub: _set_constant_width\n");
 }
 
-void
+static void
 _update (XrdScenePointerTip *self,
          graphene_matrix_t  *pose,
          graphene_point3d_t *intersection_point)
@@ -67,7 +67,7 @@ _update (XrdScenePointerTip *self,
   g_warning ("stub: _update\n");
 }
 
-void
+static void
 _set_active (XrdScenePointerTip *self,
              gboolean            active)
 {
@@ -76,21 +76,21 @@ _set_active (XrdScenePointerTip *self,
   g_warning ("stub: _set_active\n");
 }
 
-void
+static void
 _init_vulkan (XrdScenePointerTip  *self)
 {
   (void) self;
   g_warning ("stub: _init_vulkan\n");
 }
 
-void
+static void
 _animate_pulse (XrdScenePointerTip  *self)
 {
   (void) self;
   g_warning ("stub: _animate_pulse\n");
 }
 
-void
+static void
 _set_transformation_matrix (XrdScenePointerTip *self,
                             graphene_matrix_t  *matrix)
 {
@@ -100,14 +100,14 @@ _set_transformation_matrix (XrdScenePointerTip *self,
   g_warning ("stub: _set_transformation_matrix\n");
 }
 
-void
+static void
 _show (XrdScenePointerTip *self)
 {
   (void) self;
   g_warning ("stub: _show\n");
 }
 
-void
+static void
 _hide (XrdScenePointerTip *self)
 {
   (void) self;
