@@ -502,14 +502,14 @@ _action_rotate_cb (OpenVRAction        *action,
 }
 
 void
-_window_grab_start_cb (XrdOverlayWindow        *window,
+_window_grab_start_cb (XrdWindow               *window,
                        XrdControllerIndexEvent *event,
                        gpointer                 _self)
 {
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  /* don't grab if this overlay is already grabbed */
+  /* don't grab if this window is already grabbed */
   if (xrd_window_manager_is_grabbed (priv->manager, XRD_WINDOW (window)))
     {
       g_free (event);
@@ -525,9 +525,9 @@ _window_grab_start_cb (XrdOverlayWindow        *window,
 }
 
 void
-_window_grab_cb (XrdOverlayWindow *window,
-                 XrdGrabEvent     *event,
-                 gpointer          _self)
+_window_grab_cb (XrdWindow    *window,
+                 XrdGrabEvent *event,
+                 gpointer     _self)
 {
   (void) window;
   XrdClient *self = XRD_CLIENT (_self);
@@ -574,7 +574,7 @@ _button_hover_cb (XrdWindow     *window,
   XrdPointerTip *pointer_tip =
       priv->pointer_tip[event->controller_index];
 
-  /* update pointer length and intersection overlay */
+  /* update pointer length and pointer tip */
   graphene_matrix_t window_pose;
   xrd_window_get_transformation_matrix (window, &window_pose);
 
@@ -632,7 +632,7 @@ _button_hover_end_cb (XrdWindow               *window,
 }
 
 void
-_button_sphere_press_cb (XrdOverlayWindow        *window,
+_button_sphere_press_cb (XrdWindow               *window,
                          XrdControllerIndexEvent *event,
                          gpointer                 _self)
 {
@@ -645,7 +645,7 @@ _button_sphere_press_cb (XrdOverlayWindow        *window,
 }
 
 void
-_button_reset_press_cb (XrdOverlayWindow        *window,
+_button_reset_press_cb (XrdWindow               *window,
                         XrdControllerIndexEvent *event,
                         gpointer                 _self)
 {
@@ -755,7 +755,7 @@ _window_hover_cb (XrdWindow     *window,
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  /* update pointer length and intersection overlay */
+  /* update pointer length and pointer tip */
   XrdPointerTip *pointer_tip =
     priv->pointer_tip[event->controller_index];
 
@@ -781,7 +781,7 @@ _window_hover_cb (XrdWindow     *window,
 }
 
 void
-_window_hover_start_cb (XrdOverlayWindow        *window,
+_window_hover_start_cb (XrdWindow               *window,
                         XrdControllerIndexEvent *event,
                         XrdClient               *self)
 {
@@ -917,7 +917,7 @@ xrd_client_add_window_callbacks (XrdClient *self,
   g_signal_connect (window, "grab-event",
                     (GCallback) _window_grab_cb, self);
   // g_signal_connect (window, "release-event",
-  //                   (GCallback) _overlay_release_cb, self);
+  //                   (GCallback) _window_release_cb, self);
   g_signal_connect (window, "hover-start-event",
                     (GCallback) _window_hover_start_cb, self);
   g_signal_connect (window, "hover-event",
