@@ -23,6 +23,8 @@
 
 #include "graphene-ext.h"
 
+#include "xrd-scene-pointer-tip.h"
+
 static bool use_validation = true;
 
 #define DEBUG_GEOMETRY 0
@@ -415,12 +417,16 @@ _init_vulkan (XrdSceneClient *self)
       return false;
     }
 
-  for (int i = 0; i < 2; i++)
+  for (uint32_t i = 0; i < 2; i++)
     {
       XrdScenePointer *pointer = xrd_scene_pointer_new ();
       xrd_scene_pointer_initialize (pointer, self->gulkan_client->device,
                                     &self->descriptor_set_layout);
       _insert_at_key2 (self->pointers, i, pointer);
+      xrd_client_set_pointer (XRD_CLIENT (self), XRD_POINTER (pointer), i);
+
+      XrdScenePointerTip *pointer_tip = xrd_scene_pointer_tip_new ();
+      xrd_client_set_pointer_tip (XRD_CLIENT (self), XRD_POINTER_TIP (pointer_tip), i);
     }
 
   vkQueueWaitIdle (self->gulkan_client->device->queue);
