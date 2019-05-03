@@ -10,16 +10,17 @@
 
 #include <glib-object.h>
 
+#include "xrd-scene-object.h"
+
 G_BEGIN_DECLS
 
 #define XRD_TYPE_SCENE_POINTER_TIP xrd_scene_pointer_tip_get_type()
-G_DECLARE_FINAL_TYPE (XrdScenePointerTip, xrd_scene_pointer_tip, XRD, SCENE_POINTER_TIP, GObject)
+G_DECLARE_FINAL_TYPE (XrdScenePointerTip, xrd_scene_pointer_tip,
+                      XRD, SCENE_POINTER_TIP, XrdSceneObject)
 
 struct _XrdScenePointerTip
 {
-  GObject parent;
-
-  guint index;
+  XrdSceneObject parent;
 };
 
 XrdScenePointerTip *xrd_scene_pointer_tip_new (void);

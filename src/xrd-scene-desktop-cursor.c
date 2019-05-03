@@ -23,7 +23,7 @@ xrd_scene_desktop_cursor_class_init (XrdSceneDesktopCursorClass *klass)
 static void
 xrd_scene_desktop_cursor_init (XrdSceneDesktopCursor *self)
 {
-  self->index = 1337;
+  (void) self;
 }
 
 XrdSceneDesktopCursor *
