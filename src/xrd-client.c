@@ -545,15 +545,14 @@ _window_grab_start_cb (XrdWindow               *window,
   /* don't grab if this window is already grabbed */
   if (priv->selection_mode)
     {
-      gboolean pinned =
-          xrd_window_manager_is_pinned (priv->manager, XRD_WINDOW (window));
-      xrd_window_manager_set_pin (priv->manager, XRD_WINDOW (window), !pinned);
+      gboolean pinned = xrd_window_manager_is_pinned (priv->manager, window);
+      xrd_window_manager_set_pin (priv->manager, window, !pinned);
       _mark_windows_for_selection_mode (self);
       return;
     }
 
 
-  if (xrd_window_manager_is_grabbed (priv->manager, XRD_WINDOW (window)))
+  if (xrd_window_manager_is_grabbed (priv->manager, window))
     {
       g_free (event);
       return;
@@ -606,7 +605,7 @@ static void
 _mark_windows_for_selection_mode (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+  XrdWindowManager *manager = xrd_client_get_manager (self);
   if (priv->selection_mode)
     {
       GSList *all = xrd_window_manager_get_windows (manager);
@@ -686,7 +685,7 @@ _window_hover_end_cb (XrdWindow               *window,
   XrdPointerTip *pointer_tip = priv->pointer_tip[event->index];
   xrd_pointer_tip_set_active (pointer_tip, active);
 
-  XrdInputSynth *input_synth = xrd_client_get_input_synth (XRD_CLIENT (self));
+  XrdInputSynth *input_synth = xrd_client_get_input_synth (self);
   xrd_input_synth_reset_press_state (input_synth);
 
   if (event->index == xrd_input_synth_synthing_controller (input_synth))
@@ -788,7 +787,7 @@ _init_buttons (XrdClient *self)
     return FALSE;
 
   float reset_width_meter;
-  xrd_window_get_width_meter (XRD_WINDOW (priv->button_reset),
+  xrd_window_get_width_meter (priv->button_reset,
                               &reset_width_meter);
 
   button_x += reset_width_meter;
@@ -1022,11 +1021,11 @@ _synth_click_cb (XrdInputSynth *synth,
   if (priv->hover_window[event->controller_index])
     {
       event->window = priv->hover_window[event->controller_index];
-      xrd_client_emit_click (XRD_CLIENT (self), event);
+      xrd_client_emit_click (self, event);
 
       if (event->button == 1)
         {
-          XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+          XrdWindowManager *manager = xrd_client_get_manager (self);
           HoverState *hover_state =
               xrd_window_manager_get_hover_state
                   (manager, event->controller_index);
@@ -1053,7 +1052,7 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
 
   (void) synth;
   if (!event->ignore)
-    xrd_client_emit_move_cursor (XRD_CLIENT (self), event);
+    xrd_client_emit_move_cursor (self, event);
 
   g_free (event);
 }
@@ -1205,7 +1204,7 @@ xrd_client_init (XrdClient *self)
   for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
       priv->hover_window[i] = NULL;
-      priv->controllers[i].self = XRD_CLIENT (self);
+      priv->controllers[i].self = self;
       priv->controllers[i].index = i;
     }
 
