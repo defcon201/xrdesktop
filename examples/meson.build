@@ -27,6 +27,14 @@ executable(
   install: false)
 
 executable(
+  'scene_and_overlay_client', ['scene_and_overlay_client.c',
+                               test_resources, shader_resources],
+  dependencies: xrdesktop_deps,
+  link_with: xrdesktop_lib,
+  include_directories: xrdesktop_inc,
+  install: false)
+
+executable(
   'settings', ['settings.c'],
   dependencies: xrdesktop_deps,
   link_with: xrdesktop_lib,
