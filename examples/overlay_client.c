@@ -165,10 +165,7 @@ _init_windows (Example *self)
       gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
 
-  xrd_client_submit_cursor_texture (
-      self->client,
-      xrd_client_get_uploader (self->client),
-      texture, 3, 3);
+  xrd_client_submit_cursor_texture (self->client, gc, texture, 3, 3);
 
   g_object_unref (cursor_pixbuf);
   g_object_unref (texture);
