@@ -1,7 +1,7 @@
 /*
- * Xrd GLib
+ * xrdesktop
  * Copyright 2018 Collabora Ltd.
- * Author: Lubosz Sarnecki <lubosz.sarnecki@collabora.com>
+ * Author: Christoph haag <christoph.haag@collabora.com>
  * SPDX-License-Identifier: MIT
  */
 
