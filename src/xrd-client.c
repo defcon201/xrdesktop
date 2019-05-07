@@ -112,13 +112,6 @@ xrd_client_class_init (XrdClientClass *klass)
                    0, NULL, NULL, NULL, G_TYPE_NONE, 0, 0);
 }
 
-static void
-_update_double_val (GSettings *settings, gchar *key, gpointer user_data)
-{
-  double *val = user_data;
-  *val = g_settings_get_double (settings, key);
-}
-
 /**
  * xrd_client_add_window:
  * @self: The #XrdClient
@@ -1167,13 +1160,13 @@ xrd_client_init (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
+  xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "scroll-to-push-ratio",
                                   &priv->scroll_to_push_ratio);
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
+  xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "scroll-to-scale-ratio",
                                   &priv->scroll_to_scale_ratio);
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_double_val),
+  xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "analog-threshold", &priv->analog_threshold);
 
   priv->poll_runtime_event_source_id = 0;

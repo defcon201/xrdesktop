@@ -66,3 +66,38 @@ xrd_settings_connect_and_apply (GCallback callback, gchar *key, gpointer data)
 
   g_string_free (detailed_signal, TRUE);
 }
+
+/**
+ * xrd_settings_update_double_val:
+ * @settings: The gsettings
+ * @key: The key
+ * @val: Pointer to a double value to be updated
+ *
+ * Convencience callback that can be registered when no action is required on
+ * an update of a double value.
+ * */
+void
+xrd_settings_update_double_val (GSettings *settings,
+                                gchar *key,
+                                double *val)
+{
+  *val = g_settings_get_double (settings, key);
+}
+
+/**
+ * xrd_settings_update_int_val:
+ * @settings: The gsettings
+ * @key: The key
+ * @val: Pointer to an int value to be updated
+ *
+ * Convencience callback that can be registered when no action is required on
+ * an update of a int value.
+ * */
+void
+xrd_settings_update_int_val (GSettings *settings,
+                             gchar *key,
+                             int *val)
+{
+  *val = g_settings_get_int (settings, key);
+}
+
