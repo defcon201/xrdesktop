@@ -96,11 +96,11 @@ _init_windows (Example *self)
           xrd_window_submit_texture (window, gc, hawk_big);
 
           float window_width;
-          xrd_window_get_width_meter (XRD_WINDOW (window), &window_width);
+          xrd_window_get_width_meter (window, &window_width);
           window_x += window_width;
 
           float window_height;
-          xrd_window_get_height_meter (XRD_WINDOW (window), &window_height);
+          xrd_window_get_height_meter (window, &window_height);
           if (window_height > max_window_height)
             max_window_height = window_height;
 
@@ -113,10 +113,8 @@ _init_windows (Example *self)
           graphene_matrix_init_translate (&transform, &point);
           xrd_window_set_transformation_matrix (window, &transform);
 
-          XrdWindowManager *manager =
-              xrd_client_get_manager (XRD_CLIENT (self->client));
-          xrd_window_manager_save_reset_transform (manager,
-                                                   XRD_WINDOW (window));
+          XrdWindowManager *manager = xrd_client_get_manager (self->client);
+          xrd_window_manager_save_reset_transform (manager, window);
 
           if (col == 0 && row == 0)
             {
@@ -135,16 +133,6 @@ _init_windows (Example *self)
               graphene_point_t offset = { .x = 25, .y = 25 };
               xrd_window_add_child (window, child, &offset);
 
-              /*
-              graphene_point3d_t point = {
-                .x = x,
-                .y = y,
-                .z = -2.9
-              };
-              graphene_matrix_t transform;
-              graphene_matrix_init_translate (&transform, &point);
-              xrd_overlay_window_set_transformation_matrix (child, &transform);
-              */
             }
         }
       window_x = 0;
@@ -178,8 +166,8 @@ _init_windows (Example *self)
   gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
 
   xrd_client_submit_cursor_texture (
-      XRD_CLIENT (self->client),
-      xrd_client_get_uploader (XRD_CLIENT (self->client)),
+      self->client,
+      xrd_client_get_uploader (self->client),
       texture, 3, 3);
 
   return TRUE;
@@ -195,9 +183,9 @@ _cleanup (Example *self)
 }
 
 static void
-_click_cb (XrdOverlayClient *client,
-           XrdClickEvent    *event,
-           Example          *self)
+_click_cb (XrdClient     *client,
+           XrdClickEvent *event,
+           Example       *self)
 {
   (void) client;
   (void) self;
@@ -207,7 +195,7 @@ _click_cb (XrdOverlayClient *client,
 
 /*
 static void
-_move_cursor_cb (XrdOverlayClient   *client,
+_move_cursor_cb (XrdClient          *client,
                  XrdMoveCursorEvent *event,
                  Example            *self)
 {
@@ -219,9 +207,9 @@ _move_cursor_cb (XrdOverlayClient   *client,
 */
 
 static void
-_keyboard_press_cb (XrdOverlayClient *client,
-                    GdkEventKey      *event,
-                    Example          *self)
+_keyboard_press_cb (XrdClient   *client,
+                    GdkEventKey *event,
+                    Example     *self)
 {
   (void) client;
   (void) self;
@@ -229,8 +217,8 @@ _keyboard_press_cb (XrdOverlayClient *client,
 }
 
 static void
-_request_quit_cb (XrdOverlayClient *client,
-                  Example          *self)
+_request_quit_cb (XrdClient *client,
+                  Example   *self)
 {
   (void) client;
   (void) self;
