@@ -170,6 +170,9 @@ _init_windows (Example *self)
       xrd_client_get_uploader (self->client),
       texture, 3, 3);
 
+  g_object_unref (cursor_pixbuf);
+  g_object_unref (texture);
+
   return TRUE;
 }
 
