@@ -218,7 +218,7 @@ _click_cb (XrdClient     *client,
            event->position->x, event->position->y);
 }
 
-/*
+
 static void
 _move_cursor_cb (XrdClient          *client,
                  XrdMoveCursorEvent *event,
@@ -226,10 +226,13 @@ _move_cursor_cb (XrdClient          *client,
 {
   (void) client;
   (void) self;
+  (void) event;
+  /*
   g_print ("move: %f, %f\n",
            event->position->x, event->position->y);
+   */
 }
-*/
+
 
 static void
 _keyboard_press_cb (XrdClient   *client,
@@ -274,8 +277,8 @@ main ()
 
   g_signal_connect (self.client, "click-event",
                     (GCallback) _click_cb, &self);
-  //g_signal_connect (self.client, "move-cursor-event",
-  //                  (GCallback) _move_cursor_cb, &self);
+  g_signal_connect (self.client, "move-cursor-event",
+                    (GCallback) _move_cursor_cb, &self);
   g_signal_connect (self.client, "keyboard-press-event",
                     (GCallback) _keyboard_press_cb, &self);
 

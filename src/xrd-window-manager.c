@@ -421,6 +421,9 @@ _test_hover (XrdWindowManager  *self,
     {
       XrdWindow *window = (XrdWindow *) l->data;
 
+      if (xrd_window_get_hidden (window))
+        continue;
+
       graphene_point3d_t intersection_point;
       if (xrd_window_intersects (window, pose, &intersection_point))
         {

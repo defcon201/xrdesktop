@@ -10,6 +10,8 @@
 #include <gdk/gdk.h>
 
 #include "xrd-settings.h"
+#include "graphene-ext.h"
+#include "xrd-shake-compensator.h"
 
 struct _XrdInputSynth
 {
@@ -20,6 +22,7 @@ struct _XrdInputSynth
 
   /* hover_position is relative to hover_window */
   graphene_point_t hover_position;
+  XrdWindow *hover_window;
 
   uint32_t button_press_state;
   graphene_vec3_t scroll_accumulator;
@@ -29,6 +32,9 @@ struct _XrdInputSynth
   int synthing_controller_index;
 
   OpenVRActionSet *synth_actions;
+
+  XrdShakeCompensator *compensator;
+  gboolean compensator_enabled;
 };
 
 #define LEFT_BUTTON 1
@@ -84,6 +90,7 @@ xrd_input_synth_finalize (GObject *gobject)
 {
   XrdInputSynth *self = XRD_INPUT_SYNTH (gobject);
   g_object_unref (self->synth_actions);
+  g_object_unref (self->compensator);
 
   G_OBJECT_CLASS (xrd_input_synth_parent_class)->finalize (gobject);
 }
@@ -94,6 +101,15 @@ _emit_click (XrdInputSynth    *self,
              int               button,
              gboolean          state)
 {
+  /* Button press and release only start and stop prediction.
+   * If necessary, the prediction queue is replayed in mouse move. */
+  if (state && (button == LEFT_BUTTON || button == RIGHT_BUTTON) &&
+      self->compensator_enabled)
+    xrd_shake_compensator_start_recording (self->compensator, button);
+  else if (!state && button ==
+           xrd_shake_compensator_get_button (self->compensator))
+    xrd_shake_compensator_reset (self->compensator);
+
   XrdClickEvent *click_event = g_malloc (sizeof (XrdClickEvent));
   click_event->position = position;
   click_event->button = button;
@@ -294,6 +310,7 @@ _action_scroll_cb (OpenVRAction            *action,
 void
 xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              XrdWindow *window,
+                             graphene_matrix_t *controller_pose,
                              graphene_point3d_t *intersection)
 {
   XrdPixelSize pixel_size = {
@@ -305,12 +322,40 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
                                           &pixel_size, &position))
     return;
   
-  XrdMoveCursorEvent *event = g_malloc (sizeof (XrdClickEvent));
+  XrdMoveCursorEvent *event = g_malloc (sizeof (XrdMoveCursorEvent));
   event->window = window;
   event->position = &position;
-  g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
+  event->ignore = FALSE;
 
   graphene_point_init_from_point (&self->hover_position, &position);
+  self->hover_window = window;
+
+  if (xrd_shake_compensator_is_recording (self->compensator))
+    {
+      xrd_shake_compensator_record (self->compensator, &position);
+
+      gboolean is_drag = xrd_shake_compensator_is_drag (self->compensator,
+                                                        self->hover_window,
+                                                        controller_pose,
+                                                        intersection);
+
+      /* If we don't know yet, move cursor in VR pretending to be responsive.
+       * If we predict drag, replay queue which contains "start of the drag".
+       * If we predict click, queue only contains "shake" which we discard. */
+       if (is_drag)
+        {
+          xrd_shake_compensator_replay_move_queue (
+              self->compensator, self,
+              signals[MOVE_CURSOR_EVENT], self->hover_window);
+          xrd_shake_compensator_reset (self->compensator);
+        }
+      else
+        {
+          event->ignore = TRUE;
+        }
+    }
+
+  g_signal_emit (self, signals[MOVE_CURSOR_EVENT], 0, event);
 }
 
 static void
@@ -320,11 +365,23 @@ _update_scroll_threshold (GSettings *settings, gchar *key, gpointer _self)
   self->scroll_threshold = g_settings_get_double (settings, key);
 }
 
+void
+_update_shake_compensation_enabled (GSettings *settings,
+                                    gchar *key,
+                                    XrdInputSynth *self)
+{
+  self->compensator_enabled = g_settings_get_boolean (settings, key);
+  if (!self->compensator_enabled)
+    xrd_shake_compensator_reset (self->compensator);
+}
+
 static void
 xrd_input_synth_init (XrdInputSynth *self)
 {
   self->button_press_state = 0;
   graphene_point_init (&self->hover_position, 0, 0);
+
+  self->compensator = xrd_shake_compensator_new ();
 
   self->synth_actions = openvr_action_set_new_from_url ("/actions/mouse_synth");
 
@@ -356,6 +413,11 @@ xrd_input_synth_init (XrdInputSynth *self)
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_threshold),
                                   "scroll-threshold", self);
+
+  xrd_settings_connect_and_apply
+      (G_CALLBACK (_update_shake_compensation_enabled),
+       "shake-compensation-enabled",
+       self);
 
   self->synthing_controller_index = 1;
 }

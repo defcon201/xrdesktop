@@ -31,6 +31,9 @@ typedef struct XrdClickEvent {
 typedef struct XrdMoveCursorEvent {
   XrdWindow *window;
   graphene_point_t *position;
+  /* Ignoring this events means only updating the cursor position in VR so it
+   * does not appear frozen, but don't actually synthesize mouse move events. */
+  gboolean ignore;
 } XrdMoveCursorEvent;
 
 typedef struct XrdInputSynthController
@@ -56,6 +59,7 @@ xrd_input_synth_reset_press_state (XrdInputSynth *self);
 void
 xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              XrdWindow *window,
+                             graphene_matrix_t *controller_pose,
                              graphene_point3d_t *intersection);
 
 int

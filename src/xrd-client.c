@@ -710,6 +710,9 @@ _button_hover_end_cb (XrdWindow               *window,
     xrd_window_unmark (window);
 
   _window_hover_end_cb (window, event, _self);
+
+  /* _window_hover_end_cb will free the event */
+  /* g_free (event); */
 }
 
 void
@@ -839,6 +842,8 @@ _keyboard_press_cb (OpenVRContext *context,
 {
   (void) context;
   xrd_client_emit_keyboard_press (self, event);
+
+  g_free (event);
 }
 
 static void
@@ -884,6 +889,8 @@ _action_show_keyboard_cb (OpenVRAction       *action,
           g_signal_connect (context, "keyboard-close-event",
                             (GCallback) _keyboard_close_cb, self);
     }
+
+  g_free (event);
 }
 
 void
@@ -909,13 +916,16 @@ _window_hover_cb (XrdWindow     *window,
   if (event->controller_index ==
       xrd_input_synth_synthing_controller (priv->input_synth))
     {
-      xrd_input_synth_move_cursor (priv->input_synth, window, &event->point);
+      xrd_input_synth_move_cursor (priv->input_synth, window,
+                                   &event->pose, &event->point);
 
       xrd_desktop_cursor_update (priv->cursor, window, &event->point);
 
       if (priv->hover_window[event->controller_index] != window)
         xrd_input_synth_reset_scroll (priv->input_synth);
     }
+
+  g_free (event);
 }
 
 void
@@ -974,11 +984,11 @@ _manager_no_hover_cb (XrdWindowManager *manager,
 
   xrd_pointer_tip_set_active (pointer_tip, FALSE);
 
-  g_free (event);
-
   xrd_input_synth_reset_scroll (priv->input_synth);
 
   priv->hover_window[event->controller_index] = NULL;
+
+  g_free (event);
 }
 
 static void
@@ -1006,6 +1016,9 @@ _synth_click_cb (XrdInputSynth *synth,
 
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
+  if (priv->selection_mode)
+    return;
+
   if (priv->hover_window[event->controller_index])
     {
       event->window = priv->hover_window[event->controller_index];
@@ -1025,6 +1038,8 @@ _synth_click_cb (XrdInputSynth *synth,
             }
         }
     }
+
+  g_free (event);
 }
 
 static void
@@ -1032,8 +1047,15 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
                        XrdMoveCursorEvent *event,
                        XrdClient          *self)
 {
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  if (priv->selection_mode)
+    return;
+
   (void) synth;
-  xrd_client_emit_move_cursor (self, event);
+  if (!event->ignore)
+    xrd_client_emit_move_cursor (XRD_CLIENT (self), event);
+
+  g_free (event);
 }
 
 void
@@ -1197,6 +1219,8 @@ static void _system_quit_cb (OpenVRContext *context,
   /* g_print("Handling VR quit event\n"); */
   openvr_context_acknowledge_quit (context);
   xrd_client_emit_system_quit (self, event);
+
+  g_free (event);
 }
 
 void

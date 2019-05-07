@@ -14,7 +14,40 @@
       </description>
     </key>
 
-    <key name='scroll-threshold' type='d'>
+    <key name='shake-compensation-enabled' type='b'>
+      <default>true</default>
+      <summary>Whether slight shaking while pressing a button should be compensated for.</summary>
+      <description>
+        Clicking with a conventional mouse is usually possible without moving the mouse at all
+        because the mouse rests on a solid surface.
+        Holding motion controllers freely in the air makes it hard to keep the controller still
+        while pressing a button.
+        This setting compensates for this involuntary shaking while using left or right click.
+      </description>
+    </key>
+
+    <key name='shake-compensation-threshold' type='d'>
+      <default>2.0</default>
+      <summary>How strong the shake compensation should be.</summary>
+      <description>
+        Moving the cursor on a Window by shaking a controller is linearly amplified by distance.
+        Therefore this value is a percentage of the cursor's movement on the window in relation to
+        the distance of the window from the cursor.
+        A value of 2% means that on a window in e.g. 100 cm distance the threshold is 2 cm.
+      </description>
+    </key>
+
+    <key name='shake-compensation-duration-ms' type='i'>
+      <default>180</default>
+      <summary>How long the shake compensation waits for a button release before falling back to dragging.</summary>
+      <description>
+        The shake compensation is only meant for "stabilizing" a click, i.e. a quick button press and release.
+        If the time between button press and button release is longer than this time, the action will
+        always be interpreted a as a drag action.
+      </description>
+    </key>
+
+        <key name='scroll-threshold' type='d'>
       <default>0.1</default>
       <summary>How big of a touchpad movement should generate a scroll event</summary>
       <description>
