@@ -31,6 +31,14 @@ struct _XrdInputSynth
   OpenVRActionSet *synth_actions;
 };
 
+#define LEFT_BUTTON 1
+#define RIGHT_BUTTON 3
+
+#define SCROLL_UP 4
+#define SCROLL_DOWN 5
+#define SCROLL_LEFT 6
+#define SCROLL_RIGHT 7
+
 G_DEFINE_TYPE (XrdInputSynth, xrd_input_synth, G_TYPE_OBJECT)
 
 enum {
@@ -147,12 +155,13 @@ _action_left_click_cb (OpenVRAction             *action,
 
   if (event->changed)
     {
-      _emit_click (self, &self->hover_position, 1, event->state);
+      _emit_click (self, &self->hover_position,
+                   LEFT_BUTTON, event->state);
 
       if (event->state)
-        self->button_press_state |= 1 << 1;
+        self->button_press_state |= 1 << LEFT_BUTTON;
       else
-        self->button_press_state &= ~(1 << 1);
+        self->button_press_state &= ~(1 << LEFT_BUTTON);
     }
   g_free (event);
 }
@@ -173,11 +182,12 @@ _action_right_click_cb (OpenVRAction            *action,
 
   if (event->changed)
     {
-      _emit_click (self, &self->hover_position, 3, event->state);
+      _emit_click (self, &self->hover_position,
+                   RIGHT_BUTTON, event->state);
       if (event->state)
-        self->button_press_state |= 1 << 3;
+        self->button_press_state |= 1 << RIGHT_BUTTON;
       else
-        self->button_press_state &= ~(1 << 3);
+        self->button_press_state &= ~(1 << RIGHT_BUTTON);
     }
   g_free (event);
 }
@@ -189,9 +199,9 @@ _do_scroll (XrdInputSynth *self, int steps_x, int steps_y)
     {
       int btn;
       if (steps_y > 0)
-        btn = 4;
+        btn = SCROLL_UP;
       else
-        btn = 5;
+        btn = SCROLL_DOWN;
       _emit_click (self, &self->hover_position, btn, TRUE);
       _emit_click (self, &self->hover_position, btn, FALSE);
     }
@@ -200,9 +210,9 @@ _do_scroll (XrdInputSynth *self, int steps_x, int steps_y)
     {
       int btn;
       if (steps_x < 0)
-        btn = 6;
+        btn = SCROLL_LEFT;
       else
-        btn = 7;
+        btn = SCROLL_RIGHT;
       _emit_click (self, &self->hover_position, btn, TRUE);
       _emit_click (self, &self->hover_position, btn, FALSE);
     }
