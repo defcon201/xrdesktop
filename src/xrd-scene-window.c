@@ -127,25 +127,6 @@ xrd_scene_window_class_init (XrdSceneWindowClass *klass)
 }
 
 static void
-xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
-{
-  iface->set_transformation =
-      (void*) xrd_scene_window_set_transformation;
-  iface->get_transformation =
-      (void*) xrd_scene_window_get_transformation;
-  iface->submit_texture = (void*)xrd_scene_window_submit_texture;
-  iface->poll_event = (void*)xrd_scene_window_poll_event;
-  iface->intersects = (void*)xrd_scene_window_intersects;
-  iface->intersection_to_pixels =
-      (void*)xrd_scene_window_intersection_to_pixels;
-  iface->intersection_to_2d_offset_meter =
-      (void*)xrd_scene_window_intersection_to_2d_offset_meter;
-  iface->add_child = (void*)xrd_scene_window_add_child;
-  iface->set_color = (void*)xrd_scene_window_set_color;
-  iface->set_flip_y = (void*)xrd_scene_window_set_flip_y;
-}
-
-static void
 xrd_scene_window_init (XrdSceneWindow *self)
 {
   self->vertex_buffer = gulkan_vertex_buffer_new ();
@@ -397,4 +378,23 @@ xrd_scene_window_set_flip_y (XrdSceneWindow *self,
   (void) flip_y;
 
   g_warning ("stub: xrd_scene_window_set_flip_y\n");
+}
+
+static void
+xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
+{
+  iface->set_transformation =
+      (void*) xrd_scene_window_set_transformation;
+  iface->get_transformation =
+      (void*) xrd_scene_window_get_transformation;
+  iface->submit_texture = (void*)xrd_scene_window_submit_texture;
+  iface->poll_event = (void*)xrd_scene_window_poll_event;
+  iface->intersects = (void*)xrd_scene_window_intersects;
+  iface->intersection_to_pixels =
+      (void*)xrd_scene_window_intersection_to_pixels;
+  iface->intersection_to_2d_offset_meter =
+      (void*)xrd_scene_window_intersection_to_2d_offset_meter;
+  iface->add_child = (void*)xrd_scene_window_add_child;
+  iface->set_color = (void*)xrd_scene_window_set_color;
+  iface->set_flip_y = (void*)xrd_scene_window_set_flip_y;
 }
