@@ -653,8 +653,7 @@ _button_hover_cb (XrdWindow     *window,
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  if (!priv->selection_mode)
-    xrd_window_mark_color (window, .8f, .4f, .2f);
+  xrd_window_mark_color (window, .8f, .4f, .2f);
 
   XrdPointer *pointer =
       priv->pointer_ray[event->controller_index];
@@ -712,8 +711,7 @@ _button_hover_end_cb (XrdWindow               *window,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   /* unmark if no controller is hovering over this button */
-  if (!xrd_window_manager_is_hovered (priv->manager, window) &&
-      !priv->selection_mode)
+  if (!xrd_window_manager_is_hovered (priv->manager, window))
     xrd_window_unmark (window);
 
   _window_hover_end_cb (window, event, _self);

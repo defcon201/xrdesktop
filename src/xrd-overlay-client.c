@@ -140,15 +140,14 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   xrd_window_manager_add_window (manager,
                                  XRD_WINDOW (*button),
                                  XRD_WINDOW_HOVERABLE |
-                                 XRD_WINDOW_DESTROY_WITH_PARENT);
+                                 XRD_WINDOW_DESTROY_WITH_PARENT |
+                                 XRD_WINDOW_MANAGER_BUTTON);
 
   g_signal_connect (window, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);
 
   xrd_client_add_button_callbacks (XRD_CLIENT (self),
                                    XRD_WINDOW (window));
-
-  xrd_window_manager_set_pin (manager, XRD_WINDOW (window), TRUE);
 
   return TRUE;
 }

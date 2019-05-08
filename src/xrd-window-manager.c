@@ -25,7 +25,11 @@ struct _XrdWindowManager
   GSList *destroy_windows;
   GSList *following;
 
+  /* all windows except XRD_WINDOW_MANAGER_BUTTON */
   GSList *all_windows;
+
+  /* XRD_WINDOW_MANAGER_BUTTON */
+  GSList *buttons;
 
   GSList *pinned_windows;
 
@@ -74,6 +78,7 @@ static void
 xrd_window_manager_init (XrdWindowManager *self)
 {
   self->all_windows = NULL;
+  self->buttons = NULL;
   self->pinned_windows = NULL;
   self->draggable_windows = NULL;
   self->managed_windows = NULL;
@@ -109,6 +114,7 @@ xrd_window_manager_finalize (GObject *gobject)
 
   /* remove the window manager's reference to all windows */
   g_slist_free_full (self->all_windows, g_object_unref);
+  g_slist_free_full (self->buttons, g_object_unref);
 
   g_slist_free (self->pinned_windows);
   g_slist_free (self->hoverable_windows);
@@ -311,8 +317,11 @@ xrd_window_manager_add_window (XrdWindowManager *self,
                                XrdWindow *window,
                                XrdWindowFlags flags)
 {
-  /* all windows that are added to the wm so they can be unrefed on finalize. */
-  self->all_windows = g_slist_append (self->all_windows, window);
+  /* any window must be either in all_windows or buttons */
+  if (flags & XRD_WINDOW_MANAGER_BUTTON)
+    self->buttons = g_slist_append (self->buttons, window);
+  else
+    self->all_windows = g_slist_append (self->all_windows, window);
 
   /* Freed with manager */
   if (flags & XRD_WINDOW_DESTROY_WITH_PARENT)
@@ -373,6 +382,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
                                   XrdWindow *window)
 {
   self->all_windows = g_slist_remove (self->all_windows, window);
+  self->buttons = g_slist_remove (self->buttons, window);
   self->destroy_windows = g_slist_remove (self->destroy_windows, window);
   self->draggable_windows = g_slist_remove (self->draggable_windows, window);
   self->managed_windows = g_slist_remove (self->managed_windows, window);
