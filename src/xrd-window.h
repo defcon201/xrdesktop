@@ -141,7 +141,7 @@ typedef struct XrdWindowData
 
   uint32_t texture_width;
   uint32_t texture_height;
-  GString *window_title;
+  GString *title;
 
   float ppm;
   float scale;

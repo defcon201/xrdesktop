@@ -38,9 +38,9 @@ xrd_scene_window_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_TITLE:
-      if (self->window_data.window_title)
-        g_string_free (self->window_data.window_title, TRUE);
-      self->window_data.window_title = g_string_new (g_value_get_string (value));
+      if (self->window_data.title)
+        g_string_free (self->window_data.title, TRUE);
+      self->window_data.title = g_string_new (g_value_get_string (value));
       break;
     case PROP_PPM:
       self->window_data.ppm = g_value_get_float (value);
@@ -74,7 +74,7 @@ xrd_scene_window_get_property (GObject    *object,
   switch (property_id)
     {
     case PROP_TITLE:
-      g_value_set_string (value, self->window_data.window_title->str);
+      g_value_set_string (value, self->window_data.title->str);
       break;
     case PROP_PPM:
       g_value_set_float (value, self->window_data.ppm);
@@ -110,7 +110,7 @@ xrd_scene_window_class_init (XrdSceneWindowClass *klass)
   object_class->set_property = xrd_scene_window_set_property;
   object_class->get_property = xrd_scene_window_get_property;
 
-  g_object_class_override_property (object_class, PROP_TITLE, "window-title");
+  g_object_class_override_property (object_class, PROP_TITLE, "title");
   g_object_class_override_property (object_class, PROP_PPM, "ppm");
   g_object_class_override_property (object_class, PROP_SCALE, "scale");
   g_object_class_override_property (object_class, PROP_NATIVE, "native");

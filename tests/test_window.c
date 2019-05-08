@@ -31,7 +31,7 @@ main ()
   GValue val = G_VALUE_INIT;
   g_value_init (&val, G_TYPE_STRING);
 
-  g_object_get_property (G_OBJECT (window), "window-title", &val);
+  g_object_get_property (G_OBJECT (window), "title", &val);
 
   g_print ("Window name: %s\n", g_value_get_string (&val));
 

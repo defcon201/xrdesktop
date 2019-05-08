@@ -129,12 +129,10 @@ xrd_window_default_init (XrdWindowInterface *iface)
 
   GParamSpec *pspec;
   pspec =
-      g_param_spec_string ("window-title",
-                           "Window Title",
+      g_param_spec_string ("title",
+                           "Title",
                            "Title of the Window.",
-                           NULL  /* default value */,
-                           /* TODO: changeable window description
-                            * can not change overlay key? */
+                           "Untitled",
                            G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
   g_object_interface_install_property (iface, pspec);
 
