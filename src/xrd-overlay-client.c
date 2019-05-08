@@ -33,14 +33,6 @@ G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, XRD_TYPE_CLIENT)
 static void
 xrd_overlay_client_finalize (GObject *gobject);
 
-XrdOverlayWindow *
-xrd_overlay_client_add_window (XrdOverlayClient *self,
-                               const char       *title,
-                               gpointer          native,
-                               float             ppm,
-                               gboolean          is_child,
-                               gboolean          follow_head);
-
 gboolean
 xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                XrdWindow         **button,
