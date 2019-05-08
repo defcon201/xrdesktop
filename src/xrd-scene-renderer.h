@@ -14,18 +14,30 @@
 
 G_BEGIN_DECLS
 
+enum PipelineType
+{
+  PIPELINE_WINDOWS = 0,
+  PIPELINE_POINTER,
+  PIPELINE_DEVICE_MODELS,
+  PIPELINE_COUNT
+};
+
 #define XRD_TYPE_SCENE_RENDERER xrd_scene_renderer_get_type()
 G_DECLARE_FINAL_TYPE (XrdSceneRenderer, xrd_scene_renderer,
                       XRD, SCENE_RENDERER, GulkanClient)
 
-struct _XrdSceneRenderer
-{
-  GulkanClient parent;
-};
-
 XrdSceneRenderer *xrd_scene_renderer_new (void);
 
-XrdSceneRenderer *xrd_scene_renderer_instance (void);
+XrdSceneRenderer *xrd_scene_renderer_get_instance (void);
+
+bool
+xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self);
+
+VkDescriptorSetLayout *
+xrd_scene_renderer_get_descriptor_set_layout (XrdSceneRenderer *self);
+
+void
+xrd_scene_renderer_draw (XrdSceneRenderer *self);
 
 G_END_DECLS
 
