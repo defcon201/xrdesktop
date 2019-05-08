@@ -44,7 +44,7 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 gboolean
 xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                XrdWindow         **button,
-                               gchar              *label,
+                               const gchar        *label,
                                graphene_point3d_t *position,
                                GCallback           press_callback,
                                gpointer            press_callback_data);
@@ -94,7 +94,7 @@ xrd_overlay_client_get_uploader (XrdOverlayClient *self)
 gboolean
 xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                XrdWindow         **button,
-                               gchar              *label,
+                               const gchar        *label,
                                graphene_point3d_t *position,
                                GCallback           press_callback,
                                gpointer            press_callback_data)
@@ -116,15 +116,15 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                            VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_cairo_surface (client, texture, surface);
 
-  XrdOverlayWindow *overlay_window = xrd_overlay_window_new (label, ppm, NULL);
-  if (overlay_window == NULL)
+  XrdOverlayWindow *window = xrd_overlay_window_new_from_ppm (label, ppm);
+  if (window == NULL)
     return FALSE;
 
-  xrd_overlay_window_submit_texture (overlay_window, client, texture);
+  xrd_overlay_window_submit_texture (window, client, texture);
 
-  *button = XRD_WINDOW (overlay_window);
+  *button = XRD_WINDOW (window);
 
-  xrd_overlay_window_set_transformation_matrix (overlay_window, &transform);
+  xrd_overlay_window_set_transformation_matrix (window, &transform);
 
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
   xrd_window_manager_add_window (manager,
@@ -132,13 +132,13 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                  XRD_WINDOW_HOVERABLE |
                                  XRD_WINDOW_DESTROY_WITH_PARENT);
 
-  g_signal_connect (overlay_window, "grab-start-event",
+  g_signal_connect (window, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);
 
   xrd_client_add_button_callbacks (XRD_CLIENT (self),
-                                   XRD_WINDOW (overlay_window));
+                                   XRD_WINDOW (window));
 
-  xrd_window_manager_set_pin (manager, XRD_WINDOW (overlay_window), TRUE);
+  xrd_window_manager_set_pin (manager, XRD_WINDOW (window), TRUE);
 
   return TRUE;
 }
@@ -151,11 +151,8 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
                                gboolean          is_child,
                                gboolean          follow_head)
 {
-  gchar *window_title = g_strdup (title);
-  if (!window_title)
-    window_title = g_strdup ("Unnamed Window");
-
-  XrdOverlayWindow *window = xrd_overlay_window_new (window_title, ppm, native);
+  XrdOverlayWindow *window =
+    xrd_overlay_window_new_from_native (title, native, ppm);
 
   XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
 

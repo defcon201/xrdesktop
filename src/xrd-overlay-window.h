@@ -23,7 +23,14 @@ G_DECLARE_FINAL_TYPE (XrdOverlayWindow, xrd_overlay_window,
 struct _XrdOverlayWindow;
 
 XrdOverlayWindow *
-xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native);
+xrd_overlay_window_new (const gchar *title);
+
+XrdOverlayWindow *
+xrd_overlay_window_new_from_ppm (const gchar *title, float ppm);
+
+XrdOverlayWindow *
+xrd_overlay_window_new_from_native (const gchar *title,
+                                    gpointer native, float ppm);
 
 gboolean
 xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,

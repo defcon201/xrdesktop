@@ -18,7 +18,7 @@ struct _XrdOverlayWindow
   OpenVROverlay parent;
   gboolean      recreate;
   gboolean      flip_y;
-  gboolean       hidden;
+  gboolean      hidden;
 
   XrdWindowData window_data;
 };
@@ -338,15 +338,29 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
  * Create a new XrdWindow. Note that the window will only have dimensions after
  * a texture is uploaded. */
 XrdOverlayWindow *
-xrd_overlay_window_new (gchar *window_title, float ppm, gpointer native)
+xrd_overlay_window_new (const gchar *title)
 {
   XrdOverlayWindow *self =
       (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW,
-                                        "window-title", window_title,
-                                        "ppm", ppm,
-                                        "native", native,
-                                         NULL);
+                                        "window-title", title, NULL);
   return self;
+}
+
+XrdOverlayWindow *
+xrd_overlay_window_new_from_ppm (const gchar *title, float ppm)
+{
+  XrdOverlayWindow *window = xrd_overlay_window_new (title);
+  g_object_set (window, "ppm", ppm, NULL);
+  return window;
+}
+
+XrdOverlayWindow *
+xrd_overlay_window_new_from_native (const gchar *title,
+                                    gpointer native, float ppm)
+{
+  XrdOverlayWindow *window = xrd_overlay_window_new (title);
+  g_object_set (window, "ppm", ppm, "native", native, NULL);
+  return window;
 }
 
 void

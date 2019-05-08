@@ -26,8 +26,7 @@ main ()
       return -1;
     }
 
-  XrdOverlayWindow *window = xrd_overlay_window_new ("Some window", 1234.0f,
-                                                     NULL);
+  XrdOverlayWindow *window = xrd_overlay_window_new ("Some window");
 
   GValue val = G_VALUE_INIT;
   g_value_init (&val, G_TYPE_STRING);

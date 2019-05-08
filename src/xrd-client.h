@@ -46,7 +46,7 @@ struct _XrdClientClass
   gboolean
   (*add_button) (XrdClient          *self,
                  XrdWindow         **button,
-                 gchar              *label,
+                 const gchar        *label,
                  graphene_point3d_t *position,
                  GCallback           press_callback,
                  gpointer            press_callback_data);
@@ -61,7 +61,7 @@ XrdWindow *
 xrd_client_add_window (XrdClient  *self,
                        const char *title,
                        gpointer    native,
-                       float        ppm,
+                       float       ppm,
                        gboolean    is_child,
                        gboolean    follow_head);
 void
@@ -71,7 +71,7 @@ xrd_client_remove_window (XrdClient *self,
 gboolean
 xrd_client_add_button (XrdClient          *self,
                        XrdWindow         **button,
-                       gchar              *label,
+                       const gchar        *label,
                        graphene_point3d_t *position,
                        GCallback           press_callback,
                        gpointer            press_callback_data);

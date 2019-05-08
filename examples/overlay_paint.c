@@ -219,7 +219,7 @@ _init_paint_overlay (Example *self)
   if (self->draw_pixbuf == NULL)
     return FALSE;
 
-  self->paint_window = xrd_overlay_window_new ("Paint", 300, NULL);
+  self->paint_window = xrd_overlay_window_new_from_ppm ("Paint", 300);
 
   graphene_point3d_t position = {
     .x = -1,
