@@ -144,7 +144,7 @@ typedef struct XrdWindowData
   GString *window_title;
 
   float ppm;
-  float scaling_factor;
+  float scale;
   graphene_matrix_t vr_transform;
 
   /* A window that is pinned on top of this window and follows this window's
@@ -233,7 +233,7 @@ xrd_window_set_flip_y (XrdWindow *self,
                        gboolean flip_y);
 
 float
-xrd_window_get_scaling_factor (XrdWindow *self);
+xrd_window_get_scale (XrdWindow *self);
 
 float
 xrd_window_get_ppm (XrdWindow *self);

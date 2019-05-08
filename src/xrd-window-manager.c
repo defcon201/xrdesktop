@@ -137,7 +137,7 @@ _interpolate_cb (gpointer _transition)
     transition->to_scaling * transition->interpolate;
 
   /* TODO interpolate scaling instead of width */
-  g_object_set (G_OBJECT(window), "scaling-factor", interpolated_scaling, NULL);
+  g_object_set (G_OBJECT(window), "scale", interpolated_scaling, NULL);
 
   transition->interpolate += 0.03f;
 
@@ -145,7 +145,7 @@ _interpolate_cb (gpointer _transition)
     {
       xrd_window_set_transformation_matrix (window, &transition->to);
 
-      g_object_set (G_OBJECT(window), "scaling-factor",
+      g_object_set (G_OBJECT(window), "scale",
                     transition->to_scaling, NULL);
 
       g_object_unref (transition->window);
@@ -187,7 +187,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
       float *scaling = g_hash_table_lookup (self->reset_scalings, window);
       transition->to_scaling = *scaling;
 
-      g_object_get (G_OBJECT(window), "scaling-factor", &transition->from_scaling, NULL);
+      g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
       if (!graphene_matrix_equals (&transition->from, transform))
         {
@@ -265,7 +265,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
           xrd_window_get_transformation_matrix (window, &transition->from);
 
-          g_object_get (G_OBJECT(window), "scaling-factor", &transition->from_scaling, NULL);
+          g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
           if (!graphene_matrix_equals (&transition->from, &transform))
             {
@@ -303,7 +303,7 @@ xrd_window_manager_save_reset_transform (XrdWindowManager *self,
   xrd_window_get_transformation_matrix (window, transform);
 
   float *scaling = g_hash_table_lookup (self->reset_scalings, window);
-  g_object_get (G_OBJECT(window), "scaling-factor", scaling, NULL);
+  g_object_get (G_OBJECT(window), "scale", scaling, NULL);
 }
 
 void
@@ -345,7 +345,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   g_hash_table_insert (self->reset_transforms, window, transform);
 
   float *scaling = (float*) g_malloc (sizeof (float));
-  g_object_get (G_OBJECT(window), "scaling-factor", scaling, NULL);
+  g_object_get (G_OBJECT(window), "scale", scaling, NULL);
   g_hash_table_insert (self->reset_scalings, window, scaling);
 
   /* keep the window referenced as long as the window manages this window */
@@ -640,7 +640,7 @@ xrd_window_manager_scale (XrdWindowManager *self,
   (void) self;
 
   float current_factor;
-  g_object_get (G_OBJECT(grab_state->window), "scaling-factor", &current_factor, NULL);
+  g_object_get (G_OBJECT(grab_state->window), "scale", &current_factor, NULL);
 
   float new_factor = current_factor + current_factor * factor * (update_rate_ms / 1000.);
   /* Don't make the overlay so small it can not be grabbed anymore */
@@ -651,7 +651,7 @@ xrd_window_manager_scale (XrdWindowManager *self,
                               1 + factor * (update_rate_ms / 1000.),
                               &grab_state->offset_translation_point);
 
-      g_object_set (G_OBJECT(grab_state->window), "scaling-factor", new_factor, NULL);
+      g_object_set (G_OBJECT(grab_state->window), "scale", new_factor, NULL);
     }
 }
 

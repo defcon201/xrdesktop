@@ -27,7 +27,7 @@ enum
 {
   PROP_TITLE = 1,
   PROP_PPM,
-  PROP_SCALING,
+  PROP_SCALE,
   PROP_NATIVE,
   PROP_TEXTURE_WIDTH,
   PROP_TEXTURE_HEIGHT,
@@ -65,8 +65,8 @@ xrd_overlay_window_set_property (GObject      *object,
     case PROP_PPM:
       self->window_data.ppm = g_value_get_float (value);
       break;
-    case PROP_SCALING:
-      self->window_data.scaling_factor = g_value_get_float (value);
+    case PROP_SCALE:
+      self->window_data.scale = g_value_get_float (value);
       break;
     case PROP_NATIVE:
       self->window_data.native = g_value_get_pointer (value);
@@ -99,8 +99,8 @@ xrd_overlay_window_get_property (GObject    *object,
     case PROP_PPM:
       g_value_set_float (value, self->window_data.ppm);
       break;
-    case PROP_SCALING:
-      g_value_set_float (value, self->window_data.scaling_factor);
+    case PROP_SCALE:
+      g_value_set_float (value, self->window_data.scale);
       break;
     case PROP_NATIVE:
       g_value_set_pointer (value, self->window_data.native);
@@ -155,7 +155,7 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
 
   g_object_class_override_property (object_class, PROP_TITLE, "window-title");
   g_object_class_override_property (object_class, PROP_PPM, "ppm");
-  g_object_class_override_property (object_class, PROP_SCALING, "scaling-factor");
+  g_object_class_override_property (object_class, PROP_SCALE, "scale");
   g_object_class_override_property (object_class, PROP_NATIVE, "native");
   g_object_class_override_property (object_class, PROP_TEXTURE_WIDTH, "texture-width");
   g_object_class_override_property (object_class, PROP_TEXTURE_HEIGHT, "texture-height");
@@ -187,11 +187,11 @@ _scale_move_child (XrdOverlayWindow *self)
 {
   XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (self->window_data.child_window);
 
-  g_object_set (G_OBJECT(child), "scaling-factor", self->window_data.scaling_factor, NULL);
+  g_object_set (G_OBJECT(child), "scale", self->window_data.scale, NULL);
 
   graphene_point_t scaled_offset;
   graphene_point_scale (&self->window_data.child_offset_center,
-                        self->window_data.scaling_factor / self->window_data.ppm,
+                        self->window_data.scale / self->window_data.ppm,
                         &scaled_offset);
 
   graphene_point3d_t scaled_offset3d = {
@@ -432,7 +432,7 @@ xrd_overlay_window_constructed (GObject *gobject)
 
   iface->windows_created++;
 
-  g_signal_connect(xrd_window, "notify::scaling-factor",
+  g_signal_connect(xrd_window, "notify::scale",
                    (GCallback)notify_property_scale_changed, NULL);
 
   g_signal_connect(xrd_window, "notify::ppm",

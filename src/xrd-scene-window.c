@@ -14,7 +14,7 @@ enum
 {
   PROP_TITLE = 1,
   PROP_PPM,
-  PROP_SCALING,
+  PROP_SCALE,
   PROP_NATIVE,
   PROP_TEXTURE_WIDTH,
   PROP_TEXTURE_HEIGHT,
@@ -45,8 +45,8 @@ xrd_scene_window_set_property (GObject      *object,
     case PROP_PPM:
       self->window_data.ppm = g_value_get_float (value);
       break;
-    case PROP_SCALING:
-      self->window_data.scaling_factor = g_value_get_float (value);
+    case PROP_SCALE:
+      self->window_data.scale = g_value_get_float (value);
       break;
     case PROP_NATIVE:
       self->window_data.native = g_value_get_pointer (value);
@@ -79,8 +79,8 @@ xrd_scene_window_get_property (GObject    *object,
     case PROP_PPM:
       g_value_set_float (value, self->window_data.ppm);
       break;
-    case PROP_SCALING:
-      g_value_set_float (value, self->window_data.scaling_factor);
+    case PROP_SCALE:
+      g_value_set_float (value, self->window_data.scale);
       break;
     case PROP_NATIVE:
       g_value_set_pointer (value, self->window_data.native);
@@ -112,7 +112,7 @@ xrd_scene_window_class_init (XrdSceneWindowClass *klass)
 
   g_object_class_override_property (object_class, PROP_TITLE, "window-title");
   g_object_class_override_property (object_class, PROP_PPM, "ppm");
-  g_object_class_override_property (object_class, PROP_SCALING, "scaling-factor");
+  g_object_class_override_property (object_class, PROP_SCALE, "scale");
   g_object_class_override_property (object_class, PROP_NATIVE, "native");
   g_object_class_override_property (object_class, PROP_TEXTURE_WIDTH, "texture-width");
   g_object_class_override_property (object_class, PROP_TEXTURE_HEIGHT, "texture-height");

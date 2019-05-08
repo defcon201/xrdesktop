@@ -149,7 +149,7 @@ xrd_window_default_init (XrdWindowInterface *iface)
   g_object_interface_install_property (iface, pspec);
 
   pspec =
-    g_param_spec_float ("scaling-factor",
+    g_param_spec_float ("scale",
                        "Scaling Factor",
                        "Scaling Factor of this Window.",
                         /* TODO: use gsettings values */
@@ -221,11 +221,11 @@ xrd_window_submit_texture (XrdWindow *self,
 }
 
 float
-xrd_window_get_scaling_factor (XrdWindow *self)
+xrd_window_get_scale (XrdWindow *self)
 {
   GValue val = G_VALUE_INIT;
   g_value_init (&val, G_TYPE_FLOAT);
-  g_object_get_property (G_OBJECT (self), "scaling-factor", &val);
+  g_object_get_property (G_OBJECT (self), "scale", &val);
   return g_value_get_float (&val);
 }
 
