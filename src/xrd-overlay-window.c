@@ -130,6 +130,14 @@ _update_dimensions (XrdOverlayWindow *self)
   float width_meters = xrd_window_get_current_width_meters (XRD_WINDOW (self));
   openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width_meters);
 
+  uint32_t w, h;
+  g_object_get (self,
+                "texture-width", &w,
+                "texture-height", &h,
+                NULL);
+
+  openvr_overlay_set_mouse_scale (OPENVR_OVERLAY (self), w, h);
+
   if (self->window_data.child_window)
     _scale_move_child (self);
 }
