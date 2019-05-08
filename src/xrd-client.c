@@ -508,6 +508,24 @@ _action_grab_cb (OpenVRAction        *action,
 }
 
 static void
+_action_menu_cb (OpenVRAction        *action,
+                 OpenVRDigitalEvent  *event,
+                 XrdClientController *controller)
+{
+  (void) action;
+  XrdClient *self = controller->self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  if (event->changed && event->state == 1 &&
+      !priv->hover_window[controller->index])
+    {
+      XrdWindowManager *manager = xrd_client_get_manager (self);
+      gboolean controls = xrd_window_manager_is_controls_shown (manager);
+      xrd_window_manager_show_controls  (manager, !controls);
+    }
+  g_free (event);
+}
+
+static void
 _action_rotate_cb (OpenVRAction        *action,
                    OpenVRAnalogEvent   *event,
                    XrdClientController *controller)
@@ -1022,7 +1040,6 @@ _synth_click_cb (XrdInputSynth *synth,
                  XrdClient     *self)
 {
   (void) synth;
-
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   if (priv->selection_mode)
@@ -1300,6 +1317,15 @@ xrd_client_post_openvr_init (XrdClient *self)
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window_right",
                              (GCallback) _action_grab_cb,
+                             &priv->controllers[1]);
+
+  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
+                             "/actions/wm/in/menu_left",
+                             (GCallback) _action_menu_cb,
+                             &priv->controllers[0]);
+  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
+                             "/actions/wm/in/menu_right",
+                             (GCallback) _action_menu_cb,
                              &priv->controllers[1]);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,

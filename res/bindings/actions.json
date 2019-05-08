@@ -67,6 +67,14 @@
         "type": "vibration"
       },
       {
+         "name":"/actions/wm/in/menu_left",
+         "type":"boolean"
+      },
+      {
+         "name":"/actions/wm/in/menu_right",
+         "type":"boolean"
+      },
+      {
          "name":"/actions/mouse_synth/in/left_click_left",
          "type":"boolean"
       },
@@ -111,6 +119,7 @@
          "/actions/wm/in/push_pull_scale_left":"Scale Window (Left Controller)",
          "/actions/wm/in/hand_pose_left" : "Pose (Left Controller)",
          "/actions/wm/out/haptic_left" : "Haptic Feedback (Left Controller)",
+         "/actions/wm/in/menu_left" : "Window Manager Menu (Left Controller)",
          "/actions/mouse_synth/in/left_click_left" : "Left Click (Left Controller)",
          "/actions/mouse_synth/in/right_click_left" : "Right Click (Left Controller)",
          "/actions/mouse_synth/in/scroll_left" : "Scroll (Left Controller)",
@@ -121,6 +130,7 @@
          "/actions/wm/in/push_pull_scale_right":"Scale Window (Right Controller)",
          "/actions/wm/in/hand_pose_right" : "Pose (Right Controller)",
          "/actions/wm/out/haptic_right" : "Haptic Feedback (Right Controller)",
+         "/actions/wm/in/menu_right" : "Window Manager Menu (Right Controller)",
          "/actions/mouse_synth/in/left_click_right" : "Left Click (Right Controller)",
          "/actions/mouse_synth/in/right_click_right" : "Right Click (Right Controller)",
          "/actions/mouse_synth/in/scroll_right" : "Scroll (Right Controller)"

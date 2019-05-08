@@ -33,6 +33,8 @@ struct _XrdWindowManager
 
   GSList *pinned_windows;
 
+  gboolean controls_shown;
+
   HoverState hover_state[OPENVR_CONTROLLER_COUNT];
   GrabState grab_state[OPENVR_CONTROLLER_COUNT];
 
@@ -96,6 +98,8 @@ xrd_window_manager_init (XrdWindowManager *self)
       self->hover_state[i].window = NULL;
       self->grab_state[i].window = NULL;
     }
+
+  self->controls_shown = FALSE;
 }
 
 XrdWindowManager *
@@ -319,9 +323,15 @@ xrd_window_manager_add_window (XrdWindowManager *self,
 {
   /* any window must be either in all_windows or buttons */
   if (flags & XRD_WINDOW_MANAGER_BUTTON)
-    self->buttons = g_slist_append (self->buttons, window);
+    {
+      self->buttons = g_slist_append (self->buttons, window);
+      if (!self->controls_shown)
+        xrd_window_set_hidden (window, TRUE);
+    }
   else
-    self->all_windows = g_slist_append (self->all_windows, window);
+    {
+      self->all_windows = g_slist_append (self->all_windows, window);
+    }
 
   /* Freed with manager */
   if (flags & XRD_WINDOW_DESTROY_WITH_PARENT)
@@ -800,4 +810,25 @@ xrd_window_manager_show_pinned_only (XrdWindowManager *self,
         to_show = g_slist_find (self->pinned_windows, window) != NULL;
       xrd_window_set_hidden (window, !to_show);
     }
+}
+
+void
+xrd_window_manager_show_controls (XrdWindowManager *self,
+                                  gboolean          show_controls)
+{
+  if (self->controls_shown == show_controls)
+    return;
+
+  for (GSList *l = self->buttons; l != NULL; l = l->next)
+    {
+      XrdWindow *window = (XrdWindow *) l->data;
+      xrd_window_set_hidden (window, !show_controls);
+    }
+  self->controls_shown = show_controls;
+}
+
+gboolean
+xrd_window_manager_is_controls_shown (XrdWindowManager *self)
+{
+  return self->controls_shown;
 }

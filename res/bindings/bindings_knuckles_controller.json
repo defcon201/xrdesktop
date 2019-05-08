@@ -117,6 +117,24 @@
                }
             },
             {
+               "path": "/user/hand/right/input/b",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/menu_right"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/left/input/b",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wn/in/menu_left"
+                  }
+               }
+            },
+            {
                "path": "/user/hand/left/input/trigger",
                "mode": "button",
                "inputs": {
