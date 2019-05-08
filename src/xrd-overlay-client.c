@@ -44,7 +44,8 @@ xrd_overlay_client_add_window (XrdOverlayClient *self,
 gboolean
 xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                XrdWindow         **button,
-                               const gchar        *label,
+                               int                 label_count,
+                               gchar             **label,
                                graphene_point3d_t *position,
                                GCallback           press_callback,
                                gpointer            press_callback_data);
@@ -92,7 +93,8 @@ xrd_overlay_client_get_uploader (XrdOverlayClient *self)
 gboolean
 xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                XrdWindow         **button,
-                               const gchar        *label,
+                               int                 label_count,
+                               gchar             **label,
                                graphene_point3d_t *position,
                                GCallback           press_callback,
                                gpointer            press_callback_data)
@@ -101,12 +103,12 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   graphene_matrix_init_translate (&transform, position);
 
   int width = 220;
-  int height = 120;
+  int height = 220;
   int ppm = 450;
 
   unsigned char image[4 * width * height];
   cairo_surface_t* surface =
-      xrd_client_create_button_surface (image, width, height, label);
+      xrd_client_create_button_surface (image, width, height, label_count, label);
 
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
   GulkanTexture *texture =
@@ -114,8 +116,17 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                            VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_cairo_surface (client, texture, surface);
 
+  GString *full_label = g_string_new ("");
+  for (int i = 0; i < label_count; i++)
+    {
+      g_string_append (full_label, label[i]);
+    }
+
   XrdOverlayWindow *window =
-    xrd_overlay_window_new_from_ppm (label, width, height, ppm);
+    xrd_overlay_window_new_from_ppm (full_label->str, width, height, ppm);
+
+  g_string_free (full_label, FALSE);
+
   if (window == NULL)
     return FALSE;
 

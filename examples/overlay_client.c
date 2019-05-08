@@ -180,11 +180,12 @@ _init_windows (Example *self)
 
   graphene_point3d_t button_position = {
     .x =  0.0f,
-    .y =  -0.3f,
+    .y =  -0.6f,
     .z = -1.0f
   };
+  gchar *tracked_str[] =  { "Show Tracked", "window" };
   xrd_client_add_button (self->client, &self->head_follow_button,
-                         "Tracked",
+                         2, tracked_str,
                          &button_position,
                          (GCallback) _head_follow_press_cb,
                          self);

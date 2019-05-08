@@ -38,7 +38,8 @@ struct _XrdClientClass
   gboolean
   (*add_button) (XrdClient          *self,
                  XrdWindow         **button,
-                 const gchar        *label,
+                 int                 label_count,
+                 gchar             **label,
                  graphene_point3d_t *position,
                  GCallback           press_callback,
                  gpointer            press_callback_data);
@@ -62,7 +63,8 @@ xrd_client_remove_window (XrdClient *self,
 gboolean
 xrd_client_add_button (XrdClient          *self,
                        XrdWindow         **button,
-                       const gchar        *label,
+                       int                 label_count,
+                       gchar             **label,
                        graphene_point3d_t *position,
                        GCallback           press_callback,
                        gpointer            press_callback_data);
@@ -167,7 +169,8 @@ xrd_client_set_desktop_cursor (XrdClient        *self,
 
 cairo_surface_t*
 xrd_client_create_button_surface (unsigned char *image, uint32_t width,
-                                  uint32_t height, const gchar *text);
+                                  uint32_t height, int lines,
+                                  gchar *const *text);
 
 G_END_DECLS
 

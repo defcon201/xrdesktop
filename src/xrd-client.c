@@ -163,7 +163,8 @@ xrd_client_add_window (XrdClient *self,
 gboolean
 xrd_client_add_button (XrdClient          *self,
                        XrdWindow         **button,
-                       const gchar        *label,
+                       int                 label_count,
+                       gchar             **label,
                        graphene_point3d_t *position,
                        GCallback           press_callback,
                        gpointer            press_callback_data)
@@ -171,7 +172,7 @@ xrd_client_add_button (XrdClient          *self,
   XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
   if (klass->add_button == NULL)
       return FALSE;
-  return klass->add_button (self, button, label, position,
+  return klass->add_button (self, button, label_count, label, position,
                             press_callback, press_callback_data);
 }
 
@@ -787,7 +788,9 @@ _init_buttons (XrdClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
-  if (!xrd_client_add_button (self, &priv->button_reset, "Reset",
+
+  gchar *reset_str[] =  { "Reset" };
+  if (!xrd_client_add_button (self, &priv->button_reset, 1, reset_str,
                               &position_reset,
                               (GCallback) _button_reset_press_cb,
                               self))
@@ -803,7 +806,8 @@ _init_buttons (XrdClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
-  if (!xrd_client_add_button (self, &priv->button_sphere, "Sphere",
+  gchar *sphere_str[] =  { "Sphere" };
+  if (!xrd_client_add_button (self, &priv->button_sphere, 1, sphere_str,
                               &position_sphere,
                               (GCallback) _button_sphere_press_cb,
                               self))
@@ -816,8 +820,9 @@ _init_buttons (XrdClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
+  gchar *pinned_str[] =  { "Show only", "pinned windows" };
   if (!xrd_client_add_button (self, &priv->pinned_button,
-                              "Pinned",
+                              2, pinned_str,
                               &position_pinned,
                               (GCallback) _button_pinned_press_cb,
                               self))
@@ -830,8 +835,9 @@ _init_buttons (XrdClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
+  gchar *select_str[] =  { "Select pinned", "windows" };
   if (!xrd_client_add_button (self, &priv->select_pinned_button,
-                              "Select",
+                              2, select_str,
                               &select_pinned,
                               (GCallback) _button_select_pinned_press_cb,
                               self))
@@ -1120,7 +1126,8 @@ xrd_client_set_desktop_cursor (XrdClient        *self,
 
 cairo_surface_t*
 xrd_client_create_button_surface (unsigned char *image, uint32_t width,
-                                  uint32_t height, const gchar *text)
+                                  uint32_t height, int lines,
+                                  gchar *const *text)
 {
   cairo_surface_t *surface =
     cairo_image_surface_create_for_data (image,
@@ -1160,22 +1167,47 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
   cairo_fill (cr);
   cairo_pattern_destroy (pat);
 
-  cairo_select_font_face (cr, "Sans",
+  cairo_select_font_face (cr, "cairo :monospace",
       CAIRO_FONT_SLANT_NORMAL,
       CAIRO_FONT_WEIGHT_NORMAL);
 
-  float font_size = 52.0;
+  uint longest_line = 0;
+  for (int i = 0; i < lines; i++)
+    {
+      if (strlen (text[i]) > longest_line)
+        longest_line = strlen (text[i]);
+    }
+
+  float spacing = 2.;
+
+  /* top/bottom border + one spacing between each 2 lines */
+  float line_spacing = 2 * spacing + (lines - 1) * spacing;
+
+  float font_height = (height - line_spacing) / (float) lines;
+  float font_width = (width - 2. * spacing) / (float) longest_line;
+  /* assume square letters */
+  float font_size = fmin (font_height, font_width);
 
   cairo_set_font_size (cr, font_size);
 
-  cairo_text_extents_t extents;
-  cairo_text_extents (cr, text, &extents);
+  for (int i = 0; i < lines; i++)
+    {
+      cairo_text_extents_t extents;
+      cairo_text_extents (cr, text[i], &extents);
 
-  cairo_move_to (cr,
-                 center_x - extents.width / 2,
-                 center_y  - extents.height / 2 + extents.height / 2);
-  cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
-  cairo_show_text (cr, text);
+      /* horizontally centered*/
+      float x = center_x - extents.width / 2;
+
+      /* TODO: does this work for texts with height > width */
+      float y = spacing + /* top border*/
+                i * font_height + /* height of previous lines */
+                i * spacing + /* spacing between previous lines */
+                font_height / 2.; /* current line */;
+
+      cairo_move_to (cr, x, y);
+      cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
+      cairo_show_text (cr, text[i]);
+    }
 
   cairo_destroy (cr);
 
