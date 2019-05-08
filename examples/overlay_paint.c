@@ -242,7 +242,8 @@ _init_paint_overlay (Example *self)
 
   gulkan_client_upload_pixbuf (client, self->texture, self->draw_pixbuf);
 
-  xrd_overlay_window_submit_texture (self->paint_window, client, self->texture);
+  xrd_window_submit_texture (XRD_WINDOW (self->paint_window),
+                             client, self->texture);
 
   xrd_window_manager_add_window (self->manager,
                                  XRD_WINDOW (self->paint_window),

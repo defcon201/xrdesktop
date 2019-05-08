@@ -43,58 +43,6 @@ xrd_overlay_window_new_from_native (const gchar *title,
                                     uint32_t     height_pixels,
                                     float        ppm);
 
-gboolean
-xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
-                                              graphene_matrix_t *mat);
-
-gboolean
-xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
-                                              graphene_matrix_t *mat);
-
-void
-xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
-                                   GulkanClient *client,
-                                   GulkanTexture *texture);
-
-void
-xrd_overlay_window_poll_event (XrdOverlayWindow *self);
-
-gboolean
-xrd_overlay_window_intersects (XrdOverlayWindow   *self,
-                               graphene_matrix_t  *pointer_transformation_matrix,
-                               graphene_point3d_t *intersection_point);
-
-gboolean
-xrd_overlay_window_intersection_to_pixels (XrdOverlayWindow   *self,
-                                           graphene_point3d_t *intersection_point,
-                                           XrdPixelSize       *size_pixels,
-                                           graphene_point_t   *window_coords);
-
-gboolean
-xrd_overlay_window_intersection_to_2d_offset_meter (XrdOverlayWindow *self,
-                                                    graphene_point3d_t *intersection_point,
-                                                    graphene_point_t   *offset_center);
-
-void
-xrd_overlay_window_add_child (XrdOverlayWindow *self,
-                              XrdOverlayWindow *child,
-                              graphene_point_t *offset_center);
-
-void
-xrd_overlay_window_set_color (XrdOverlayWindow *self,
-                              graphene_vec3_t *color);
-
-void
-xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
-                               gboolean flip_y);
-
-void
-xrd_overlay_window_set_hidden (XrdOverlayWindow *self,
-                               gboolean hidden);
-
-gboolean
-xrd_overlay_window_get_hidden (XrdOverlayWindow *self);
-
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_WINDOW_H_ */
