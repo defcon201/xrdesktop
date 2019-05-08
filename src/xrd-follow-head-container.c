@@ -118,7 +118,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
 
   /* _cs means camera (hmd) space, _ws means world space. */
   graphene_matrix_t window_transform_ws;
-  xrd_window_get_transformation_matrix (window, &window_transform_ws);
+  xrd_window_get_transformation (window, &window_transform_ws);
   graphene_matrix_t window_transform_cs;
   graphene_matrix_multiply (&window_transform_ws, &hmd_pose_inv,
                             &window_transform_cs);
@@ -175,7 +175,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
     graphene_matrix_t new_window_pose_ws;
     _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_window_pose_ws);
 
-    xrd_window_set_transformation_matrix (window, &new_window_pose_ws);
+    xrd_window_set_transformation (window, &new_window_pose_ws);
     return TRUE;
   }
 
@@ -222,7 +222,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
       graphene_matrix_t new_window_pose_ws;
       _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_window_pose_ws);
 
-      xrd_window_set_transformation_matrix (window, &new_window_pose_ws);
+      xrd_window_set_transformation (window, &new_window_pose_ws);
 
 
       graphene_vec2_t velocity;
@@ -301,7 +301,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
 
   graphene_matrix_t new_window_pose_ws;
   _hmd_facing_pose (&hmd_pose, &next_point_ws, &new_window_pose_ws);
-  xrd_window_set_transformation_matrix (window, &new_window_pose_ws);
+  xrd_window_set_transformation (window, &new_window_pose_ws);
 
   //g_print ("Moving head following window with %f!\n", angle_speed);
   return TRUE;

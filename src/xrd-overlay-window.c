@@ -153,12 +153,12 @@ static void
 xrd_overlay_window_constructed (GObject *gobject);
 
 gboolean
-xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
-                                              graphene_matrix_t *mat);
+xrd_overlay_window_set_transformation (XrdOverlayWindow *self,
+                                       graphene_matrix_t *mat);
 
 gboolean
-xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
-                                              graphene_matrix_t *mat);
+xrd_overlay_window_get_transformation (XrdOverlayWindow *self,
+                                       graphene_matrix_t *mat);
 
 void
 xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
@@ -226,10 +226,10 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
 static void
 xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
 {
-  iface->set_transformation_matrix =
-      (void*)xrd_overlay_window_set_transformation_matrix;
-  iface->get_transformation_matrix =
-      (void*)xrd_overlay_window_get_transformation_matrix;
+  iface->set_transformation =
+      (void*) xrd_overlay_window_set_transformation;
+  iface->get_transformation =
+      (void*) xrd_overlay_window_get_transformation;
   iface->submit_texture = (void*)xrd_overlay_window_submit_texture;
   iface->poll_event = (void*)xrd_overlay_window_poll_event;
   iface->intersects = (void*)xrd_overlay_window_intersects;
@@ -267,18 +267,18 @@ _scale_move_child (XrdOverlayWindow *self)
   graphene_matrix_init_translate (&child_transform, &scaled_offset3d);
 
   graphene_matrix_t parent_transform;
-  xrd_overlay_window_get_transformation_matrix (self, &parent_transform);
+  xrd_overlay_window_get_transformation (self, &parent_transform);
 
   graphene_matrix_multiply (&child_transform, &parent_transform,
                             &child_transform);
 
-  xrd_overlay_window_set_transformation_matrix (child, &child_transform);
+  xrd_overlay_window_set_transformation (child, &child_transform);
 
 }
 
 gboolean
-xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
-                                              graphene_matrix_t *mat)
+xrd_overlay_window_set_transformation (XrdOverlayWindow *self,
+                                       graphene_matrix_t *mat)
 {
   gboolean res =
     openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), mat);
@@ -288,8 +288,8 @@ xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,
 }
 
 gboolean
-xrd_overlay_window_get_transformation_matrix (XrdOverlayWindow *self,
-                                              graphene_matrix_t *mat)
+xrd_overlay_window_get_transformation (XrdOverlayWindow *self,
+                                       graphene_matrix_t *mat)
 {
   return openvr_overlay_get_transform_absolute (OPENVR_OVERLAY (self), mat);
 }

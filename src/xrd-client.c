@@ -662,7 +662,7 @@ _button_hover_cb (XrdWindow     *window,
 
   /* update pointer length and pointer tip */
   graphene_matrix_t window_pose;
-  xrd_window_get_transformation_matrix (window, &window_pose);
+  xrd_window_get_transformation (window, &window_pose);
 
   xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
   xrd_pointer_set_length (pointer, event->distance);
@@ -910,7 +910,7 @@ _window_hover_cb (XrdWindow     *window,
     priv->pointer_tip[event->controller_index];
 
   graphene_matrix_t window_pose;
-  xrd_window_get_transformation_matrix (window, &window_pose);
+  xrd_window_get_transformation (window, &window_pose);
   xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
 
   XrdPointer *pointer = priv->pointer_ray[event->controller_index];

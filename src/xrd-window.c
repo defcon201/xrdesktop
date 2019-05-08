@@ -198,17 +198,17 @@ xrd_window_default_init (XrdWindowInterface *iface)
 }
 
 gboolean
-xrd_window_set_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
+xrd_window_set_transformation (XrdWindow *self, graphene_matrix_t *mat)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->set_transformation_matrix (self, mat);
+  return iface->set_transformation (self, mat);
 }
 
 gboolean
-xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat)
+xrd_window_get_transformation (XrdWindow *self, graphene_matrix_t *mat)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->get_transformation_matrix (self, mat);
+  return iface->get_transformation (self, mat);
 }
 
 /**

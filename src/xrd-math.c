@@ -262,7 +262,7 @@ xrd_math_hmd_window_distance (XrdWindow *window)
 
 
   graphene_matrix_t window_pose;
-  xrd_window_get_transformation_matrix (window, &window_pose);
+  xrd_window_get_transformation (window, &window_pose);
   graphene_point3d_t window_location;
   graphene_matrix_get_translation_point3d (&window_pose, &window_location);
 

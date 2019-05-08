@@ -214,7 +214,7 @@ xrd_window_emit_hover
 xrd_window_emit_hover_end
 xrd_window_emit_hover_start
 xrd_window_emit_release
-xrd_window_get_transformation_matrix
+xrd_window_get_transformation
 xrd_window_get_type
 xrd_window_get_height_meter
 xrd_window_get_width_meter
@@ -223,7 +223,7 @@ xrd_window_intersection_to_pixels
 xrd_window_intersects
 xrd_window_pixel_to_meter
 xrd_window_poll_event
-xrd_window_set_transformation_matrix
+xrd_window_set_transformation
 xrd_window_submit_texture
 xrd_window_set_color
 xrd_window_set_flip_y

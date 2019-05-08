@@ -50,12 +50,12 @@ struct _XrdWindowInterface
   GTypeInterface parent;
 
   gboolean
-  (*set_transformation_matrix) (XrdWindow *self,
-                                graphene_matrix_t *mat);
+  (*set_transformation) (XrdWindow         *self,
+                         graphene_matrix_t *mat);
 
   gboolean
-  (*get_transformation_matrix) (XrdWindow *self,
-                                graphene_matrix_t *mat);
+  (*get_transformation) (XrdWindow         *self,
+                         graphene_matrix_t *mat);
 
   void
   (*submit_texture) (XrdWindow *self,
@@ -148,10 +148,10 @@ typedef struct XrdWindowData
 } XrdWindowData;
 
 gboolean
-xrd_window_set_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat);
+xrd_window_set_transformation (XrdWindow *self, graphene_matrix_t *mat);
 
 gboolean
-xrd_window_get_transformation_matrix (XrdWindow *self, graphene_matrix_t *mat);
+xrd_window_get_transformation (XrdWindow *self, graphene_matrix_t *mat);
 
 void
 xrd_window_submit_texture (XrdWindow    *self,

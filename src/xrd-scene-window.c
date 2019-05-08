@@ -129,10 +129,10 @@ xrd_scene_window_class_init (XrdSceneWindowClass *klass)
 static void
 xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
 {
-  iface->set_transformation_matrix =
-      (void*)xrd_scene_window_set_transformation_matrix;
-  iface->get_transformation_matrix =
-      (void*)xrd_scene_window_get_transformation_matrix;
+  iface->set_transformation =
+      (void*) xrd_scene_window_set_transformation;
+  iface->get_transformation =
+      (void*) xrd_scene_window_get_transformation;
   iface->submit_texture = (void*)xrd_scene_window_submit_texture;
   iface->poll_event = (void*)xrd_scene_window_poll_event;
   iface->intersects = (void*)xrd_scene_window_intersects;
@@ -289,8 +289,8 @@ xrd_scene_window_get_plane (XrdSceneWindow   *self,
 /* XrdWindow Interface functions */
 
 gboolean
-xrd_scene_window_set_transformation_matrix (XrdSceneWindow    *self,
-                                            graphene_matrix_t *mat)
+xrd_scene_window_set_transformation (XrdSceneWindow    *self,
+                                     graphene_matrix_t *mat)
 {
   (void) self;
   (void) mat;
@@ -299,8 +299,8 @@ xrd_scene_window_set_transformation_matrix (XrdSceneWindow    *self,
 }
 
 gboolean
-xrd_scene_window_get_transformation_matrix (XrdSceneWindow    *self,
-                                            graphene_matrix_t *mat)
+xrd_scene_window_get_transformation (XrdSceneWindow    *self,
+                                     graphene_matrix_t *mat)
 {
   (void) self;
   (void) mat;

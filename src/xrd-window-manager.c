@@ -130,7 +130,7 @@ _interpolate_cb (gpointer _transition)
                                   &transition->to,
                                    transition->interpolate,
                                   &interpolated);
-  xrd_window_set_transformation_matrix (window, &interpolated);
+  xrd_window_set_transformation (window, &interpolated);
 
   float interpolated_scaling =
     transition->from_scaling * (1.0f - transition->interpolate) +
@@ -143,7 +143,7 @@ _interpolate_cb (gpointer _transition)
 
   if (transition->interpolate > 1)
     {
-      xrd_window_set_transformation_matrix (window, &transition->to);
+      xrd_window_set_transformation (window, &transition->to);
 
       g_object_set (G_OBJECT(window), "scale",
                     transition->to_scaling, NULL);
@@ -182,7 +182,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
       graphene_matrix_t *transform =
         g_hash_table_lookup (self->reset_transforms, window);
 
-      xrd_window_get_transformation_matrix (window, &transition->from);
+      xrd_window_get_transformation (window, &transition->from);
 
       float *scaling = g_hash_table_lookup (self->reset_scalings, window);
       transition->to_scaling = *scaling;
@@ -263,7 +263,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
               return FALSE;
             }
 
-          xrd_window_get_transformation_matrix (window, &transition->from);
+          xrd_window_get_transformation (window, &transition->from);
 
           g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
@@ -300,7 +300,7 @@ xrd_window_manager_save_reset_transform (XrdWindowManager *self,
 {
   graphene_matrix_t *transform =
     g_hash_table_lookup (self->reset_transforms, window);
-  xrd_window_get_transformation_matrix (window, transform);
+  xrd_window_get_transformation (window, transform);
 
   float *scaling = g_hash_table_lookup (self->reset_scalings, window);
   g_object_get (G_OBJECT(window), "scale", scaling, NULL);
@@ -341,7 +341,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
 
   /* Register reset position */
   graphene_matrix_t *transform = graphene_matrix_alloc ();
-  xrd_window_get_transformation_matrix (window, transform);
+  xrd_window_get_transformation (window, transform);
   g_hash_table_insert (self->reset_transforms, window, transform);
 
   float *scaling = (float*) g_malloc (sizeof (float));
@@ -555,7 +555,7 @@ _drag_window (XrdWindowManager  *self,
                             &transformation_matrix);
 
 
-  xrd_window_set_transformation_matrix (grab_state->window,
+  xrd_window_set_transformation (grab_state->window,
                                         &transformation_matrix);
 
   xrd_window_emit_grab (grab_state->window, event);
@@ -579,7 +579,7 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
                                         &hover_state->pose);
 
   graphene_matrix_t window_transform;
-  xrd_window_get_transformation_matrix (grab_state->window, &window_transform);
+  xrd_window_get_transformation (grab_state->window, &window_transform);
   graphene_quaternion_init_from_matrix (
       &grab_state->window_rotation, &window_transform);
 

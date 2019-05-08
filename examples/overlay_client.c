@@ -97,7 +97,7 @@ _head_follow_press_cb (XrdOverlayWindow        *button,
       graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
       graphene_matrix_t transform;
       graphene_matrix_init_translate (&transform, &point);
-      xrd_window_set_transformation_matrix (self->head_follow_window,
+      xrd_window_set_transformation (self->head_follow_window,
                                             &transform);
     }
   else
@@ -148,7 +148,7 @@ _init_windows (Example *self)
           };
           graphene_matrix_t transform;
           graphene_matrix_init_translate (&transform, &point);
-          xrd_window_set_transformation_matrix (window, &transform);
+          xrd_window_set_transformation (window, &transform);
 
           XrdWindowManager *manager = xrd_client_get_manager (self->client);
           xrd_window_manager_save_reset_transform (manager, window);

@@ -123,7 +123,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
 
   *button = XRD_WINDOW (window);
 
-  xrd_window_set_transformation_matrix (XRD_WINDOW (window), &transform);
+  xrd_window_set_transformation (XRD_WINDOW (window), &transform);
 
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
   xrd_window_manager_add_window (manager,

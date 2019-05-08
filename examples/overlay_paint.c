@@ -230,7 +230,7 @@ _init_paint_overlay (Example *self)
 
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, &position);
-  xrd_window_set_transformation_matrix (XRD_WINDOW (self->paint_window),
+  xrd_window_set_transformation (XRD_WINDOW (self->paint_window),
                                         &transform);
 
 

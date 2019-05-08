@@ -211,7 +211,7 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
   graphene_matrix_translate (&transform, &cursor_hotspot);
 
   graphene_matrix_t overlay_transform;
-  xrd_window_get_transformation_matrix (window, &overlay_transform);
+  xrd_window_get_transformation (window, &overlay_transform);
   graphene_matrix_multiply(&transform, &overlay_transform, &transform);
 
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);

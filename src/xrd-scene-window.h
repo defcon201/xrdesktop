@@ -70,12 +70,12 @@ xrd_scene_window_get_plane (XrdSceneWindow   *self,
 /* XrdWindow Interface functions */
 
 gboolean
-xrd_scene_window_set_transformation_matrix (XrdSceneWindow    *self,
-                                            graphene_matrix_t *mat);
+xrd_scene_window_set_transformation (XrdSceneWindow    *self,
+                                     graphene_matrix_t *mat);
 
 gboolean
-xrd_scene_window_get_transformation_matrix (XrdSceneWindow    *self,
-                                            graphene_matrix_t *mat);
+xrd_scene_window_get_transformation (XrdSceneWindow    *self,
+                                     graphene_matrix_t *mat);
 
 void
 xrd_scene_window_submit_texture (XrdSceneWindow *self,
