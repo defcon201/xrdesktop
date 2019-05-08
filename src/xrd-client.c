@@ -129,19 +129,26 @@ xrd_client_class_init (XrdClientClass *klass)
  * Creates an #XrdWindow, puts it under the management of the #XrdWindowManager
  * and returns it.
  */
-XrdWindow *
-xrd_client_add_window (XrdClient  *self,
-                       const char *title,
-                       gpointer    native,
-                       float        ppm,
-                       gboolean    is_child,
-                       gboolean    follow_head)
+void
+xrd_client_add_window (XrdClient *self,
+                       XrdWindow *window,
+                       gboolean   is_child,
+                       gboolean   follow_head)
 {
-  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
-  if (klass->add_window == NULL)
-      return NULL;
-  return klass->add_window (self, title, native, ppm,
-                            is_child, follow_head);
+  XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
+
+  /* User can't drag child windows, they are attached to the parent.
+   * The child window's position is managed by its parent, not the WM. */
+  if (!is_child && !follow_head)
+    flags |= XRD_WINDOW_DRAGGABLE | XRD_WINDOW_MANAGED;
+
+  if (follow_head)
+      flags |= XRD_WINDOW_FOLLOW_HEAD;
+
+  XrdWindowManager *manager = xrd_client_get_manager (self);
+  xrd_window_manager_add_window (manager, window, flags);
+
+  xrd_client_add_window_callbacks (self, window);
 }
 
 /**
@@ -786,9 +793,8 @@ _init_buttons (XrdClient *self)
                               self))
     return FALSE;
 
-  float reset_width_meter;
-  xrd_window_get_width_meter (priv->button_reset,
-                              &reset_width_meter);
+  float reset_width_meter =
+    xrd_window_get_current_width_meters (priv->button_reset);
 
   button_x += reset_width_meter;
 

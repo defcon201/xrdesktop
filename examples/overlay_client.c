@@ -83,9 +83,15 @@ _head_follow_press_cb (XrdOverlayWindow        *button,
       GulkanClient *gc = xrd_client_get_uploader (self->client);
 
       float ppm = self->hawk_big->width / 0.5;
+
       self->head_follow_window =
-          xrd_client_add_window (self->client, "Head Tracked window.",
-                                 NULL, ppm,  FALSE, TRUE);
+        XRD_WINDOW (xrd_overlay_window_new_from_ppm ("Head Tracked window.",
+                                                     self->hawk_big->width,
+                                                     self->hawk_big->height,
+                                                     ppm));
+
+      xrd_client_add_window (self->client,
+                             self->head_follow_window, FALSE, TRUE);
 
       xrd_window_submit_texture (self->head_follow_window, gc, self->hawk_big);
       graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
@@ -119,18 +125,19 @@ _init_windows (Example *self)
           // a window should have ~0.5 meter
           float ppm = self->hawk_big->width / 0.5;
           XrdWindow *window =
-              xrd_client_add_window (self->client, "A window.", NULL,
-                                     ppm, FALSE, FALSE);
+            XRD_WINDOW (xrd_overlay_window_new_from_ppm ("A window.",
+                                                         self->hawk_big->width,
+                                                         self->hawk_big->height,
+                                                         ppm));
+
+          xrd_client_add_window (self->client, window, FALSE, FALSE);
           self->windows = g_slist_append (self->windows, window);
 
           xrd_window_submit_texture (window, gc, self->hawk_big);
 
-          float window_width;
-          xrd_window_get_width_meter (window, &window_width);
-          window_x += window_width;
+          window_x += xrd_window_get_current_width_meters (window);
 
-          float window_height;
-          xrd_window_get_height_meter (window, &window_height);
+          float window_height = xrd_window_get_current_height_meters (window);
           if (window_height > max_window_height)
             max_window_height = window_height;
 
@@ -151,8 +158,12 @@ _init_windows (Example *self)
               GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg");
               float ppm = cat_small->width / 0.25;
               XrdWindow *child =
-                  xrd_client_add_window (self->client, "A child.", NULL,
-                                         ppm, TRUE, FALSE);
+                XRD_WINDOW (xrd_overlay_window_new_from_ppm ("A child.",
+                                                             cat_small->width,
+                                                             cat_small->height,
+                                                             ppm));
+
+              xrd_client_add_window (self->client, child, TRUE, FALSE);
               self->windows = g_slist_append (self->windows, child);
 
               xrd_window_submit_texture (child, gc, cat_small);

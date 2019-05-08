@@ -62,15 +62,6 @@ struct _XrdWindowInterface
                      GulkanClient *client,
                      GulkanTexture *texture);
 
-  float
-  (*pixel_to_meter) (XrdWindow *self, int pixel);
-
-  gboolean
-  (*get_width_meter) (XrdWindow *self, float *meters);
-
-  gboolean
-  (*get_height_meter) (XrdWindow *self, float *meters);
-
   void
   (*poll_event) (XrdWindow *self);
 
@@ -143,7 +134,8 @@ typedef struct XrdWindowData
   uint32_t texture_height;
   GString *title;
 
-  float ppm;
+  graphene_point_t initial_size_meters;
+
   float scale;
   graphene_matrix_t vr_transform;
 
@@ -165,15 +157,6 @@ void
 xrd_window_submit_texture (XrdWindow    *self,
                            GulkanClient *client,
                            GulkanTexture *texture);
-
-float
-xrd_window_pixel_to_meter (XrdWindow *self, int pixel);
-
-gboolean
-xrd_window_get_width_meter (XrdWindow *self, float *meters);
-
-gboolean
-xrd_window_get_height_meter (XrdWindow *self, float *meters);
 
 void
 xrd_window_poll_event (XrdWindow *self);
@@ -233,10 +216,10 @@ xrd_window_set_flip_y (XrdWindow *self,
                        gboolean flip_y);
 
 float
-xrd_window_get_scale (XrdWindow *self);
+xrd_window_get_current_ppm (XrdWindow *self);
 
 float
-xrd_window_get_ppm (XrdWindow *self);
+xrd_window_get_initial_ppm (XrdWindow *self);
 
 void
 xrd_window_set_hidden (XrdWindow *self,
@@ -245,11 +228,11 @@ xrd_window_set_hidden (XrdWindow *self,
 gboolean
 xrd_window_get_hidden (XrdWindow *self);
 
-uint32_t
-xrd_window_get_texture_width (XrdWindow *self);
+float
+xrd_window_get_current_width_meters (XrdWindow *self);
 
-uint32_t
-xrd_window_get_texture_height (XrdWindow *self);
+float
+xrd_window_get_current_height_meters (XrdWindow *self);
 
 G_END_DECLS
 

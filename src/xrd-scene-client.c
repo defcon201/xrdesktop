@@ -116,6 +116,14 @@ _action_hand_pose_cb (OpenVRAction        *action,
                       OpenVRPoseEvent     *event,
                       XrdClientController *controller);
 
+gboolean
+xrd_scene_client_add_button (XrdSceneClient     *self,
+                             XrdWindow         **button,
+                             gchar              *label,
+                             graphene_point3d_t *position,
+                             GCallback           press_callback,
+                             gpointer            press_callback_data);
+
 static void
 xrd_scene_client_class_init (XrdSceneClientClass *klass)
 {
@@ -124,8 +132,6 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
   object_class->finalize = xrd_scene_client_finalize;
 
   XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
-  xrd_client_class->add_window =
-      (void*) xrd_scene_client_add_window;
   xrd_client_class->add_button =
       (void*) xrd_scene_client_add_button;
   xrd_client_class->get_uploader =
@@ -948,26 +954,6 @@ _init_graphics_pipelines (XrdSceneClient *self)
 }
 
 /* Inheritance overwrites from XrdClient */
-
-XrdOverlayWindow *
-xrd_scene_client_add_window (XrdSceneClient *self,
-                             const char     *title,
-                             gpointer        native,
-                             float           ppm,
-                             gboolean        is_child,
-                             gboolean        follow_head)
-{
-  (void) self;
-  (void) title;
-  (void) native;
-  (void) ppm;
-  (void) is_child;
-  (void) follow_head;
-
-  g_warning ("stub: xrd_scene_client_add_window\n");
-  return NULL;
-}
-
 gboolean
 xrd_scene_client_add_button (XrdSceneClient     *self,
                              XrdWindow         **button,

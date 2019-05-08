@@ -13,11 +13,12 @@
 enum
 {
   PROP_TITLE = 1,
-  PROP_PPM,
   PROP_SCALE,
   PROP_NATIVE,
   PROP_TEXTURE_WIDTH,
   PROP_TEXTURE_HEIGHT,
+  PROP_WIDTH_METERS,
+  PROP_HEIGHT_METERS,
   N_PROPERTIES
 };
 
@@ -42,9 +43,6 @@ xrd_scene_window_set_property (GObject      *object,
         g_string_free (self->window_data.title, TRUE);
       self->window_data.title = g_string_new (g_value_get_string (value));
       break;
-    case PROP_PPM:
-      self->window_data.ppm = g_value_get_float (value);
-      break;
     case PROP_SCALE:
       self->window_data.scale = g_value_get_float (value);
       break;
@@ -56,6 +54,12 @@ xrd_scene_window_set_property (GObject      *object,
       break;
     case PROP_TEXTURE_HEIGHT:
       self->window_data.texture_height = g_value_get_uint (value);
+      break;
+    case PROP_WIDTH_METERS:
+      self->window_data.initial_size_meters.x = g_value_get_float (value);
+      break;
+    case PROP_HEIGHT_METERS:
+      self->window_data.initial_size_meters.y = g_value_get_float (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -76,9 +80,6 @@ xrd_scene_window_get_property (GObject    *object,
     case PROP_TITLE:
       g_value_set_string (value, self->window_data.title->str);
       break;
-    case PROP_PPM:
-      g_value_set_float (value, self->window_data.ppm);
-      break;
     case PROP_SCALE:
       g_value_set_float (value, self->window_data.scale);
       break;
@@ -90,6 +91,12 @@ xrd_scene_window_get_property (GObject    *object,
       break;
     case PROP_TEXTURE_HEIGHT:
       g_value_set_uint (value, self->window_data.texture_height);
+      break;
+    case PROP_WIDTH_METERS:
+      g_value_set_float (value, self->window_data.initial_size_meters.x);
+      break;
+    case PROP_HEIGHT_METERS:
+      g_value_set_float (value, self->window_data.initial_size_meters.y);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -111,11 +118,12 @@ xrd_scene_window_class_init (XrdSceneWindowClass *klass)
   object_class->get_property = xrd_scene_window_get_property;
 
   g_object_class_override_property (object_class, PROP_TITLE, "title");
-  g_object_class_override_property (object_class, PROP_PPM, "ppm");
   g_object_class_override_property (object_class, PROP_SCALE, "scale");
   g_object_class_override_property (object_class, PROP_NATIVE, "native");
   g_object_class_override_property (object_class, PROP_TEXTURE_WIDTH, "texture-width");
   g_object_class_override_property (object_class, PROP_TEXTURE_HEIGHT, "texture-height");
+  g_object_class_override_property (object_class, PROP_WIDTH_METERS, "initial-width-meters");
+  g_object_class_override_property (object_class, PROP_HEIGHT_METERS, "initial-height-meters");
 }
 
 static void

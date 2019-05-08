@@ -37,8 +37,13 @@ main ()
 
   XrdWindow *xrd_window = XRD_WINDOW (window);
 
-  uint32_t texture_width = xrd_window_get_texture_width (xrd_window);
-  uint32_t texture_height = xrd_window_get_texture_height (xrd_window);
+  uint32_t texture_width;
+  uint32_t texture_height;
+
+  g_object_get (xrd_window,
+                "texture-width", &texture_width,
+                "texture-height", &texture_height,
+                NULL);
 
   g_print ("XrdWindow texture dimensions %dx%d\n", texture_width, texture_height);
 

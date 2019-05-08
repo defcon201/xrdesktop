@@ -60,8 +60,6 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
   object_class->finalize = xrd_overlay_client_finalize;
 
   XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
-  xrd_client_class->add_window =
-      (void*) xrd_overlay_client_add_window;
   xrd_client_class->add_button =
       (void*) xrd_overlay_client_add_button;
   xrd_client_class->get_uploader =
@@ -116,7 +114,8 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
                                            VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_cairo_surface (client, texture, surface);
 
-  XrdOverlayWindow *window = xrd_overlay_window_new_from_ppm (label, ppm);
+  XrdOverlayWindow *window =
+    xrd_overlay_window_new_from_ppm (label, width, height, ppm);
   if (window == NULL)
     return FALSE;
 
@@ -141,35 +140,6 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   xrd_window_manager_set_pin (manager, XRD_WINDOW (window), TRUE);
 
   return TRUE;
-}
-
-XrdOverlayWindow *
-xrd_overlay_client_add_window (XrdOverlayClient *self,
-                               const char       *title,
-                               gpointer          native,
-                               float             ppm,
-                               gboolean          is_child,
-                               gboolean          follow_head)
-{
-  XrdOverlayWindow *window =
-    xrd_overlay_window_new_from_native (title, native, ppm);
-
-  XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
-
-  /* User can't drag child windows, they are attached to the parent.
-   * The child window's position is managed by its parent, not the WM. */
-  if (!is_child && !follow_head)
-    flags |= XRD_WINDOW_DRAGGABLE | XRD_WINDOW_MANAGED;
-
-  if (follow_head)
-      flags |= XRD_WINDOW_FOLLOW_HEAD;
-
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-  xrd_window_manager_add_window (manager, XRD_WINDOW (window), flags);
-
-  xrd_client_add_window_callbacks (XRD_CLIENT (self), XRD_WINDOW (window));
-
-  return window;
 }
 
 static void

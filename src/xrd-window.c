@@ -137,16 +137,6 @@ xrd_window_default_init (XrdWindowInterface *iface)
   g_object_interface_install_property (iface, pspec);
 
   pspec =
-    g_param_spec_float ("ppm",
-                       "Pixels Per Meter",
-                       "Pixels Per Meter Setting of this Window.",
-                       0.  /* minimum value */,
-                       16384. /* maximum value */,
-                       450.  /* default value */,
-                       G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
-  g_object_interface_install_property (iface, pspec);
-
-  pspec =
     g_param_spec_float ("scale",
                        "Scaling Factor",
                        "Scaling Factor of this Window.",
@@ -181,6 +171,26 @@ xrd_window_default_init (XrdWindowInterface *iface)
                        0,
                        32768,
                        0,
+                       G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  g_object_interface_install_property (iface, pspec);
+
+  pspec =
+    g_param_spec_float ("initial-width-meters",
+                       "Initial width (meters)",
+                       "Initial window width in meters.",
+                       0.01f,
+                       1000.0f,
+                       1.0f,
+                       G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  g_object_interface_install_property (iface, pspec);
+
+  pspec =
+    g_param_spec_float ("initial-height-meters",
+                       "Initial height (meters)",
+                       "Initial window height in meters.",
+                       0.01f,
+                       1000.0f,
+                       1.0f,
                        G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_interface_install_property (iface, pspec);
 
@@ -219,85 +229,75 @@ xrd_window_submit_texture (XrdWindow *self,
 }
 
 float
-xrd_window_get_scale (XrdWindow *self)
+xrd_window_get_current_ppm (XrdWindow *self)
 {
-  GValue val = G_VALUE_INIT;
-  g_value_init (&val, G_TYPE_FLOAT);
-  g_object_get_property (G_OBJECT (self), "scale", &val);
-  return g_value_get_float (&val);
+  guint texture_width;
+  gfloat width_meters;
+  gfloat scale;
+
+  g_object_get (self,
+                "texture-width", &texture_width,
+                "initial-width-meters", &width_meters,
+                "scale", &scale,
+                NULL);
+
+  return (float) texture_width / (width_meters * scale);
 }
 
 float
-xrd_window_get_ppm (XrdWindow *self)
+xrd_window_get_initial_ppm (XrdWindow *self)
 {
-  GValue val = G_VALUE_INIT;
-  g_value_init (&val, G_TYPE_FLOAT);
-  g_object_get_property (G_OBJECT (self), "ppm", &val);
-  return g_value_get_float (&val);
-}
+  guint texture_width;
+  gfloat width_meters;
 
-uint32_t
-xrd_window_get_texture_width (XrdWindow *self)
-{
-  GValue val = G_VALUE_INIT;
-  g_value_init (&val, G_TYPE_UINT);
-  g_object_get_property (G_OBJECT (self), "texture-width", &val);
-  return g_value_get_uint (&val);
-}
+  g_object_get (self,
+                "texture-width", &texture_width,
+                "initial-width-meters", &width_meters,
+                NULL);
 
-uint32_t
-xrd_window_get_texture_height (XrdWindow *self)
-{
-  GValue val = G_VALUE_INIT;
-  g_value_init (&val, G_TYPE_UINT);
-  g_object_get_property (G_OBJECT (self), "texture-height", &val);
-  return g_value_get_uint (&val);
+  return (float) texture_width / width_meters;
 }
 
 /**
- * xrd_window_pixel_to_meter:
+ * xrd_window_get_current_width_meters:
  * @self: The #XrdWindow
- * @pixel: The amount of pixels to convert to meter.
+ * @meters: The current width of the #XrdWindow in meters.
  *
- * Returns: How many meter in world space the amount of pixels occupy, based
- * on the current ppm and scaling setting of this window.
+ * Returns: The current world space width of the window in meters.
  */
 float
-xrd_window_pixel_to_meter (XrdWindow *self, int pixel)
+xrd_window_get_current_width_meters (XrdWindow *self)
 {
-  float ppm = xrd_window_get_ppm (self);
-  float scaling_factor = xrd_window_get_scaling_factor (self);
-  return (float) pixel / ppm * scaling_factor;
+  float initial_width_meters;
+  float scale;
+
+  g_object_get (self,
+                "scale", &scale,
+                "initial-width-meters", &initial_width_meters,
+                NULL);
+
+  return initial_width_meters * scale;
 }
 
 /**
- * xrd_window_get_width_meter:
+ * xrd_window_get_current_height_meters:
  * @self: The #XrdWindow
- * @meters: The width of the #XrdWindow in meters.
- *
- * Returns: The current world space width of the window in meter.
- */
-gboolean
-xrd_window_get_width_meter (XrdWindow *self, float *meters)
-{
-  *meters = xrd_window_pixel_to_meter (self,
-                                       xrd_window_get_texture_width (self));
-  return TRUE;
-}
-
-/**
- * xrd_window_get_height_meter:
- * @self: The #XrdWindow
- * @meters: The height of the #XrdWindow in meter.
+ * @meters: The current height of the #XrdWindow in meter.
  *
  * Returns: The current world space height of the window in meter.
  */
-gboolean
-xrd_window_get_height_meter (XrdWindow *self, float *meters)
+float
+xrd_window_get_current_height_meters (XrdWindow *self)
 {
-  *meters = xrd_window_pixel_to_meter (self,
-                                       xrd_window_get_texture_height (self));
-  return TRUE;
+  float initial_height_meters;
+  float scale;
+
+  g_object_get (self,
+                "scale", &scale,
+                "initial-height-meters", &initial_height_meters,
+                NULL);
+
+  return initial_height_meters * scale;
 }
 
 /**

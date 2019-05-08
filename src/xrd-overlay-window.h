@@ -26,11 +26,22 @@ XrdOverlayWindow *
 xrd_overlay_window_new (const gchar *title);
 
 XrdOverlayWindow *
-xrd_overlay_window_new_from_ppm (const gchar *title, float ppm);
+xrd_overlay_window_new_from_meters (const gchar *title,
+                                    float        width_meters,
+                                    float        height_meters);
+
+XrdOverlayWindow *
+xrd_overlay_window_new_from_ppm (const gchar *title,
+                                 uint32_t     width_pixels,
+                                 uint32_t     height_pixels,
+                                 float        ppm);
 
 XrdOverlayWindow *
 xrd_overlay_window_new_from_native (const gchar *title,
-                                    gpointer native, float ppm);
+                                    gpointer     native,
+                                    uint32_t     width_pixels,
+                                    uint32_t     height_pixels,
+                                    float        ppm);
 
 gboolean
 xrd_overlay_window_set_transformation_matrix (XrdOverlayWindow *self,

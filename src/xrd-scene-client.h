@@ -23,7 +23,6 @@
 #include <gulkan-vertex-buffer.h>
 #include <gulkan-uniform-buffer.h>
 
-
 #include "xrd-scene-device.h"
 #include "xrd-scene-device-manager.h"
 #include "xrd-scene-window.h"
@@ -47,24 +46,6 @@ void xrd_scene_client_render (XrdSceneClient *self);
 void
 xrd_scene_client_add_scene_window (XrdSceneClient *self,
                                    XrdSceneWindow *window);
-
-/* Inheritance overwrites from XrdClient */
-
-XrdOverlayWindow *
-xrd_scene_client_add_window (XrdSceneClient *self,
-                             const char     *title,
-                             gpointer        native,
-                             float           ppm,
-                             gboolean        is_child,
-                             gboolean        follow_head);
-
-gboolean
-xrd_scene_client_add_button (XrdSceneClient     *self,
-                             XrdWindow         **button,
-                             gchar              *label,
-                             graphene_point3d_t *position,
-                             GCallback           press_callback,
-                             gpointer            press_callback_data);
 
 GulkanClient *
 xrd_scene_client_get_uploader (XrdSceneClient *self);

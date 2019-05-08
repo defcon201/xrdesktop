@@ -127,7 +127,8 @@ xrd_shake_compensator_is_drag (XrdShakeCompensator *self,
   graphene_point_t *p = g_queue_peek_head (self->queue);
 
   float dist_pixel = graphene_point_distance (start, p, 0, 0);
-  float dist_meter = xrd_window_pixel_to_meter (window, dist_pixel);
+
+  float dist_meter = dist_pixel / xrd_window_get_current_ppm (window);
 
   variance_meter = fmax (dist_meter, variance_meter);
 

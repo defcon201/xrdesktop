@@ -313,10 +313,12 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              graphene_matrix_t *controller_pose,
                              graphene_point3d_t *intersection)
 {
-  XrdPixelSize pixel_size = {
-    .width = xrd_window_get_texture_width (window),
-    .height = xrd_window_get_texture_height (window)
-  };
+  XrdPixelSize pixel_size;
+  g_object_get (window,
+                "texture-width", &pixel_size.width,
+                "texture-height", &pixel_size.height,
+                NULL);
+
   graphene_point_t position;
   if (!xrd_window_intersection_to_pixels (window, intersection,
                                           &pixel_size, &position))

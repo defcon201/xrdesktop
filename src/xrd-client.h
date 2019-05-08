@@ -35,14 +35,6 @@ struct _XrdClientClass
 {
   GObjectClass parent;
 
-  XrdWindow *
-  (*add_window) (XrdClient  *self,
-                 const char *title,
-                 gpointer    native,
-                 float        ppm,
-                 gboolean    is_child,
-                 gboolean    follow_head);
-
   gboolean
   (*add_button) (XrdClient          *self,
                  XrdWindow         **button,
@@ -57,13 +49,12 @@ struct _XrdClientClass
 
 XrdClient *xrd_client_new (void);
 
-XrdWindow *
-xrd_client_add_window (XrdClient  *self,
-                       const char *title,
-                       gpointer    native,
-                       float       ppm,
-                       gboolean    is_child,
-                       gboolean    follow_head);
+void
+xrd_client_add_window (XrdClient *self,
+                       XrdWindow *window,
+                       gboolean   is_child,
+                       gboolean   follow_head);
+
 void
 xrd_client_remove_window (XrdClient *self,
                           XrdWindow *window);
