@@ -120,6 +120,8 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   for (int i = 0; i < label_count; i++)
     {
       g_string_append (full_label, label[i]);
+      if (i < label_count - 1)
+        g_string_append (full_label, " ");
     }
 
   XrdOverlayWindow *window =
