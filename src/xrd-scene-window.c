@@ -339,6 +339,12 @@ xrd_scene_window_set_transformation (XrdSceneWindow    *self,
                                      graphene_matrix_t *mat)
 {
   xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), mat);
+
+  float height_meters =
+    xrd_window_get_current_height_meters (XRD_WINDOW (self));
+
+  xrd_scene_object_set_scale (XRD_SCENE_OBJECT (self), height_meters);
+
   return TRUE;
 }
 
