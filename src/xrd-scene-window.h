@@ -41,15 +41,12 @@ XrdSceneWindow *xrd_scene_window_new (void);
 
 bool
 xrd_scene_window_init_texture (XrdSceneWindow *self,
-                               GulkanDevice   *device,
-                               VkCommandBuffer cmd_buffer,
                                GdkPixbuf      *pixbuf);
 
 gboolean
 xrd_scene_window_initialize (XrdSceneWindow        *self,
                              GulkanDevice          *device,
                              VkDescriptorSetLayout *layout);
-
 
 void
 xrd_scene_window_draw (XrdSceneWindow    *self,

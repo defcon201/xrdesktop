@@ -158,25 +158,33 @@ xrd_scene_window_finalize (GObject *gobject)
 
 bool
 xrd_scene_window_init_texture (XrdSceneWindow *self,
-                               GulkanDevice   *device,
-                               VkCommandBuffer cmd_buffer,
                                GdkPixbuf      *pixbuf)
 {
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+
+
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->device = device;
+  obj->device = GULKAN_CLIENT (renderer)->device;
 
   uint32_t mip_levels;
 
   self->aspect_ratio = (float) gdk_pixbuf_get_width (pixbuf) /
                        (float) gdk_pixbuf_get_height (pixbuf);
 
+  FencedCommandBuffer cmd_buffer;
+  if (!gulkan_client_begin_res_cmd_buffer (GULKAN_CLIENT (renderer), &cmd_buffer))
+    {
+      g_printerr ("Could not begin command buffer.\n");
+      return false;
+    }
+
   self->texture = gulkan_texture_new_from_pixbuf_mipmapped (
-      device, cmd_buffer, pixbuf,
+      GULKAN_CLIENT (renderer)->device, cmd_buffer.cmd_buffer, pixbuf,
       &mip_levels, VK_FORMAT_R8G8B8A8_UNORM);
 
   gulkan_texture_transfer_layout_mips (self->texture,
-                                       device,
-                                       cmd_buffer,
+                                       GULKAN_CLIENT (renderer)->device,
+                                       cmd_buffer.cmd_buffer,
                                        mip_levels,
                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -194,7 +202,14 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
     .maxLod = (float) mip_levels
   };
 
-  vkCreateSampler (device->device, &sampler_info, NULL, &self->sampler);
+  vkCreateSampler (GULKAN_CLIENT (renderer)->device->device,
+                   &sampler_info, NULL, &self->sampler);
+
+  if (!gulkan_client_submit_res_cmd_buffer (GULKAN_CLIENT (renderer), &cmd_buffer))
+    {
+      g_printerr ("Could not submit command buffer.\n");
+      return false;
+    }
 
   return true;
 }

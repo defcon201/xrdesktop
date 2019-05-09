@@ -80,16 +80,8 @@ _init_windows (Example *self)
 
   GulkanClient *client = xrd_client_get_uploader (XRD_CLIENT (self->client));
 
-  FencedCommandBuffer cmd_buffer;
-  if (!gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer))
-    {
-      g_printerr ("Could not begin command buffer.\n");
-      return false;
-    }
-
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
-    if (!xrd_scene_window_init_texture (self->windows[i], client->device,
-                                        cmd_buffer.cmd_buffer,
+    if (!xrd_scene_window_init_texture (self->windows[i],
                                         pixbufs[i % G_N_ELEMENTS (pixbufs)]))
       return FALSE;
 
@@ -117,12 +109,6 @@ _init_windows (Example *self)
       xrd_scene_object_set_rotation_euler (obj, &rotation);
 
       xrd_scene_client_add_scene_window (self->client, self->windows[i]);
-    }
-
-  if (!gulkan_client_submit_res_cmd_buffer (client, &cmd_buffer))
-    {
-      g_printerr ("Could not submit command buffer.\n");
-      return false;
     }
 
   return TRUE;
