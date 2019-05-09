@@ -79,7 +79,8 @@ _action_hand_pose_cb (OpenVRAction        *action,
 gboolean
 xrd_scene_client_add_button (XrdSceneClient     *self,
                              XrdWindow         **button,
-                             gchar              *label,
+                             int                 label_count,
+                             gchar             **label,
                              graphene_point3d_t *position,
                              GCallback           press_callback,
                              gpointer            press_callback_data);
@@ -512,19 +513,58 @@ _get_view_projection_matrix (XrdSceneClient *self, EVREye eye)
 gboolean
 xrd_scene_client_add_button (XrdSceneClient     *self,
                              XrdWindow         **button,
-                             gchar              *label,
+                             int                 label_count,
+                             gchar             **label,
                              graphene_point3d_t *position,
                              GCallback           press_callback,
                              gpointer            press_callback_data)
 {
-  (void) self;
-  (void) button;
-  (void) label;
-  (void) position;
-  (void) press_callback;
-  (void) press_callback_data;
+  graphene_matrix_t transform;
+  graphene_matrix_init_translate (&transform, position);
 
-  g_warning ("stub: xrd_scene_client_add_button\n");
+  int width = 220;
+  int height = 220;
+  int ppm = 450;
+
+  GulkanClient *client = GULKAN_CLIENT (xrd_scene_renderer_get_instance ());
+
+  GString *full_label = g_string_new ("");
+  for (int i = 0; i < label_count; i++)
+    {
+      g_string_append (full_label, label[i]);
+      if (i < label_count - 1)
+        g_string_append (full_label, " ");
+    }
+
+  XrdWindow *window =
+    XRD_WINDOW (xrd_scene_window_new_from_ppm (full_label->str,
+                                               width, height, ppm));
+
+  g_string_free (full_label, FALSE);
+
+  if (window == NULL)
+    return FALSE;
+
+  xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+
+  xrd_button_set_text (window, client, label_count, label);
+
+  *button = window;
+
+  xrd_window_set_transformation (window, &transform);
+
+  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+  xrd_window_manager_add_window (manager,
+                                 *button,
+                                 XRD_WINDOW_HOVERABLE |
+                                 XRD_WINDOW_DESTROY_WITH_PARENT |
+                                 XRD_WINDOW_MANAGER_BUTTON);
+
+  g_signal_connect (window, "grab-start-event",
+                    (GCallback) press_callback, press_callback_data);
+
+  xrd_client_add_button_callbacks (XRD_CLIENT (self), window);
+
   return TRUE;
 }
 
