@@ -43,10 +43,6 @@ bool xrd_scene_client_initialize (XrdSceneClient *self);
 
 void xrd_scene_client_render (XrdSceneClient *self);
 
-void
-xrd_scene_client_add_scene_window (XrdSceneClient *self,
-                                   XrdSceneWindow *window);
-
 GulkanClient *
 xrd_scene_client_get_uploader (XrdSceneClient *self);
 

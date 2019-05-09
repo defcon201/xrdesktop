@@ -48,8 +48,6 @@ struct _XrdSceneClient
 
   XrdClientController controllers[2];
 
-  GSList *windows;
-
   GHashTable *pointers; // int -> XrdScenePointer
 
   XrdSceneBackground *background;
@@ -123,8 +121,6 @@ xrd_scene_client_init (XrdSceneClient *self)
     self->debug_vectors[i] = xrd_scene_vector_new ();
 #endif
 
-  self->windows = NULL;
-
   self->pointers = g_hash_table_new_full (g_int_hash, g_int_equal,
                                           g_free, g_object_unref);
 
@@ -156,8 +152,6 @@ xrd_scene_client_finalize (GObject *gobject)
 
   g_object_unref (self->device_manager);
   g_hash_table_unref (self->pointers);
-
-  g_slist_free_full (self->windows, g_object_unref);
 
   g_object_unref (self->background);
 
@@ -274,9 +268,12 @@ _render_eye_cb (uint32_t         eye,
 
   graphene_matrix_t vp = _get_view_projection_matrix (self, eye);
 
-  for (GSList *l = self->windows; l != NULL; l = l->next)
+  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+
+  for (GSList *l = xrd_window_manager_get_windows (manager);
+       l != NULL; l = l->next)
     {
-      XrdSceneWindow *window = (XrdSceneWindow *) l->data;
+      XrdSceneWindow *window = XRD_SCENE_WINDOW (l->data);
       xrd_scene_window_draw (window, eye,
                              pipelines[PIPELINE_WINDOWS],
                              pipeline_layout,
@@ -418,13 +415,6 @@ _init_device_models (XrdSceneClient *self)
 }
 
 void
-xrd_scene_client_add_scene_window (XrdSceneClient *self,
-                                   XrdSceneWindow *window)
-{
-  self->windows = g_slist_append (self->windows, window);
-}
-
-void
 _test_intersection (XrdSceneClient *self)
 {
   GList *pointers = g_hash_table_get_values (self->pointers);
@@ -437,7 +427,10 @@ _test_intersection (XrdSceneClient *self)
       float lowest_distance = FLT_MAX;
       XrdSceneWindow *selected_window = NULL;
 
-      for (GSList *l = self->windows; l != NULL; l = l->next)
+      XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+
+      for (GSList *l = xrd_window_manager_get_windows (manager);
+           l != NULL; l = l->next)
         {
           XrdSceneWindow *window = (XrdSceneWindow *) l->data;
 

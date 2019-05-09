@@ -104,7 +104,8 @@ _init_windows (Example *self)
       graphene_euler_init (&rotation, i * 15.0f, 20.0f, 5.0f);
       xrd_scene_object_set_rotation_euler (obj, &rotation);
 
-      xrd_scene_client_add_scene_window (self->client, self->windows[i]);
+      xrd_client_add_window (XRD_CLIENT (self->client),
+                             XRD_WINDOW (self->windows[i]), FALSE, FALSE);
     }
 
   return TRUE;
