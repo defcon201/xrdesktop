@@ -136,10 +136,56 @@ xrd_scene_window_init (XrdSceneWindow *self)
 }
 
 XrdSceneWindow *
-xrd_scene_window_new (void)
+xrd_scene_window_new (const gchar *title)
 {
-  return (XrdSceneWindow*) g_object_new (XRD_TYPE_SCENE_WINDOW, 0);
+  return (XrdSceneWindow*) g_object_new (XRD_TYPE_SCENE_WINDOW,
+                                         "title", title, NULL);
 }
+
+XrdSceneWindow *
+xrd_scene_window_new_from_meters (const gchar *title,
+                                  float        width_meters,
+                                  float        height_meters)
+{
+  XrdSceneWindow *window = xrd_scene_window_new (title);
+  g_object_set (window,
+                "initial-width-meters", width_meters,
+                "initial-height-meters", height_meters,
+                NULL);
+  return window;
+}
+
+XrdSceneWindow *
+xrd_scene_window_new_from_ppm (const gchar *title,
+                               uint32_t     width_pixels,
+                               uint32_t     height_pixels,
+                               float        ppm)
+{
+  XrdSceneWindow *window = xrd_scene_window_new (title);
+  g_object_set (window,
+                "texture-width", width_pixels,
+                "texture-height", height_pixels,
+                "initial-width-meters", width_pixels / ppm,
+                "initial-height-meters", height_pixels / ppm,
+                NULL);
+  return window;
+}
+
+XrdSceneWindow *
+xrd_scene_window_new_from_native (const gchar *title,
+                                  gpointer     native,
+                                  uint32_t     width_pixels,
+                                  uint32_t     height_pixels,
+                                  float        ppm)
+{
+  XrdSceneWindow *window = xrd_scene_window_new_from_ppm (title,
+                                                          width_pixels,
+                                                          height_pixels,
+                                                          ppm);
+  g_object_set (window, "native", native, NULL);
+  return window;
+}
+
 
 static void
 xrd_scene_window_finalize (GObject *gobject)

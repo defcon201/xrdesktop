@@ -37,7 +37,25 @@ struct _XrdSceneWindow
   XrdWindowData window_data;
 };
 
-XrdSceneWindow *xrd_scene_window_new (void);
+XrdSceneWindow *xrd_scene_window_new (const gchar *title);
+
+XrdSceneWindow *
+xrd_scene_window_new_from_meters (const gchar *title,
+                                  float        width_meters,
+                                  float        height_meters);
+
+XrdSceneWindow *
+xrd_scene_window_new_from_ppm (const gchar *title,
+                               uint32_t     width_pixels,
+                               uint32_t     height_pixels,
+                               float        ppm);
+
+XrdSceneWindow *
+xrd_scene_window_new_from_native (const gchar *title,
+                                  gpointer     native,
+                                  uint32_t     width_pixels,
+                                  uint32_t     height_pixels,
+                                  float        ppm);
 
 bool
 xrd_scene_window_init_texture (XrdSceneWindow *self,
