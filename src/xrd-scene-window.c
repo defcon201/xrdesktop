@@ -359,7 +359,15 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
 
   uint32_t mip_levels = 1;
 
-  self->aspect_ratio = (float) texture->width / (float) texture->height;
+  float aspect_ratio = (float) texture->width / (float) texture->height;
+
+  if (self->aspect_ratio != aspect_ratio)
+    {
+      self->aspect_ratio = aspect_ratio;
+      gulkan_vertex_buffer_reset (self->vertex_buffer);
+      _append_plane (self->vertex_buffer, self->aspect_ratio);
+      gulkan_vertex_buffer_map_array (self->vertex_buffer);
+    }
 
   self->texture = texture;
 
