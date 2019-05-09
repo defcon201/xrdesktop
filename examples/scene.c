@@ -78,8 +78,6 @@ _init_windows (Example *self)
     if (!pixbufs[i])
       return FALSE;
 
-  GulkanClient *client = xrd_client_get_uploader (XRD_CLIENT (self->client));
-
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     if (!xrd_scene_window_init_texture (self->windows[i],
                                         pixbufs[i % G_N_ELEMENTS (pixbufs)]))
@@ -90,9 +88,7 @@ _init_windows (Example *self)
 
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->windows); i++)
     {
-      xrd_scene_window_initialize (self->windows[i],
-                                   client->device,
-                                   xrd_scene_client_get_descriptor_set_layout (self->client));
+      xrd_scene_window_initialize (self->windows[i]);
 
       graphene_point3d_t position = {
         -1, //i / 2.0f - 1,

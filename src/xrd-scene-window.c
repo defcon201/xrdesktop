@@ -162,7 +162,6 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
 {
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
-
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   obj->device = GULKAN_CLIENT (renderer)->device;
 
@@ -223,17 +222,20 @@ void _append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
 }
 
 gboolean
-xrd_scene_window_initialize (XrdSceneWindow        *self,
-                             GulkanDevice          *device,
-                             VkDescriptorSetLayout *layout)
+xrd_scene_window_initialize (XrdSceneWindow *self)
 {
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
   _append_plane (self->vertex_buffer, self->aspect_ratio);
   if (!gulkan_vertex_buffer_alloc_array (self->vertex_buffer, obj->device))
     return FALSE;
 
-  if (!xrd_scene_object_initialize (obj, device, layout))
+  VkDescriptorSetLayout *layout =
+    xrd_scene_renderer_get_descriptor_set_layout (renderer);
+
+  if (!xrd_scene_object_initialize (obj, GULKAN_CLIENT (renderer)->device,
+                                    layout))
     return FALSE;
 
   xrd_scene_object_update_descriptors_texture (obj, self->sampler,
