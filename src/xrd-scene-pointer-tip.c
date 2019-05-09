@@ -8,6 +8,7 @@
 #include "xrd-scene-pointer-tip.h"
 
 #include "xrd-pointer-tip.h"
+#include "xrd-math.h"
 
 static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface);
@@ -61,10 +62,14 @@ _update (XrdScenePointerTip *self,
          graphene_matrix_t  *pose,
          graphene_point3d_t *intersection_point)
 {
-  (void) self;
-  (void) pose;
-  (void) intersection_point;
-  g_warning ("stub: _update\n");
+  graphene_matrix_t transform;
+  graphene_matrix_init_from_matrix (&transform, pose);
+  xrd_math_matrix_set_translation_point (&transform, intersection_point);
+
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  xrd_scene_object_set_transformation (obj, &transform);
+
+  // xrd_overlay_pointer_tip_set_constant_width (self);
 }
 
 static void
