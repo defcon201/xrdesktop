@@ -25,6 +25,7 @@
 
 #include "xrd-scene-pointer-tip.h"
 #include "xrd-scene-renderer.h"
+#include "xrd-scene-desktop-cursor.h"
 
 #define DEBUG_GEOMETRY 0
 
@@ -132,6 +133,11 @@ xrd_scene_client_init (XrdSceneClient *self)
       self->controllers[i].self = XRD_CLIENT (self);
       self->controllers[i].index = i;
     }
+
+  XrdDesktopCursor *cursor =
+    XRD_DESKTOP_CURSOR (xrd_scene_desktop_cursor_new ());
+
+  xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 }
 
 XrdSceneClient *
