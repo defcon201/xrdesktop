@@ -115,19 +115,13 @@ xrd_client_class_init (XrdClientClass *klass)
 /**
  * xrd_client_add_window:
  * @self: The #XrdClient
- * @title: An arbitrary title for the window.
- * @native: A user pointer that should be used for associating a native window
- * struct (or wrapper) with the created #XrdWindow.
- * @ppm: The initial pixel per meter setting for this #XrdWindow.
+ * @window: The #XrdWindow to add
  * @is_child: If true, the window can not be dragged with controllers and will
  * not be otherwise managed by the window manager. For windows that have this
  * attribute set, xrd_window_add_child() should be called on a desired parent
  * window.
  * @follow_head: An #XrdWindow with this attribute will move to keep its
  * current distance from the user and will move to stay in the user's view.
- *
- * Creates an #XrdWindow, puts it under the management of the #XrdWindowManager
- * and returns it.
  */
 void
 xrd_client_add_window (XrdClient *self,
@@ -155,7 +149,8 @@ xrd_client_add_window (XrdClient *self,
  * xrd_client_add_button:
  * @self: The #XrdClient
  * @button: The button (#XrdWindow) that will be created by this function.
- * @label: Text that will be displayed on the button.
+ * @label_count: The number of text lines given in @label
+ * @label: One or more lines of text that will be displayed on the button.
  * @position: World space position of the button.
  * @press_callback: A function that will be called when the button is grabbed.
  * @press_callback_data: User pointer passed to @press_callback.
