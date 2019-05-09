@@ -94,10 +94,7 @@ static void
 _set_transformation_matrix (XrdScenePointerTip *self,
                             graphene_matrix_t  *matrix)
 {
-  (void) self;
-  (void) matrix;
-
-  g_warning ("stub: _set_transformation_matrix\n");
+  xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
 }
 
 static void
