@@ -9,6 +9,7 @@
 #include <gulkan-descriptor-set.h>
 
 #include "xrd-scene-renderer.h"
+#include "graphene-ext.h"
 
 G_DEFINE_TYPE (XrdSceneObject, xrd_scene_object, G_TYPE_OBJECT)
 
@@ -230,7 +231,12 @@ void
 xrd_scene_object_set_transformation (XrdSceneObject    *self,
                                      graphene_matrix_t *mat)
 {
-  /* TODO: Decompose matrix and store individual transformations */
+  graphene_matrix_get_rotation_quaternion (mat, &self->orientation);
+  graphene_matrix_get_translation_point3d (mat, &self->position);
+
+  // graphene_vec3_t scale;
+  // graphene_matrix_get_scale (mat, &scale);
+
   graphene_matrix_init_from_matrix (&self->model_matrix, mat);
 }
 
