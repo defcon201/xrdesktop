@@ -116,23 +116,24 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
         g_string_append (full_label, " ");
     }
 
-  XrdOverlayWindow *window =
-    xrd_overlay_window_new_from_ppm (full_label->str, width, height, ppm);
+  XrdWindow *window =
+    XRD_WINDOW (xrd_overlay_window_new_from_ppm (full_label->str,
+                                                 width, height, ppm));
 
   g_string_free (full_label, FALSE);
 
   if (window == NULL)
     return FALSE;
 
-  xrd_window_submit_texture (XRD_WINDOW (window), client, texture);
+  xrd_window_submit_texture (window, client, texture);
 
-  *button = XRD_WINDOW (window);
+  *button = window;
 
-  xrd_window_set_transformation (XRD_WINDOW (window), &transform);
+  xrd_window_set_transformation (window, &transform);
 
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
   xrd_window_manager_add_window (manager,
-                                 XRD_WINDOW (*button),
+                                 *button,
                                  XRD_WINDOW_HOVERABLE |
                                  XRD_WINDOW_DESTROY_WITH_PARENT |
                                  XRD_WINDOW_MANAGER_BUTTON);
@@ -140,8 +141,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   g_signal_connect (window, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);
 
-  xrd_client_add_button_callbacks (XRD_CLIENT (self),
-                                   XRD_WINDOW (window));
+  xrd_client_add_button_callbacks (XRD_CLIENT (self), window);
 
   return TRUE;
 }
