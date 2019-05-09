@@ -98,15 +98,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   int height = 220;
   int ppm = 450;
 
-  unsigned char image[4 * width * height];
-  cairo_surface_t* surface =
-      xrd_client_create_button_surface (image, width, height, label_count, label);
-
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
-  GulkanTexture *texture =
-    gulkan_texture_new_from_cairo_surface (client->device, surface,
-                                           VK_FORMAT_R8G8B8A8_UNORM);
-  gulkan_client_upload_cairo_surface (client, texture, surface);
 
   GString *full_label = g_string_new ("");
   for (int i = 0; i < label_count; i++)
@@ -125,7 +117,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   if (window == NULL)
     return FALSE;
 
-  xrd_window_submit_texture (window, client, texture);
+  xrd_button_set_text (window, client, label_count, label);
 
   *button = window;
 

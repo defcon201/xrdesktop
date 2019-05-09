@@ -172,6 +172,12 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
                                   uint32_t height, int lines,
                                   gchar *const *text);
 
+void
+xrd_button_set_text (XrdWindow    *button,
+                     GulkanClient *client,
+                     int           label_count,
+                     gchar       **label);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_CLIENT_H_ */

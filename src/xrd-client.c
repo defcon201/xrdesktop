@@ -186,11 +186,50 @@ xrd_client_set_pin (XrdClient *self,
 }
 
 void
+xrd_button_set_text (XrdWindow    *button,
+                     GulkanClient *client,
+                     int           label_count,
+                     gchar       **label)
+{
+  float width_meter = xrd_window_get_current_width_meters (button);
+  float height_meter = xrd_window_get_current_height_meters (button);
+  float ppm = xrd_window_get_current_ppm (button);
+  int width = width_meter * ppm;
+  int height = height_meter * ppm;
+  unsigned char image[4 * width * height];
+  cairo_surface_t* surface =
+    xrd_client_create_button_surface (image, width, height, label_count, label);
+  GulkanTexture *texture =
+    gulkan_texture_new_from_cairo_surface (client->device, surface,
+                                           VK_FORMAT_R8G8B8A8_UNORM);
+  gulkan_client_upload_cairo_surface (client, texture, surface);
+
+  xrd_window_submit_texture (button, client, texture);
+
+  cairo_surface_destroy (surface);
+  /* TODO: Possible SteamVR bug: When unrefing the texture, other buttons can be
+   * affected when changing text. Maybe bad texture id reuse? */
+  //g_object_unref (texture);
+}
+
+void
 xrd_client_show_pinned_only (XrdClient *self,
                              gboolean pinned_only)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   xrd_window_manager_show_pinned_only (priv->manager, pinned_only);
+
+  GulkanClient *client = xrd_client_get_uploader (self);
+  if (pinned_only)
+    {
+      gchar *all_str[] =  { "Show all", "windows" };
+      xrd_button_set_text (priv->pinned_button, client, 2, all_str);
+    }
+  else
+    {
+      gchar *pinned_str[] =  { "Show only", "pinned windows" };
+      xrd_button_set_text (priv->pinned_button, client, 2, pinned_str);
+    }
 }
 
 
@@ -794,6 +833,19 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   priv->selection_mode = !priv->selection_mode;
   _mark_windows_for_selection_mode (self);
+
+  GulkanClient *client = xrd_client_get_uploader (self);
+  if (priv->selection_mode)
+    {
+      gchar *end_str[] =  { "Confirm Selection" };
+      xrd_button_set_text (priv->select_pinned_button, client, 1, end_str);
+    }
+  else
+    {
+      gchar *start_str[] =  { "Pin windows" };
+      xrd_button_set_text (priv->select_pinned_button, client, 1, start_str);
+    }
+
   g_free (event);
 }
 
@@ -855,9 +907,9 @@ _init_buttons (XrdClient *self)
     .y =  0.0f,
     .z = -1.0f
   };
-  gchar *select_str[] =  { "Select pinned", "windows" };
+  gchar *select_str[] =  { "Pin windows" };
   if (!xrd_client_add_button (self, &priv->select_pinned_button,
-                              2, select_str,
+                              1, select_str,
                               &select_pinned,
                               (GCallback) _button_select_pinned_press_cb,
                               self))
