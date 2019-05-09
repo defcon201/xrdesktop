@@ -35,6 +35,8 @@ struct _XrdSceneObject
   graphene_quaternion_t orientation;
 
   gboolean visible;
+
+  gboolean initialized;
 };
 
 XrdSceneObject *xrd_scene_object_new (void);

@@ -32,6 +32,7 @@ xrd_scene_object_init (XrdSceneObject *self)
   for (uint32_t eye = 0; eye < 2; eye++)
     self->uniform_buffers[eye] = gulkan_uniform_buffer_new ();
   self->visible = TRUE;
+  self->initialized = FALSE;
 }
 
 XrdSceneObject *
@@ -44,6 +45,9 @@ static void
 xrd_scene_object_finalize (GObject *gobject)
 {
   XrdSceneObject *self = XRD_SCENE_OBJECT (gobject);
+  if (!self->initialized)
+    return;
+
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   GulkanDevice *device = GULKAN_CLIENT (renderer)->device;
   vkDestroyDescriptorPool (device->device, self->descriptor_pool, NULL);
@@ -142,6 +146,8 @@ xrd_scene_object_initialize (XrdSceneObject        *self,
                                          layout, 1,
                                          &self->descriptor_sets[eye]))
       return FALSE;
+
+  self->initialized = TRUE;
 
   return TRUE;
 }
