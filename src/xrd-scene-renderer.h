@@ -39,6 +39,15 @@ xrd_scene_renderer_get_descriptor_set_layout (XrdSceneRenderer *self);
 void
 xrd_scene_renderer_draw (XrdSceneRenderer *self);
 
+void
+xrd_scene_renderer_set_render_cb (XrdSceneRenderer *self,
+                                  void (*render_eye) (uint32_t         eye,
+                                                      VkCommandBuffer  cmd_buffer,
+                                                      VkPipelineLayout pipeline_layout,
+                                                      VkPipeline      *pipelines,
+                                                      gpointer         data),
+                                  gpointer data);
+
 G_END_DECLS
 
 #endif /* XRD_SCENE_RENDERER_H_ */

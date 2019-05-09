@@ -39,6 +39,15 @@ struct _XrdSceneRenderer
 
   uint32_t render_width;
   uint32_t render_height;
+
+  gpointer render_cb_data;
+
+  void
+  (*render_eye) (uint32_t         eye,
+                 VkCommandBuffer  cmd_buffer,
+                 VkPipelineLayout pipeline_layout,
+                 VkPipeline      *pipelines,
+                 gpointer         data);
 };
 
 G_DEFINE_TYPE (XrdSceneRenderer, xrd_scene_renderer, GULKAN_TYPE_CLIENT)
@@ -50,7 +59,6 @@ static void
 xrd_scene_renderer_class_init (XrdSceneRendererClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
   object_class->finalize = xrd_scene_renderer_finalize;
 }
 
@@ -59,6 +67,8 @@ xrd_scene_renderer_init (XrdSceneRenderer *self)
 {
   self->msaa_sample_count = VK_SAMPLE_COUNT_4_BIT;
   self->super_sample_scale = 1.0f;
+  self->render_eye = NULL;
+  self->render_cb_data = NULL;
 
   self->descriptor_set_layout = VK_NULL_HANDLE;
   self->pipeline_layout = VK_NULL_HANDLE;
@@ -459,7 +469,9 @@ _render_stereo (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
     {
       gulkan_frame_buffer_begin_pass (self->framebuffer[eye], cmd_buffer);
 
-      // TODO: eye pass cb
+      if (self->render_eye)
+        self->render_eye (eye, cmd_buffer, self->pipeline_layout,
+                          self->pipelines, self->render_cb_data);
 
       vkCmdEndRenderPass (cmd_buffer);
     }
@@ -530,4 +542,17 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
     (uint64_t) self->framebuffer[EVREye_Eye_Right]->color_image;
   context->compositor->Submit (EVREye_Eye_Right, &texture, &bounds,
                                EVRSubmitFlags_Submit_Default);
+}
+
+void
+xrd_scene_renderer_set_render_cb (XrdSceneRenderer *self,
+                                  void (*render_eye) (uint32_t         eye,
+                                                      VkCommandBuffer  cmd_buffer,
+                                                      VkPipelineLayout pipeline_layout,
+                                                      VkPipeline      *pipelines,
+                                                      gpointer         data),
+                                  gpointer data)
+{
+  self->render_eye = render_eye;
+  self->render_cb_data = data;
 }

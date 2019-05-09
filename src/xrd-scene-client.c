@@ -269,6 +269,48 @@ _poll_events_cb (gpointer _self)
   return TRUE;
 }
 
+static void
+_render_eye_cb (uint32_t         eye,
+                VkCommandBuffer  cmd_buffer,
+                VkPipelineLayout pipeline_layout,
+                VkPipeline      *pipelines,
+                gpointer         _self)
+{
+  XrdSceneClient *self = XRD_SCENE_CLIENT (_self);
+
+  graphene_matrix_t vp = _get_view_projection_matrix (self, eye);
+
+  for (GSList *l = self->windows; l != NULL; l = l->next)
+    {
+      XrdSceneWindow *window = (XrdSceneWindow *) l->data;
+      xrd_scene_window_draw (window, eye,
+                             pipelines[PIPELINE_WINDOWS],
+                             pipeline_layout,
+                             cmd_buffer, &vp);
+    }
+
+  _render_pointers (self, eye, cmd_buffer,
+                    pipelines[PIPELINE_POINTER],
+                    pipeline_layout, &vp);
+
+  xrd_scene_device_manager_render (self->device_manager, eye, cmd_buffer,
+                                   pipelines[PIPELINE_DEVICE_MODELS],
+                                   pipeline_layout, &vp);
+
+  xrd_scene_background_render (self->background, eye,
+                               pipelines[PIPELINE_POINTER],
+                               pipeline_layout, cmd_buffer, &vp);
+
+#if DEBUG_GEOMETRY
+  for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
+    xrd_scene_vector_render (self->debug_vectors[i], eye,
+                             pipelines[PIPELINE_POINTER],
+                             pipeline_layout,
+                             cmd_buffer,
+                            &vp);
+#endif
+}
+
 bool
 _init_vulkan (XrdSceneClient *self)
 {
@@ -305,10 +347,13 @@ _init_vulkan (XrdSceneClient *self)
       xrd_client_set_pointer (XRD_CLIENT (self), XRD_POINTER (pointer), i);
 
       XrdScenePointerTip *pointer_tip = xrd_scene_pointer_tip_new ();
-      xrd_client_set_pointer_tip (XRD_CLIENT (self), XRD_POINTER_TIP (pointer_tip), i);
+      xrd_client_set_pointer_tip (XRD_CLIENT (self),
+                                  XRD_POINTER_TIP (pointer_tip), i);
     }
 
   vkQueueWaitIdle (GULKAN_CLIENT (renderer)->device->queue);
+
+  xrd_scene_renderer_set_render_cb (renderer, _render_eye_cb, self);
 
   return true;
 }
@@ -499,44 +544,3 @@ xrd_scene_client_get_descriptor_set_layout ()
     xrd_scene_renderer_get_descriptor_set_layout (renderer);
   return descriptor_set_layout;
 }
-
-void
-_render_eye_pass_cb (XrdSceneClient *self,
-                     uint32_t eye,
-                     VkCommandBuffer cmd_buffer,
-                     VkPipelineLayout pipeline_layout,
-                     VkPipeline *pipelines)
-{
-  graphene_matrix_t vp = _get_view_projection_matrix (self, eye);
-
-  for (GSList *l = self->windows; l != NULL; l = l->next)
-    {
-      XrdSceneWindow *window = (XrdSceneWindow *) l->data;
-      xrd_scene_window_draw (window, eye,
-                             pipelines[PIPELINE_WINDOWS],
-                             pipeline_layout,
-                             cmd_buffer, &vp);
-    }
-
-  _render_pointers (self, eye, cmd_buffer,
-                    pipelines[PIPELINE_POINTER],
-                    pipeline_layout, &vp);
-
-  xrd_scene_device_manager_render (self->device_manager, eye, cmd_buffer,
-                                   pipelines[PIPELINE_DEVICE_MODELS],
-                                   pipeline_layout, &vp);
-
-  xrd_scene_background_render (self->background, eye,
-                               pipelines[PIPELINE_POINTER],
-                               pipeline_layout, cmd_buffer, &vp);
-
-#if DEBUG_GEOMETRY
-  for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
-    xrd_scene_vector_render (self->debug_vectors[i], eye,
-                             pipelines[PIPELINE_POINTER],
-                             pipeline_layout,
-                             cmd_buffer,
-                            &vp);
-#endif
-}
-
