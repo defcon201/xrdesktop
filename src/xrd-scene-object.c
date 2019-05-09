@@ -210,3 +210,16 @@ xrd_scene_object_update_descriptors (XrdSceneObject *self)
     }
 }
 
+void
+xrd_scene_object_set_transformation (XrdSceneObject    *self,
+                                     graphene_matrix_t *mat)
+{
+  /* TODO: Decompose matrix and store individual transformations */
+  graphene_matrix_init_from_matrix (&self->model_matrix, mat);
+}
+
+graphene_matrix_t
+xrd_scene_object_get_transformation (XrdSceneObject *self)
+{
+  return self->model_matrix;
+}

@@ -9,6 +9,7 @@
 
 #include "graphene-ext.h"
 #include "xrd-scene-window.h"
+#include "xrd-scene-renderer.h"
 
 enum
 {
@@ -273,9 +274,7 @@ gboolean
 xrd_scene_window_set_transformation (XrdSceneWindow    *self,
                                      graphene_matrix_t *mat)
 {
-  (void) self;
-  (void) mat;
-  g_warning ("stub: xrd_scene_window_set_transformation_matrix\n");
+  xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), mat);
   return TRUE;
 }
 
@@ -283,9 +282,7 @@ gboolean
 xrd_scene_window_get_transformation (XrdSceneWindow    *self,
                                      graphene_matrix_t *mat)
 {
-  (void) self;
-  (void) mat;
-  g_warning ("stub: xrd_scene_window_get_transformation_matrix\n");
+  *mat = xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
   return TRUE;
 }
 
@@ -294,30 +291,116 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
                                  GulkanClient   *client,
                                  GulkanTexture  *texture)
 {
-  (void) self;
-  (void) client;
-  (void) texture;
-  g_warning ("stub: xrd_scene_window_submit_texture\n");
+  VkDevice device = client->device->device;
+
+  uint32_t mip_levels = 1;
+
+  self->aspect_ratio = (float) texture->width / (float) texture->height;
+
+  self->texture = texture;
+
+  VkSamplerCreateInfo sampler_info = {
+    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+    .magFilter = VK_FILTER_LINEAR,
+    .minFilter = VK_FILTER_LINEAR,
+    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+    .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+    .anisotropyEnable = VK_TRUE,
+    .maxAnisotropy = 16.0f,
+    .minLod = 0.0f,
+    .maxLod = (float) mip_levels
+  };
+
+  if (self->sampler != VK_NULL_HANDLE)
+    vkDestroySampler (device, self->sampler, NULL);
+
+  vkCreateSampler (device, &sampler_info, NULL, &self->sampler);
+
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  xrd_scene_object_update_descriptors_texture (obj, self->sampler,
+                                               self->texture->image_view);
 }
 
 void
 xrd_scene_window_poll_event (XrdSceneWindow *self)
 {
   (void) self;
-  g_warning ("stub: xrd_scene_window_poll_event\n");
 }
 
+/* TODO: Use pointer class in interface */
 gboolean
 xrd_scene_window_intersects (XrdSceneWindow     *self,
-                             graphene_matrix_t  *pointer_transformation_matrix,
+                             graphene_matrix_t  *mat,
                              graphene_point3d_t *intersection_point)
 {
-  (void) self;
-  (void) pointer_transformation_matrix;
-  (void) intersection_point;
+  /* Hardcode pointer props */
+  float start_offset = -0.02f;
+  float length = 40.0f;
 
-  g_warning ("stub: xrd_scene_window_intersects\n");
-  return TRUE;
+  /* Get ray */
+  graphene_vec4_t start;
+  graphene_vec4_init (&start, 0, 0, start_offset, 1);
+  graphene_matrix_transform_vec4 (mat, &start, &start);
+
+  graphene_vec4_t end;
+  graphene_vec4_init (&end, 0, 0, -length, 1);
+  graphene_matrix_transform_vec4 (mat, &end, &end);
+
+  graphene_vec4_t direction_vec4;
+  graphene_vec4_subtract (&end, &start, &direction_vec4);
+
+  graphene_point3d_t origin;
+  graphene_vec3_t direction;
+
+  graphene_vec3_t vec3_start;
+  graphene_vec4_get_xyz (&start, &vec3_start);
+  graphene_point3d_init_from_vec3 (&origin, &vec3_start);
+
+  graphene_vec4_get_xyz (&direction_vec4, &direction);
+
+  graphene_ray_t ray;
+  graphene_ray_init (&ray, &origin, &direction);
+
+  /* Get intersection */
+
+  graphene_plane_t plane;
+  xrd_scene_window_get_plane (self, &plane);
+
+  float distance = graphene_ray_get_distance_to_plane (&ray, &plane);
+  if (distance == INFINITY)
+    return FALSE;
+
+  graphene_vec3_t intersection_vec;
+  graphene_ray_get_direction (&ray, &intersection_vec);
+  graphene_vec3_scale (&intersection_vec, distance, &intersection_vec);
+
+  graphene_vec3_t intersetion_origin;
+  graphene_ray_get_origin_vec3 (&ray, &intersetion_origin);
+  graphene_vec3_add (&intersetion_origin, &intersection_vec, &intersection_vec);
+
+  graphene_matrix_t inverse;
+  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (self);
+  graphene_matrix_inverse (&window_obj->model_matrix, &inverse);
+
+  graphene_vec4_t intersection_vec4;
+  graphene_vec4_init_from_vec3 (&intersection_vec4, &intersection_vec, 1.0f);
+
+  graphene_vec4_t intersection_origin;
+  graphene_matrix_transform_vec4 (&inverse,
+                                  &intersection_vec4,
+                                  &intersection_origin);
+
+  float f[4];
+  graphene_vec4_to_float (&intersection_origin, f);
+
+  graphene_point3d_init_from_vec3 (intersection_point, &intersection_vec);
+
+  /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
+  if (f[0] >= 0 && f[0] <= self->aspect_ratio && f[1] >= 0 && f[1] <= 1.0f)
+    return TRUE;
+
+  return FALSE;
 }
 
 gboolean
@@ -326,12 +409,56 @@ xrd_scene_window_intersection_to_pixels (XrdSceneWindow     *self,
                                          XrdPixelSize       *size_pixels,
                                          graphene_point_t   *window_coords)
 {
-  (void) self;
-  (void) intersection_point;
-  (void) size_pixels;
-  (void) window_coords;
+  /* transform intersection point to origin */
+  graphene_matrix_t transform =
+    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
 
-  g_warning ("stub: xrd_scene_window_intersection_to_pixels\n");
+  graphene_matrix_t inverse_transform;
+  graphene_matrix_inverse (&transform, &inverse_transform);
+
+  graphene_point3d_t intersection_origin;
+  graphene_matrix_transform_point3d (&inverse_transform,
+                                      intersection_point,
+                                     &intersection_origin);
+
+  graphene_vec2_t position_2d_vec;
+  graphene_vec2_init (&position_2d_vec,
+                      intersection_origin.x,
+                      intersection_origin.y);
+
+  /* normalize coordinates to [0 - 1, 0 - 1] */
+  graphene_vec2_t size_meters;
+
+  XrdWindow *xrd_window = XRD_WINDOW (self);
+
+  graphene_vec2_init (&size_meters,
+                      xrd_window_get_current_width_meters (xrd_window),
+                      xrd_window_get_current_height_meters (xrd_window));
+
+  graphene_vec2_divide (&position_2d_vec, &size_meters, &position_2d_vec);
+
+  /* move origin from cetner to corner of overlay */
+  graphene_vec2_t center_normalized;
+  graphene_vec2_init (&center_normalized, 0.5f, 0.5f);
+
+  graphene_vec2_add (&position_2d_vec, &center_normalized, &position_2d_vec);
+
+  /* invert y axis */
+  graphene_vec2_init (&position_2d_vec,
+                      graphene_vec2_get_x (&position_2d_vec),
+                      1.0f - graphene_vec2_get_y (&position_2d_vec));
+
+  /* scale to pixel coordinates */
+  graphene_vec2_t size_pixels_vec;
+  graphene_vec2_init (&size_pixels_vec,
+                      size_pixels->width,
+                      size_pixels->height);
+
+  graphene_vec2_multiply (&position_2d_vec, &size_pixels_vec, &position_2d_vec);
+
+  /* return point_t */
+  graphene_point_init_from_vec2 (window_coords, &position_2d_vec);
+
   return TRUE;
 }
 
@@ -340,11 +467,20 @@ xrd_scene_window_intersection_to_2d_offset_meter (XrdSceneWindow     *self,
                                                   graphene_point3d_t *intersection_point,
                                                   graphene_point_t   *offset_center)
 {
-  (void) self;
-  (void) intersection_point;
-  (void) offset_center;
+  graphene_matrix_t transform =
+    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
 
-  g_warning ("stub: xrd_scene_window_intersection_to_2d_offset_meter\n");
+  graphene_matrix_t inverse_transform;
+  graphene_matrix_inverse (&transform, &inverse_transform);
+
+  graphene_point3d_t intersection_origin;
+  graphene_matrix_transform_point3d (&inverse_transform,
+                                      intersection_point,
+                                     &intersection_origin);
+
+  graphene_point_init (offset_center,
+                      intersection_origin.x,
+                      intersection_origin.y);
   return TRUE;
 }
 
