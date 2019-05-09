@@ -1,18 +1,18 @@
-test_system = executable(
-  'test_scene_client', 'test_scene_client.c',
+test_scene_client = executable(
+  'test_scene_client', ['test_scene_client.c', shader_resources],
   dependencies: xrdesktop_deps,
   link_with: xrdesktop_lib,
   include_directories: xrdesktop_inc,
   install: false)
-test('test_scene_client', test_system)
+test('test_scene_client', test_scene_client)
 
-test_system = executable(
+test_overlay_client = executable(
   'test_overlay_client', 'test_overlay_client.c',
   dependencies: xrdesktop_deps,
   link_with: xrdesktop_lib,
   include_directories: xrdesktop_inc,
   install: false)
-test('test_overlay_client', test_system)
+test('test_overlay_client', test_overlay_client)
 
 test_window = executable(
   'test_window', 'test_window.c',

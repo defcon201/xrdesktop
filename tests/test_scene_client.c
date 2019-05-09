@@ -12,6 +12,14 @@ int
 main ()
 {
   XrdSceneClient *client = xrd_scene_client_new ();
+
+  if (!xrd_scene_client_initialize (client))
+    {
+      g_printerr ("Could not init scene client.\n");
+      g_object_unref (client);
+      return 1;
+    }
+
   g_object_unref (client);
   return 0;
 }
