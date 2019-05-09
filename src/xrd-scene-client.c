@@ -70,11 +70,6 @@ void _update_matrices (XrdSceneClient *self);
 void _update_device_poses (XrdSceneClient *self);
 void _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer);
 
-static void
-_action_hand_pose_cb (OpenVRAction        *action,
-                      OpenVRPoseEvent     *event,
-                      XrdClientController *controller);
-
 gboolean
 xrd_scene_client_add_button (XrdSceneClient     *self,
                              XrdWindow         **button,
@@ -211,20 +206,6 @@ _device_deactivate_cb (OpenVRContext          *context,
   g_hash_table_remove (self->pointers, &event->index);
 }
 
-static void
-_action_hand_pose_cb (OpenVRAction        *action,
-                      OpenVRPoseEvent     *event,
-                      XrdClientController *controller)
-{
-  (void) action;
-  XrdSceneClient *self = XRD_SCENE_CLIENT (controller->self);
-
-  XrdScenePointer *pointer = g_hash_table_lookup (self->pointers,
-                                                  &controller->index);
-
-  xrd_pointer_move (XRD_POINTER (pointer), &event->pose);
-}
-
 void
 _render_pointers (XrdSceneClient    *self,
                   EVREye             eye,
@@ -241,20 +222,6 @@ _render_pointers (XrdSceneClient    *self,
   for (GList *l = pointers; l; l = l->next)
     xrd_scene_pointer_render (l->data, eye, pipeline,
                               pipeline_layout, cmd_buffer, vp);
-}
-
-gboolean
-_poll_events_cb (gpointer _self)
-{
-  XrdSceneClient *self = _self;
-  OpenVRContext *context = openvr_context_get_instance ();
-  openvr_context_poll_event (context);
-
-  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
-  if (!openvr_action_set_poll (wm_actions))
-    return FALSE;
-
-  return TRUE;
 }
 
 static void
@@ -381,19 +348,6 @@ xrd_scene_client_initialize (XrdSceneClient *self)
                     (GCallback) _device_deactivate_cb, self);
 
   xrd_client_post_openvr_init (XRD_CLIENT (self));
-
-  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_left",
-                             (GCallback) _action_hand_pose_cb,
-                             &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_right",
-                             (GCallback) _action_hand_pose_cb,
-                             &self->controllers[1]);
-
-  g_timeout_add (20, _poll_events_cb, self);
 
   return true;
 }
