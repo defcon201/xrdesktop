@@ -170,7 +170,7 @@ xrd_scene_client_finalize (GObject *gobject)
 }
 
 bool
-_init_openvr (XrdSceneClient *self)
+_init_openvr ()
 {
   if (!openvr_context_is_installed ())
     {
@@ -190,19 +190,6 @@ _init_openvr (XrdSceneClient *self)
       g_printerr ("Could not load OpenVR function pointers.\n");
       return false;
     }
-
-  xrd_client_post_openvr_init (XRD_CLIENT (self));
-
-  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
-
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_left",
-                             (GCallback) _action_hand_pose_cb,
-                             &self->controllers[0]);
-  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_right",
-                             (GCallback) _action_hand_pose_cb,
-                             &self->controllers[1]);
 
   return true;
 }
@@ -368,7 +355,7 @@ _init_vulkan (XrdSceneClient *self)
 bool
 xrd_scene_client_initialize (XrdSceneClient *self)
 {
-  if (!_init_openvr (self))
+  if (!_init_openvr ())
     {
       g_printerr ("Could not init OpenVR.\n");
       return false;
@@ -385,6 +372,19 @@ xrd_scene_client_initialize (XrdSceneClient *self)
                     (GCallback) _device_activate_cb, self);
   g_signal_connect (context, "device-deactivate-event",
                     (GCallback) _device_deactivate_cb, self);
+
+  xrd_client_post_openvr_init (XRD_CLIENT (self));
+
+  OpenVRActionSet *wm_actions = xrd_client_get_wm_actions (XRD_CLIENT (self));
+
+  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
+                             "/actions/wm/in/hand_pose_left",
+                             (GCallback) _action_hand_pose_cb,
+                             &self->controllers[0]);
+  openvr_action_set_connect (wm_actions, OPENVR_ACTION_POSE,
+                             "/actions/wm/in/hand_pose_right",
+                             (GCallback) _action_hand_pose_cb,
+                             &self->controllers[1]);
 
   g_timeout_add (20, _poll_events_cb, self);
 
