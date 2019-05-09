@@ -133,6 +133,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
   self->vertex_buffer = gulkan_vertex_buffer_new ();
   self->sampler = VK_NULL_HANDLE;
   self->aspect_ratio = 1.0;
+  self->texture = NULL;
 }
 
 XrdSceneWindow *
@@ -274,7 +275,8 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
   _append_plane (self->vertex_buffer, self->aspect_ratio);
-  if (!gulkan_vertex_buffer_alloc_array (self->vertex_buffer, obj->device))
+  if (!gulkan_vertex_buffer_alloc_array (self->vertex_buffer,
+                                         GULKAN_CLIENT (renderer)->device))
     return FALSE;
 
   VkDescriptorSetLayout *layout =
@@ -284,8 +286,9 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
                                     layout))
     return FALSE;
 
-  xrd_scene_object_update_descriptors_texture (obj, self->sampler,
-                                               self->texture->image_view);
+  if (self->texture != NULL && self->sampler != VK_NULL_HANDLE)
+    xrd_scene_object_update_descriptors_texture (obj, self->sampler,
+                                                 self->texture->image_view);
 
   return TRUE;
 }
@@ -580,6 +583,26 @@ xrd_scene_window_set_flip_y (XrdSceneWindow *self,
 }
 
 static void
+_set_hidden (XrdWindow *self,
+             gboolean   hidden)
+{
+  (void) self;
+  (void) hidden;
+
+  g_warning ("stub: xrd_scene_window_set_hidden\n");
+}
+
+static gboolean
+_get_hidden (XrdWindow *self)
+{
+  (void) self;
+
+  g_warning ("stub: xrd_scene_window_get_hidden\n");
+
+  return FALSE;
+}
+
+static void
 xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
 {
   iface->set_transformation =
@@ -596,4 +619,6 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->add_child = (void*)xrd_scene_window_add_child;
   iface->set_color = (void*)xrd_scene_window_set_color;
   iface->set_flip_y = (void*)xrd_scene_window_set_flip_y;
+  iface->set_hidden = (void*) _set_hidden;
+  iface->get_hidden = (void*) _get_hidden;
 }
