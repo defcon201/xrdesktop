@@ -34,6 +34,9 @@ struct _XrdSceneWindow
   VkSampler sampler;
   float aspect_ratio;
 
+  gboolean flip_y;
+  graphene_vec3_t color;
+
   XrdWindowData window_data;
 };
 

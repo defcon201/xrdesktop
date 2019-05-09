@@ -566,40 +566,31 @@ void
 xrd_scene_window_set_color (XrdSceneWindow  *self,
                             graphene_vec3_t *color)
 {
-  (void) self;
-  (void) color;
-
-  g_warning ("stub: xrd_scene_window_set_color\n");
+  graphene_vec3_init_from_vec3 (&self->color, color);
 }
 
 void
 xrd_scene_window_set_flip_y (XrdSceneWindow *self,
                              gboolean        flip_y)
 {
-  (void) self;
-  (void) flip_y;
-
-  g_warning ("stub: xrd_scene_window_set_flip_y\n");
+  self->flip_y = flip_y;
 }
 
 static void
-_set_hidden (XrdWindow *self,
+_set_hidden (XrdWindow *window,
              gboolean   hidden)
 {
-  (void) self;
-  (void) hidden;
-
-  g_warning ("stub: xrd_scene_window_set_hidden\n");
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  obj->visible = !hidden;
 }
 
 static gboolean
-_get_hidden (XrdWindow *self)
+_get_hidden (XrdWindow *window)
 {
-  (void) self;
-
-  g_warning ("stub: xrd_scene_window_get_hidden\n");
-
-  return FALSE;
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  return !obj->visible;
 }
 
 static void
@@ -619,6 +610,6 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->add_child = (void*)xrd_scene_window_add_child;
   iface->set_color = (void*)xrd_scene_window_set_color;
   iface->set_flip_y = (void*)xrd_scene_window_set_flip_y;
-  iface->set_hidden = (void*) _set_hidden;
-  iface->get_hidden = (void*) _get_hidden;
+  iface->set_hidden = _set_hidden;
+  iface->get_hidden = _get_hidden;
 }
