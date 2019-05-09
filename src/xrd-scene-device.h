@@ -40,8 +40,7 @@ XrdSceneDevice *xrd_scene_device_new (void);
 
 gboolean
 xrd_scene_device_initialize (XrdSceneDevice        *self,
-                             XrdSceneModel     *model,
-                             GulkanDevice          *device,
+                             XrdSceneModel         *model,
                              VkDescriptorSetLayout *layout);
 
 void

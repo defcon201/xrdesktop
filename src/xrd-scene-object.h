@@ -35,8 +35,6 @@ struct _XrdSceneObject
   graphene_quaternion_t orientation;
 
   gboolean visible;
-
-  GulkanDevice *device;
 };
 
 XrdSceneObject *xrd_scene_object_new (void);
@@ -65,7 +63,6 @@ xrd_scene_object_bind (XrdSceneObject    *self,
 
 gboolean
 xrd_scene_object_initialize (XrdSceneObject        *self,
-                             GulkanDevice          *device,
                              VkDescriptorSetLayout *layout);
 
 void

@@ -8,6 +8,8 @@
 #include "xrd-scene-object.h"
 #include <gulkan-descriptor-set.h>
 
+#include "xrd-scene-renderer.h"
+
 G_DEFINE_TYPE (XrdSceneObject, xrd_scene_object, G_TYPE_OBJECT)
 
 static void
@@ -42,7 +44,9 @@ static void
 xrd_scene_object_finalize (GObject *gobject)
 {
   XrdSceneObject *self = XRD_SCENE_OBJECT (gobject);
-  vkDestroyDescriptorPool (self->device->device, self->descriptor_pool, NULL);
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  GulkanDevice *device = GULKAN_CLIENT (renderer)->device;
+  vkDestroyDescriptorPool (device->device, self->descriptor_pool, NULL);
 
   for (uint32_t eye = 0; eye < 2; eye++)
     g_object_unref (self->uniform_buffers[eye]);
@@ -105,15 +109,15 @@ xrd_scene_object_set_rotation_euler (XrdSceneObject   *self,
 
 gboolean
 xrd_scene_object_initialize (XrdSceneObject        *self,
-                             GulkanDevice          *device,
                              VkDescriptorSetLayout *layout)
 {
-  self->device = device;
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  GulkanDevice *device = GULKAN_CLIENT (renderer)->device;
 
   /* Create uniform buffer to hold a matrix per eye */
   for (uint32_t eye = 0; eye < 2; eye++)
     gulkan_uniform_buffer_allocate_and_map (self->uniform_buffers[eye],
-                                            self->device, sizeof (float) * 16);
+                                            device, sizeof (float) * 16);
 
   uint32_t set_count = 2;
 
@@ -129,12 +133,12 @@ xrd_scene_object_initialize (XrdSceneObject        *self,
   };
 
 
-  if (!GULKAN_INIT_DECRIPTOR_POOL (self->device, pool_sizes,
+  if (!GULKAN_INIT_DECRIPTOR_POOL (device, pool_sizes,
                                    set_count, &self->descriptor_pool))
      return FALSE;
 
   for (uint32_t eye = 0; eye < set_count; eye++)
-    if (!gulkan_allocate_descritpor_set (self->device, self->descriptor_pool,
+    if (!gulkan_allocate_descritpor_set (device, self->descriptor_pool,
                                          layout, 1,
                                          &self->descriptor_sets[eye]))
       return FALSE;
@@ -147,6 +151,9 @@ xrd_scene_object_update_descriptors_texture (XrdSceneObject *self,
                                              VkSampler       sampler,
                                              VkImageView     image_view)
 {
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  GulkanDevice *device = GULKAN_CLIENT (renderer)->device;
+
   for (uint32_t eye = 0; eye < 2; eye++)
     {
       VkWriteDescriptorSet *write_descriptor_sets = (VkWriteDescriptorSet []) {
@@ -179,7 +186,7 @@ xrd_scene_object_update_descriptors_texture (XrdSceneObject *self,
         }
       };
 
-      vkUpdateDescriptorSets (self->device->device,
+      vkUpdateDescriptorSets (device->device,
                               2, write_descriptor_sets, 0, NULL);
     }
 }
@@ -187,6 +194,9 @@ xrd_scene_object_update_descriptors_texture (XrdSceneObject *self,
 void
 xrd_scene_object_update_descriptors (XrdSceneObject *self)
 {
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  GulkanDevice *device = GULKAN_CLIENT (renderer)->device;
+
   for (uint32_t eye = 0; eye < 2; eye++)
     {
       VkWriteDescriptorSet *write_descriptor_sets = (VkWriteDescriptorSet []) {
@@ -205,7 +215,7 @@ xrd_scene_object_update_descriptors (XrdSceneObject *self)
         }
       };
 
-      vkUpdateDescriptorSets (self->device->device,
+      vkUpdateDescriptorSets (device->device,
                               1, write_descriptor_sets, 0, NULL);
     }
 }

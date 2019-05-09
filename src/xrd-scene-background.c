@@ -145,7 +145,7 @@ xrd_scene_background_initialize (XrdSceneBackground    *self,
   gulkan_vertex_buffer_map_array (self->vertex_buffer);
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  if (!xrd_scene_object_initialize (obj, device, layout))
+  if (!xrd_scene_object_initialize (obj, layout))
     return FALSE;
 
   xrd_scene_object_update_descriptors (obj);

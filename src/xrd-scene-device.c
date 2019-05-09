@@ -46,13 +46,12 @@ xrd_scene_device_finalize (GObject *gobject)
 
 gboolean
 xrd_scene_device_initialize (XrdSceneDevice        *self,
-                             XrdSceneModel     *model,
-                             GulkanDevice          *device,
+                             XrdSceneModel         *model,
                              VkDescriptorSetLayout *layout)
 {
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
 
-  if (!xrd_scene_object_initialize (obj, device, layout))
+  if (!xrd_scene_object_initialize (obj, layout))
     return FALSE;
 
   self->model = model;

@@ -100,7 +100,7 @@ xrd_scene_device_manager_add (XrdSceneDeviceManager *self,
     }
 
   XrdSceneDevice *device = xrd_scene_device_new ();
-  if (!xrd_scene_device_initialize (device, content, client->device, layout))
+  if (!xrd_scene_device_initialize (device, content, layout))
     {
       g_print ("Unable to create Vulkan model from OpenVR model %s\n",
                model_name);

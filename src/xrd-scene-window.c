@@ -194,9 +194,9 @@ xrd_scene_window_finalize (GObject *gobject)
   XrdSceneWindow *self = XRD_SCENE_WINDOW (gobject);
   g_object_unref (self->texture);
 
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
-  vkDestroySampler (obj->device->device, self->sampler, NULL);
+  vkDestroySampler (GULKAN_CLIENT (renderer)->device->device, self->sampler, NULL);
 
   g_object_unref (self->vertex_buffer);
 
@@ -209,16 +209,14 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
 {
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->device = GULKAN_CLIENT (renderer)->device;
-
   uint32_t mip_levels;
 
   self->aspect_ratio = (float) gdk_pixbuf_get_width (pixbuf) /
                        (float) gdk_pixbuf_get_height (pixbuf);
 
   FencedCommandBuffer cmd_buffer;
-  if (!gulkan_client_begin_res_cmd_buffer (GULKAN_CLIENT (renderer), &cmd_buffer))
+  if (!gulkan_client_begin_res_cmd_buffer (GULKAN_CLIENT (renderer),
+                                           &cmd_buffer))
     {
       g_printerr ("Could not begin command buffer.\n");
       return false;
@@ -251,7 +249,8 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
   vkCreateSampler (GULKAN_CLIENT (renderer)->device->device,
                    &sampler_info, NULL, &self->sampler);
 
-  if (!gulkan_client_submit_res_cmd_buffer (GULKAN_CLIENT (renderer), &cmd_buffer))
+  if (!gulkan_client_submit_res_cmd_buffer (GULKAN_CLIENT (renderer),
+                                            &cmd_buffer))
     {
       g_printerr ("Could not submit command buffer.\n");
       return false;
@@ -282,8 +281,7 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
   VkDescriptorSetLayout *layout =
     xrd_scene_renderer_get_descriptor_set_layout (renderer);
 
-  if (!xrd_scene_object_initialize (obj, GULKAN_CLIENT (renderer)->device,
-                                    layout))
+  if (!xrd_scene_object_initialize (obj, layout))
     return FALSE;
 
   if (self->texture != NULL && self->sampler != VK_NULL_HANDLE)
