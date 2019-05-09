@@ -158,6 +158,10 @@ xrd_client_set_pointer (XrdClient  *self,
                         XrdPointer *pointer,
                         uint32_t    id);
 
+XrdPointer*
+xrd_client_get_pointer (XrdClient  *self,
+                        uint32_t    id);
+
 void
 xrd_client_set_pointer_tip (XrdClient     *self,
                             XrdPointerTip *pointer,

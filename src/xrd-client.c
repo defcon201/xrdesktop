@@ -1183,6 +1183,14 @@ xrd_client_set_pointer (XrdClient  *self,
   priv->pointer_ray[id] = pointer;
 }
 
+XrdPointer*
+xrd_client_get_pointer (XrdClient  *self,
+                        uint32_t    id)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->pointer_ray[id];
+}
+
 void
 xrd_client_set_pointer_tip (XrdClient     *self,
                             XrdPointerTip *pointer,

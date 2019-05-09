@@ -48,8 +48,6 @@ struct _XrdSceneClient
 
   XrdClientController controllers[2];
 
-  GHashTable *pointers; // int -> XrdScenePointer
-
   XrdSceneBackground *background;
 };
 
@@ -93,14 +91,6 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
       (void*) xrd_scene_client_get_uploader;
 }
 
-void
-_insert_at_key2 (GHashTable *table, uint32_t key, gpointer value)
-{
-  gint *keyp = g_new0 (gint, 1);
-  *keyp = (gint) key;
-  g_hash_table_insert (table, keyp, value);
-}
-
 static void
 xrd_scene_client_init (XrdSceneClient *self)
 {
@@ -115,9 +105,6 @@ xrd_scene_client_init (XrdSceneClient *self)
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     self->debug_vectors[i] = xrd_scene_vector_new ();
 #endif
-
-  self->pointers = g_hash_table_new_full (g_int_hash, g_int_equal,
-                                          g_free, g_object_unref);
 
   for (uint32_t i = 0; i < 2; i++)
     {
@@ -146,7 +133,6 @@ xrd_scene_client_finalize (GObject *gobject)
   g_object_unref (context);
 
   g_object_unref (self->device_manager);
-  g_hash_table_unref (self->pointers);
 
   g_object_unref (self->background);
 
@@ -203,7 +189,8 @@ _device_deactivate_cb (OpenVRContext          *context,
   XrdSceneClient *self = (XrdSceneClient*) _self;
   g_print ("Device %d deactivated. Removing scene device.\n", event->index);
   xrd_scene_device_manager_remove (self->device_manager, event->index);
-  g_hash_table_remove (self->pointers, &event->index);
+  /* TODO: Remove pointer in client */
+  // g_hash_table_remove (self->pointers, &event->index);
 }
 
 void
@@ -218,10 +205,13 @@ _render_pointers (XrdSceneClient    *self,
   if (!context->system->IsInputAvailable ())
     return;
 
-  GList *pointers = g_hash_table_get_values (self->pointers);
-  for (GList *l = pointers; l; l = l->next)
-    xrd_scene_pointer_render (l->data, eye, pipeline,
-                              pipeline_layout, cmd_buffer, vp);
+  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
+    {
+      XrdScenePointer *pointer =
+        XRD_SCENE_POINTER (xrd_client_get_pointer (XRD_CLIENT (self), i));
+      xrd_scene_pointer_render (pointer, eye, pipeline,
+                                pipeline_layout, cmd_buffer, vp);
+    }
 }
 
 static void
@@ -306,12 +296,11 @@ _init_vulkan (XrdSceneClient *self)
                                 &self->descriptor_set_layout);
 #endif
 
-  for (uint32_t i = 0; i < 2; i++)
+  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
       XrdScenePointer *pointer = xrd_scene_pointer_new ();
       xrd_scene_pointer_initialize (pointer, device,
                                     descriptor_set_layout);
-      _insert_at_key2 (self->pointers, i, pointer);
       xrd_client_set_pointer (XRD_CLIENT (self), XRD_POINTER (pointer), i);
 
       XrdScenePointerTip *pointer_tip = xrd_scene_pointer_tip_new ();
@@ -381,10 +370,10 @@ _init_device_models (XrdSceneClient *self)
 void
 _test_intersection (XrdSceneClient *self)
 {
-  GList *pointers = g_hash_table_get_values (self->pointers);
-  for (GList *l = pointers; l; l = l->next)
+    for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
     {
-      XrdScenePointer *pointer = l->data;
+      XrdScenePointer *pointer =
+        XRD_SCENE_POINTER (xrd_client_get_pointer (XRD_CLIENT (self), i));
       if (pointer == NULL)
         continue;
 
