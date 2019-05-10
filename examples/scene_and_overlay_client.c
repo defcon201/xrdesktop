@@ -27,6 +27,8 @@ typedef struct Example
   guint64 move_source;
   guint64 keyboard_source;
   guint64 quit_source;
+  guint64 render_source;
+  bool shutdown;
 } Example;
 
 gboolean
@@ -231,7 +233,8 @@ _init_windows (Example *self)
           XrdWindowManager *manager = xrd_client_get_manager (self->client);
           xrd_window_manager_save_reset_transform (manager, window);
 
-          if (col == 0 && row == 0)
+          /* TODO: Fix in scene client */
+          if (col == 0 && row == 0 && !XRD_IS_SCENE_CLIENT (self->client))
             {
               GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg");
               float ppm = cat_small->width / 0.25;
@@ -313,6 +316,10 @@ _init_windows (Example *self)
 static void
 _cleanup (Example *self)
 {
+  self->shutdown = true;
+  if (self->render_source != 0)
+    g_source_remove (self->render_source);
+
   g_signal_handler_disconnect (self->client, self->click_source);
   g_signal_handler_disconnect (self->client, self->move_source);
   g_signal_handler_disconnect (self->client, self->keyboard_source);
@@ -321,6 +328,7 @@ _cleanup (Example *self)
   self->move_source = 0;
   self->keyboard_source = 0;
   self->quit_source = 0;
+  self->render_source = 0;
 
   g_slist_free (self->windows);
   self->windows = NULL;
@@ -378,6 +386,18 @@ _request_quit_cb (XrdClient *client,
   g_main_loop_quit (self->loop);
 }
 
+gboolean
+_iterate_cb (gpointer _self)
+{
+  Example *self = (Example*) _self;
+
+  if (self->shutdown)
+    return false;
+
+  xrd_scene_client_render (XRD_SCENE_CLIENT (self->client));
+  return true;
+}
+
 static gboolean
 _init_example (Example *self, XrdClient *client)
 {
@@ -393,6 +413,7 @@ _init_example (Example *self, XrdClient *client)
   self->head_follow_button = NULL;
   self->head_follow_window = NULL;
   self->hawk_big = _make_texture (gc, "/res/hawk.jpg");
+  self->shutdown = false;
 
   if (!_init_windows (self))
     return FALSE;
@@ -408,6 +429,10 @@ _init_example (Example *self, XrdClient *client)
                                             self);
   self->quit_source = g_signal_connect (client, "request-quit-event",
                                         (GCallback) _request_quit_cb, self);
+
+  if (XRD_IS_SCENE_CLIENT (client))
+    self->render_source = g_timeout_add (1, _iterate_cb, self);
+
   return TRUE;
 }
 
