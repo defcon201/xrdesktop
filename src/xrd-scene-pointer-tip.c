@@ -54,7 +54,7 @@ static void
 _set_constant_width (XrdScenePointerTip *self)
 {
   (void) self;
-  g_warning ("stub: _set_constant_width\n");
+  //g_warning ("stub: _set_constant_width\n");
 }
 
 static void
@@ -78,7 +78,7 @@ _set_active (XrdScenePointerTip *self,
 {
   (void) self;
   (void) active;
-  g_warning ("stub: _set_active\n");
+  //g_warning ("stub: _set_active\n");
 }
 
 static void
