@@ -129,9 +129,6 @@ xrd_scene_client_finalize (GObject *gobject)
 {
   XrdSceneClient *self = XRD_SCENE_CLIENT (gobject);
 
-  OpenVRContext *context = openvr_context_get_instance ();
-  g_object_unref (context);
-
   g_object_unref (self->device_manager);
 
   g_object_unref (self->background);
