@@ -48,6 +48,7 @@
     <xi:include href="xml/XrdMath.xml"/>
     <xi:include href="xml/XrdSettings.xml"/>
     <xi:include href="xml/Misc.xml"/>
+    <xi:include href="xml/New.xml"/>
 
   </chapter>
   <index id="api-index">
