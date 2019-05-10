@@ -186,6 +186,11 @@ xrd_button_set_text (XrdWindow    *button,
                      int           label_count,
                      gchar       **label)
 {
+  gpointer native;
+  g_object_get (button, "native", &native, NULL);
+  if (native != NULL)
+    g_object_unref (native);
+
   float width_meter = xrd_window_get_current_width_meters (button);
   float height_meter = xrd_window_get_current_height_meters (button);
   float ppm = xrd_window_get_current_ppm (button);
@@ -202,9 +207,8 @@ xrd_button_set_text (XrdWindow    *button,
   xrd_window_submit_texture (button, client, texture);
 
   cairo_surface_destroy (surface);
-  /* TODO: Possible SteamVR bug: When unrefing the texture, other buttons can be
-   * affected when changing text. Maybe bad texture id reuse? */
-  //g_object_unref (texture);
+
+  g_object_set (button, "native", texture, NULL);
 }
 
 void
