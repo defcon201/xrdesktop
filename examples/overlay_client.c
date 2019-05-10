@@ -179,8 +179,8 @@ _init_windows (Example *self)
     }
 
   graphene_point3d_t button_position = {
-    .x =  0.0f,
-    .y =  -0.6f,
+    .x =  -0.75f,
+    .y =  0.0f,
     .z = -1.0f
   };
   gchar *tracked_str[] =  { "Show Tracked", "window" };

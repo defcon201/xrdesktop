@@ -850,9 +850,11 @@ _init_buttons (XrdClient *self)
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   float button_x = 0.0f;
+  float button_y = 0.0f;
+
   graphene_point3d_t position_reset = {
     .x =  button_x,
-    .y =  0.0f,
+    .y =  button_y,
     .z = -1.0f
   };
 
@@ -866,11 +868,14 @@ _init_buttons (XrdClient *self)
   float reset_width_meter =
     xrd_window_get_current_width_meters (priv->button_reset);
 
+  float reset_height_meter =
+    xrd_window_get_current_height_meters (priv->button_reset);
+
   button_x += reset_width_meter;
 
   graphene_point3d_t position_sphere = {
     .x =  button_x,
-    .y =  0.0f,
+    .y =  button_y,
     .z = -1.0f
   };
   gchar *sphere_str[] =  { "Sphere" };
@@ -880,11 +885,12 @@ _init_buttons (XrdClient *self)
                               self))
     return FALSE;
 
-  button_x += reset_width_meter;
+  button_x = 0.0f;
+  button_y -= reset_height_meter;
 
   graphene_point3d_t position_pinned = {
     .x =  button_x,
-    .y =  0.0f,
+    .y =  button_y,
     .z = -1.0f
   };
   gchar *pinned_str[] =  { "Show only", "pinned windows" };
@@ -899,7 +905,7 @@ _init_buttons (XrdClient *self)
 
   graphene_point3d_t select_pinned = {
     .x =  button_x,
-    .y =  0.0f,
+    .y =  button_y,
     .z = -1.0f
   };
   gchar *select_str[] =  { "Pin windows" };
