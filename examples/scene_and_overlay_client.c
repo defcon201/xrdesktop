@@ -301,7 +301,11 @@ _init_windows (Example *self)
   g_object_unref (cursor_pixbuf);
   g_object_unref (texture);
 
-  graphene_point3d_t switch_pos = { .x = -1, .y = 1, .z = -1 };
+  graphene_point3d_t switch_pos = {
+    .x =  -0.75f,
+    .y =  -xrd_window_get_current_height_meters (self->head_follow_button),
+    .z = -1.0f
+  };
 
   gchar *switch_str[] =  { "Switch", "Mode"};
   xrd_client_add_button (self->client, &self->switch_button, 2,
