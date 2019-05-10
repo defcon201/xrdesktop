@@ -99,7 +99,10 @@ xrd_window_manager_init (XrdWindowManager *self)
       self->grab_state[i].window = NULL;
     }
 
-  self->controls_shown = FALSE;
+  /* TODO: possible steamvr issue: When input poll rate is high and buttons are
+   * immediately hidden after creation, they may not reappear on show().
+   * For, show buttons when starting overlay client to avoid this issue . */
+  self->controls_shown = TRUE;
 }
 
 XrdWindowManager *
