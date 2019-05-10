@@ -192,7 +192,8 @@ static void
 xrd_scene_window_finalize (GObject *gobject)
 {
   XrdSceneWindow *self = XRD_SCENE_WINDOW (gobject);
-  g_object_unref (self->texture);
+  /* TODO: Ref texture when set, unref in examples */
+  //g_object_unref (self->texture);
 
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
