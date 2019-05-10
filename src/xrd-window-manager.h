@@ -156,6 +156,8 @@ xrd_window_manager_show_controls (XrdWindowManager *self,
 gboolean
 xrd_window_manager_is_controls_shown (XrdWindowManager *self);
 
+GSList *
+xrd_window_manager_get_buttons (XrdWindowManager *self);
 
 G_END_DECLS
 

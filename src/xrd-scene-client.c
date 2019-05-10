@@ -280,6 +280,16 @@ _render_eye_cb (uint32_t         eye,
                              cmd_buffer, &vp);
     }
 
+  for (GSList *l = xrd_window_manager_get_buttons (manager);
+       l != NULL; l = l->next)
+    {
+      XrdSceneWindow *window = XRD_SCENE_WINDOW (l->data);
+      xrd_scene_window_draw (window, eye,
+                             pipelines[PIPELINE_WINDOWS],
+                             pipeline_layout,
+                             cmd_buffer, &vp);
+    }
+
   _render_pointers (self, eye, cmd_buffer,
                     pipelines[PIPELINE_POINTER],
                     pipeline_layout, &vp);
@@ -430,6 +440,24 @@ _test_intersection (XrdSceneClient *self)
       XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
       for (GSList *l = xrd_window_manager_get_windows (manager);
+           l != NULL; l = l->next)
+        {
+          XrdSceneWindow *window = (XrdSceneWindow *) l->data;
+
+          graphene_vec3_t intersection;
+          float distance;
+          bool intersects = xrd_scene_pointer_get_intersection (pointer,
+                                                                window,
+                                                                &distance,
+                                                                &intersection);
+          if (intersects && distance < lowest_distance)
+            {
+              selected_window = window;
+              lowest_distance = distance;
+            }
+        }
+
+      for (GSList *l = xrd_window_manager_get_buttons (manager);
            l != NULL; l = l->next)
         {
           XrdSceneWindow *window = (XrdSceneWindow *) l->data;

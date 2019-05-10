@@ -800,6 +800,12 @@ xrd_window_manager_get_windows (XrdWindowManager *self)
   return self->all_windows;
 }
 
+GSList *
+xrd_window_manager_get_buttons (XrdWindowManager *self)
+{
+  return self->buttons;
+}
+
 void
 xrd_window_manager_show_pinned_only (XrdWindowManager *self,
                                      gboolean pinned_only)
