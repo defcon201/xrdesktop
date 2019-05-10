@@ -436,13 +436,38 @@ _init_example (Example *self, XrdClient *client)
   return TRUE;
 }
 
-int
-main ()
+static gboolean overlay = FALSE;
+
+static GOptionEntry entries[] =
 {
+  { "overlay", 'o', 0, G_OPTION_ARG_NONE, &overlay, "Launch overlay client by default.", NULL },
+  { NULL }
+};
+
+int
+main (int argc, char *argv[])
+{
+  GError *error = NULL;
+  GOptionContext *context;
+
+  context = g_option_context_new ("- xrdesktop client example.");
+  g_option_context_add_main_entries (context, entries, NULL);
+  if (!g_option_context_parse (context, &argc, &argv, &error))
+    {
+      g_print ("Wrong parameters: %s\n", error->message);
+      exit (1);
+    }
+
   Example self;
   self.loop = g_main_loop_new (NULL, FALSE);
 
-  if (!_init_example (&self, XRD_CLIENT (xrd_scene_client_new ())))
+  XrdClient *client;
+  if (overlay)
+    client = XRD_CLIENT (xrd_overlay_client_new ());
+  else
+    client = XRD_CLIENT (xrd_scene_client_new ());
+
+  if (!_init_example (&self, client))
     return 1;
 
   /* start glib main loop */
