@@ -64,7 +64,7 @@ _submit_texture (XrdSceneDesktopCursor *self,
   (void) hotspot_x;
   (void) hotspot_y;
 
-  g_warning ("stub: _submit_texture\n");
+  // g_warning ("stub: _submit_texture\n");
 }
 
 static void
