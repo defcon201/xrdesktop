@@ -78,10 +78,9 @@ _head_follow_press_cb (XrdOverlayWindow        *button,
   (void) event;
   (void) button;
   Example *self = _self;
+  GulkanClient *gc = xrd_client_get_uploader (self->client);
   if (self->head_follow_window == NULL)
     {
-      GulkanClient *gc = xrd_client_get_uploader (self->client);
-
       float ppm = self->hawk_big->width / 0.5;
 
       self->head_follow_window =
@@ -99,6 +98,8 @@ _head_follow_press_cb (XrdOverlayWindow        *button,
       graphene_matrix_init_translate (&transform, &point);
       xrd_window_set_transformation (self->head_follow_window,
                                             &transform);
+      gchar *hide_str[] =  { "Hide", "modal" };
+      xrd_button_set_text (self->head_follow_button, gc, 2, hide_str);
     }
   else
     {
@@ -106,6 +107,8 @@ _head_follow_press_cb (XrdOverlayWindow        *button,
                                 XRD_WINDOW (self->head_follow_window));
       g_object_unref (self->head_follow_window);
       self->head_follow_window = NULL;
+      gchar *show_str[] =  { "Show", "modal" };
+      xrd_button_set_text (self->head_follow_button, gc, 2, show_str);
     }
   g_free (event);
 }
@@ -183,7 +186,7 @@ _init_windows (Example *self)
     .y =  0.0f,
     .z = -1.0f
   };
-  gchar *tracked_str[] =  { "Show Tracked", "window" };
+  gchar *tracked_str[] =  { "Show", "modal"};
   xrd_client_add_button (self->client, &self->head_follow_button,
                          2, tracked_str,
                          &button_position,

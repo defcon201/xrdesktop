@@ -217,12 +217,12 @@ xrd_client_show_pinned_only (XrdClient *self,
   GulkanClient *client = xrd_client_get_uploader (self);
   if (pinned_only)
     {
-      gchar *all_str[] =  { "Show all", "windows" };
+      gchar *all_str[] =  { "Show", "all" };
       xrd_button_set_text (priv->pinned_button, client, 2, all_str);
     }
   else
     {
-      gchar *pinned_str[] =  { "Show only", "pinned windows" };
+      gchar *pinned_str[] =  { "Show", "pinned" };
       xrd_button_set_text (priv->pinned_button, client, 2, pinned_str);
     }
 }
@@ -832,13 +832,13 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   GulkanClient *client = xrd_client_get_uploader (self);
   if (priv->selection_mode)
     {
-      gchar *end_str[] =  { "Confirm Selection" };
+      gchar *end_str[] =  { "Confirm" };
       xrd_button_set_text (priv->select_pinned_button, client, 1, end_str);
     }
   else
     {
-      gchar *start_str[] =  { "Pin windows" };
-      xrd_button_set_text (priv->select_pinned_button, client, 1, start_str);
+      gchar *start_str[] =  { "Select", "pinned" };
+      xrd_button_set_text (priv->select_pinned_button, client, 2, start_str);
     }
 
   g_free (event);
@@ -893,7 +893,7 @@ _init_buttons (XrdClient *self)
     .y =  button_y,
     .z = -1.0f
   };
-  gchar *pinned_str[] =  { "Show only", "pinned windows" };
+  gchar *pinned_str[] =  { "Show", "pinned" };
   if (!xrd_client_add_button (self, &priv->pinned_button,
                               2, pinned_str,
                               &position_pinned,
@@ -908,9 +908,9 @@ _init_buttons (XrdClient *self)
     .y =  button_y,
     .z = -1.0f
   };
-  gchar *select_str[] =  { "Pin windows" };
+  gchar *select_str[] =  { "Select", "pinned" };
   if (!xrd_client_add_button (self, &priv->select_pinned_button,
-                              1, select_str,
+                              2, select_str,
                               &select_pinned,
                               (GCallback) _button_select_pinned_press_cb,
                               self))
@@ -1250,16 +1250,7 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
         longest_line = strlen (text[i]);
     }
 
-  float spacing = 2.;
-
-  /* top/bottom border + one spacing between each 2 lines */
-  float line_spacing = 2 * spacing + (lines - 1) * spacing;
-
-  float font_height = (height - line_spacing) / (float) lines;
-  float font_width = (width - 2. * spacing) / (float) longest_line;
-  /* assume square letters */
-  float font_size = fmin (font_height, font_width);
-
+  float font_size = 42;
   cairo_set_font_size (cr, font_size);
 
   for (int i = 0; i < lines; i++)
@@ -1270,16 +1261,34 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
       /* horizontally centered*/
       float x = center_x - extents.width / 2;
 
-      /* TODO: does this work for texts with height > width */
-      float y = spacing + /* top border*/
-                i * font_height + /* height of previous lines */
-                i * spacing + /* spacing between previous lines */
-                font_height / 2.; /* current line */;
+      float line_spacing = 0.25 * font_size;
+
+      float y;
+      if (lines == 1)
+        y = .5 * font_size + center_y;
+      else if (lines == 2)
+        {
+          if (i == 0)
+            y = .5 * font_size + center_y - .5 * font_size - line_spacing / 2.;
+          else
+            y = .5 * font_size + center_y + .5 * font_size + line_spacing / 2.;
+        }
+      else
+        /* TODO: better placement for more than 2 lines */
+        y = font_size + line_spacing + i * font_size + i * line_spacing;
 
       cairo_move_to (cr, x, y);
       cairo_set_source_rgb (cr, 0.9, 0.9, 0.9);
       cairo_show_text (cr, text[i]);
     }
+
+  /* draw a line at half the height of the button*/
+  /*
+  cairo_set_line_width(cr, 0.5);
+  cairo_move_to(cr, 0, center_y);
+  cairo_line_to(cr, width, center_y);
+  cairo_stroke(cr);
+   */
 
   cairo_destroy (cr);
 
