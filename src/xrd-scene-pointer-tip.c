@@ -14,7 +14,7 @@ static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (XrdScenePointerTip, xrd_scene_pointer_tip,
-                         XRD_TYPE_SCENE_OBJECT,
+                         XRD_TYPE_SCENE_WINDOW,
                          G_IMPLEMENT_INTERFACE (XRD_TYPE_POINTER_TIP,
                                                 xrd_scene_pointer_tip_interface_init))
 
