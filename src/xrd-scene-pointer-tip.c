@@ -105,15 +105,15 @@ _set_transformation_matrix (XrdScenePointerTip *self,
 static void
 _show (XrdScenePointerTip *self)
 {
-  (void) self;
-  g_warning ("stub: _show\n");
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  obj->visible = TRUE;
 }
 
 static void
 _hide (XrdScenePointerTip *self)
 {
-  (void) self;
-  g_warning ("stub: _hide\n");
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  obj->visible = FALSE;
 }
 
 static void
