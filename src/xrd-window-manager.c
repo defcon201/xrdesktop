@@ -598,13 +598,14 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
   grab_state->window = hover_state->window;
 
   graphene_quaternion_t controller_rotation;
-  graphene_quaternion_init_from_matrix (&controller_rotation,
-                                        &hover_state->pose);
+  graphene_matrix_get_rotation_quaternion (&hover_state->pose,
+                                           &controller_rotation);
 
   graphene_matrix_t window_transform;
   xrd_window_get_transformation (grab_state->window, &window_transform);
-  graphene_quaternion_init_from_matrix (
-      &grab_state->window_rotation, &window_transform);
+
+  graphene_matrix_get_rotation_quaternion (&window_transform,
+                                           &grab_state->window_rotation);
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,
