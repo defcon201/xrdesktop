@@ -1,5 +1,5 @@
 so_version = 0
-api_version = '0.9'
+api_version = '0.10'
 api_path = 'xrdesktop-' + api_version
 
 xrdesktop_sources = [
