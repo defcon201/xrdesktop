@@ -1265,13 +1265,13 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
 
       float y;
       if (lines == 1)
-        y = .5 * font_size + center_y;
+        y = .25 * font_size + center_y;
       else if (lines == 2)
         {
           if (i == 0)
-            y = .5 * font_size + center_y - .5 * font_size - line_spacing / 2.;
+            y = .25 * font_size + center_y - .5 * font_size - line_spacing / 2.;
           else
-            y = .5 * font_size + center_y + .5 * font_size + line_spacing / 2.;
+            y = .25 * font_size + center_y + .5 * font_size + line_spacing / 2.;
         }
       else
         /* TODO: better placement for more than 2 lines */
