@@ -47,6 +47,10 @@ struct _XrdPointerTipInterface
 
   void
   (*hide) (XrdPointerTip *self);
+
+  void
+  (*set_width_meters) (XrdPointerTip *self,
+                       float          meters);
 };
 
 void
@@ -76,6 +80,10 @@ xrd_pointer_tip_show (XrdPointerTip *self);
 
 void
 xrd_pointer_tip_hide (XrdPointerTip *self);
+
+void
+xrd_pointer_tip_set_width_meters (XrdPointerTip *self,
+                                  float          meters);
 
 G_END_DECLS
 

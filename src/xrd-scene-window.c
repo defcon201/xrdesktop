@@ -606,6 +606,21 @@ _get_hidden (XrdWindow *window)
   return !obj->visible;
 }
 
+void
+xrd_scene_window_set_width_meters (XrdSceneWindow *self,
+                                   float           width_meters)
+{
+  float height_meters = width_meters / self->aspect_ratio;
+
+  g_object_set (self,
+                "initial-width-meters", width_meters,
+                "initial-height-meters", height_meters,
+                "scale", 1.0f, /* Reset window scale */
+                NULL);
+
+  xrd_scene_object_set_scale (XRD_SCENE_OBJECT (self), height_meters);
+}
+
 static void
 xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
 {

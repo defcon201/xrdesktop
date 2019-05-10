@@ -74,3 +74,11 @@ xrd_pointer_tip_hide (XrdPointerTip *self)
   XrdPointerTipInterface* iface = XRD_POINTER_TIP_GET_IFACE (self);
   return iface->hide (self);
 }
+
+void
+xrd_pointer_tip_set_width_meters (XrdPointerTip *self,
+                                  float          meters)
+{
+  XrdPointerTipInterface* iface = XRD_POINTER_TIP_GET_IFACE (self);
+  return iface->set_width_meters (self, meters);
+}

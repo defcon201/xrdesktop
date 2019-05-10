@@ -117,6 +117,14 @@ _hide (XrdScenePointerTip *self)
 }
 
 static void
+_set_width_meters (XrdScenePointerTip *self,
+                   float               meters)
+{
+  XrdSceneWindow *window = XRD_SCENE_WINDOW (self);
+  xrd_scene_window_set_width_meters (window, meters);
+}
+
+static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
   iface->set_constant_width = (void*) _set_constant_width;
@@ -127,4 +135,5 @@ xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->set_transformation = (void*) _set_transformation;
   iface->show = (void*) _show;
   iface->hide = (void*) _hide;
+  iface->set_width_meters = (void*) _set_width_meters;
 }

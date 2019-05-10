@@ -95,6 +95,12 @@ xrd_overlay_pointer_tip_class_init (XrdOverlayPointerTipClass *klass)
 }
 
 static void
+_set_width_meters (XrdOverlayPointerTip *self, float meters)
+{
+  openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), meters);
+}
+
+static void
 xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
   iface->set_constant_width = (void*) xrd_overlay_pointer_tip_set_constant_width;
@@ -105,6 +111,7 @@ xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *ifac
   iface->set_transformation = (void*) xrd_overlay_pointer_tip_set_transformation;
   iface->show = (void*) xrd_overlay_pointer_tip_show;
   iface->hide = (void*) xrd_overlay_pointer_tip_hide;
+  iface->set_width_meters = (void*) _set_width_meters;
 }
 
 static void

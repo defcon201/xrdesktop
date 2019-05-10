@@ -83,6 +83,9 @@ void
 xrd_scene_window_get_plane (XrdSceneWindow   *self,
                             graphene_plane_t *res);
 
+void
+xrd_scene_window_set_width_meters (XrdSceneWindow *self,
+                                   float           width_meters);
 
 
 G_END_DECLS
