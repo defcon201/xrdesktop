@@ -97,7 +97,7 @@ xrdesktop_deps = [
 ]
 
 xrdesktop_lib = shared_library(api_path,
-  xrdesktop_sources,
+  xrdesktop_sources + shader_resources,
   version: meson.project_version(),
   soversion: so_version,
   dependencies: xrdesktop_deps,
