@@ -18,7 +18,6 @@ typedef struct Example
 {
   GMainLoop *loop;
   XrdClient *client;
-  GSList *windows;
   XrdWindow *head_follow_window;
   XrdWindow *head_follow_button;
   GulkanTexture *hawk_big;
@@ -206,12 +205,7 @@ _init_windows (Example *self)
                                                              ppm));
             }
 
-          // TODO
-          if (window == NULL)
-            continue;
-
           xrd_client_add_window (self->client, window, FALSE, FALSE);
-          self->windows = g_slist_append (self->windows, window);
 
           xrd_window_submit_texture (window, gc, self->hawk_big);
 
@@ -259,7 +253,6 @@ _init_windows (Example *self)
                 }
 
               xrd_client_add_window (self->client, child, TRUE, FALSE);
-              self->windows = g_slist_append (self->windows, child);
 
               xrd_window_submit_texture (child, gc, cat_small);
 
@@ -313,7 +306,6 @@ _init_windows (Example *self)
                          &switch_pos,
                          (GCallback) _button_switch_press_cb,
                          self);
-  self->windows = g_slist_append (self->windows, self->switch_button);
   return TRUE;
 }
 
@@ -334,8 +326,6 @@ _cleanup (Example *self)
   self->quit_source = 0;
   self->render_source = 0;
 
-  g_slist_free (self->windows);
-  self->windows = NULL;
   g_object_unref (self->hawk_big);
   self->hawk_big = NULL;
   g_object_unref (self->client);
@@ -413,7 +403,6 @@ _init_example (Example *self, XrdClient *client)
   GulkanClient *gc = xrd_client_get_uploader (client);
 
   self->client = client;
-  self->windows = NULL;
   self->head_follow_button = NULL;
   self->head_follow_window = NULL;
   self->hawk_big = _make_texture (gc, "/res/hawk.jpg");
