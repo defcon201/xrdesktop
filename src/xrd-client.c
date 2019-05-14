@@ -931,7 +931,8 @@ _keyboard_press_cb (OpenVRContext *context,
   (void) context;
   xrd_client_emit_keyboard_press (self, event);
 
-  g_free (event);
+  /* TODO: this crashes
+  gdk_event_free ((GdkEvent*) event); */
 }
 
 static void
