@@ -386,10 +386,10 @@ _iterate_cb (gpointer _self)
   Example *self = (Example*) _self;
 
   if (self->shutdown)
-    return false;
+    return FALSE;
 
   xrd_scene_client_render (XRD_SCENE_CLIENT (self->client));
-  return true;
+  return TRUE;
 }
 
 static gboolean
