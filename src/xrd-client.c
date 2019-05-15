@@ -641,7 +641,7 @@ _window_grab_cb (XrdWindow    *window,
 
   XrdPointerTip *pointer_tip =
     priv->pointer_tip[event->controller_index];
-  xrd_pointer_tip_set_transformation_matrix (pointer_tip, &event->pose);
+  xrd_pointer_tip_set_transformation (pointer_tip, &event->pose);
 
   xrd_pointer_tip_set_constant_width (pointer_tip);
   g_free (event);
@@ -1067,7 +1067,7 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   graphene_matrix_rotate_quaternion (&tip_pose, &controller_rotation);
   graphene_matrix_translate (&tip_pose, &controller_translation_point);
 
-  xrd_pointer_tip_set_transformation_matrix (pointer_tip, &tip_pose);
+  xrd_pointer_tip_set_transformation (pointer_tip, &tip_pose);
 
   xrd_pointer_tip_set_constant_width (pointer_tip);
 

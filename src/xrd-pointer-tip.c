@@ -54,11 +54,11 @@ xrd_pointer_tip_animate_pulse (XrdPointerTip *self)
 }
 
 void
-xrd_pointer_tip_set_transformation_matrix (XrdPointerTip    *self,
-                                          graphene_matrix_t *matrix)
+xrd_pointer_tip_set_transformation (XrdPointerTip    *self,
+                                    graphene_matrix_t *matrix)
 {
   XrdPointerTipInterface* iface = XRD_POINTER_TIP_GET_IFACE (self);
-  return iface->set_transformation_matrix (self, matrix);
+  return iface->set_transformation (self, matrix);
 }
 
 void

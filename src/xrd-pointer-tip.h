@@ -39,8 +39,8 @@ struct _XrdPointerTipInterface
   (*animate_pulse) (XrdPointerTip *self);
 
   void
-  (*set_transformation_matrix) (XrdPointerTip    *self,
-                                graphene_matrix_t *matrix);
+  (*set_transformation) (XrdPointerTip    *self,
+                         graphene_matrix_t *matrix);
 
   void
   (*show) (XrdPointerTip *self);
@@ -68,8 +68,8 @@ void
 xrd_pointer_tip_animate_pulse (XrdPointerTip *self);
 
 void
-xrd_pointer_tip_set_transformation_matrix (XrdPointerTip    *self,
-                                          graphene_matrix_t *matrix);
+xrd_pointer_tip_set_transformation (XrdPointerTip    *self,
+                                    graphene_matrix_t *matrix);
 
 void
 xrd_pointer_tip_show (XrdPointerTip *self);

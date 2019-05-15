@@ -77,8 +77,8 @@ void
 xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip  *self);
 
 void
-xrd_overlay_pointer_tip_set_transformation_matrix (XrdOverlayPointerTip *self,
-                                                   graphene_matrix_t *matrix);
+xrd_overlay_pointer_tip_set_transformation (XrdOverlayPointerTip *self,
+                                            graphene_matrix_t *matrix);
 
 void
 xrd_overlay_pointer_tip_show (XrdOverlayPointerTip *self);
@@ -102,7 +102,7 @@ xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *ifac
   iface->set_active = (void*) xrd_overlay_pointer_tip_set_active;
   iface->init_vulkan = (void*) xrd_overlay_pointer_tip_init_vulkan;
   iface->animate_pulse = (void*) xrd_overlay_pointer_tip_animate_pulse;
-  iface->set_transformation_matrix = (void*) xrd_overlay_pointer_tip_set_transformation_matrix;
+  iface->set_transformation = (void*) xrd_overlay_pointer_tip_set_transformation;
   iface->show = (void*) xrd_overlay_pointer_tip_show;
   iface->hide = (void*) xrd_overlay_pointer_tip_hide;
 }
@@ -516,8 +516,8 @@ xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
 }
 
 void
-xrd_overlay_pointer_tip_set_transformation_matrix (XrdOverlayPointerTip *self,
-                                                   graphene_matrix_t *matrix)
+xrd_overlay_pointer_tip_set_transformation (XrdOverlayPointerTip *self,
+                                            graphene_matrix_t    *matrix)
 {
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), matrix);
 }

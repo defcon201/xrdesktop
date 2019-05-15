@@ -96,8 +96,8 @@ _animate_pulse (XrdScenePointerTip  *self)
 }
 
 static void
-_set_transformation_matrix (XrdScenePointerTip *self,
-                            graphene_matrix_t  *matrix)
+_set_transformation (XrdScenePointerTip *self,
+                     graphene_matrix_t  *matrix)
 {
   xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
 }
@@ -124,7 +124,7 @@ xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->set_active = (void*) _set_active;
   iface->init_vulkan = (void*) _init_vulkan;
   iface->animate_pulse = (void*) _animate_pulse;
-  iface->set_transformation_matrix = (void*) _set_transformation_matrix;
+  iface->set_transformation = (void*) _set_transformation;
   iface->show = (void*) _show;
   iface->hide = (void*) _hide;
 }
