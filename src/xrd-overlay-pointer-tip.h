@@ -20,7 +20,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, XRD,
                       OVERLAY_POINTER_TIP, OpenVROverlay)
 
-struct Animation;
 
 struct _XrdOverlayPointerTip;
 

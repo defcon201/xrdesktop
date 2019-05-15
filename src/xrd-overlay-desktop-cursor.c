@@ -125,7 +125,7 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
 
   xrd_settings_connect_and_apply (G_CALLBACK
                                   (_update_use_constant_apparent_width),
-                                  "pointer-tip-apparent-width-is-constant",
+                                  "pointer-tip-keep-apparent-size",
                                   self);
 
   /* pointer ray is MAX, pointer tip is MAX - 1, so cursor is MAX - 2 */

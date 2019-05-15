@@ -111,7 +111,7 @@
       </description>
     </key>
 
-    <key name='pointer-tip-apparent-width-is-constant' type='b'>
+    <key name='pointer-tip-keep-apparent-size' type='b'>
       <default>true</default>
       <summary>Whether the pointer tip should have the same apparent size, independent from the distance to the user.</summary>
       <description>
@@ -120,15 +120,13 @@
       </description>
     </key>
 
-    <key name='pointer-tip-width' type='d'>
+    <key name='pointer-tip-width-meters' type='d'>
       <default>0.05</default>
-      <summary>Either the width or the apparent width of the pointer tip, depending on the pointer-tip-apparent-width-is-constant option.</summary>
+      <summary>The width of the tip in meters or the apparent width at distance of 3 meters.</summary>
       <description>
-        When pointer-tip-apparent-width-is-constant is disabled, this option sets the width of the pointer tip.
-        When pointer-tip-apparent-width-is-constant is enabled, this option sets the apparent width such
-        that it always appears to have this width as if seen in 3 meter distance. The value of 3 meter was chosen because
-        at typical usage distances, it makes the pointer tip usable both with pointer-tip-apparent-width-is-constant
-        enabled and disabled.
+        When pointer-tip-keep-apparent-size is disabled, this option sets the width in meters of the pointer tip.
+        When pointer-tip-keep-apparent-size is enabled, this option sets the apparent width such
+        that it always appears to have this width as if seen in 3 meters distance.
       </description>
     </key>
 
@@ -142,21 +140,21 @@
       </description>
     </key>
 
-    <key name='active-pointer-tip-color' type='(ddd)'>
+    <key name='pointer-tip-active-color' type='(ddd)'>
       <default>(0.078,0.471,0.675)</default>
       <summary>The color of an active pointer tip e.g. pointing at an overlay</summary>
       <description>
       </description>
     </key>
 
-    <key name='pointer-tip-animation-alpha' type='d'>
+    <key name='pointer-tip-pulse-alpha' type='d'>
       <default>0.25</default>
-      <summary>The opaqueness of the pointer tip animation</summary>
+      <summary>The opaqueness of the pointer tip pulse animation.</summary>
       <description>
       </description>
     </key>
 
-    <key name='inactive-pointer-tip-color' type='(ddd)'>
+    <key name='pointer-tip-passive-color' type='(ddd)'>
       <default>(1.0,1.0,1.0)</default>
       <summary>The color of an inactive pointer tip i.e. not point at anything</summary>
       <description>
