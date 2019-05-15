@@ -51,17 +51,19 @@ xrd_scene_pointer_tip_finalize (GObject *gobject)
 }
 
 static void
-_set_constant_width (XrdScenePointerTip *self)
+_set_constant_width (XrdPointerTip *tip)
 {
-  (void) self;
+  (void) tip;
   //g_warning ("stub: _set_constant_width\n");
 }
 
 static void
-_update (XrdScenePointerTip *self,
+_update (XrdPointerTip      *tip,
          graphene_matrix_t  *pose,
          graphene_point3d_t *intersection_point)
 {
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
+
   graphene_matrix_t transform;
   graphene_matrix_init_from_matrix (&transform, pose);
   xrd_math_matrix_set_translation_point (&transform, intersection_point);
@@ -73,53 +75,57 @@ _update (XrdScenePointerTip *self,
 }
 
 static void
-_set_active (XrdScenePointerTip *self,
-             gboolean            active)
+_set_active (XrdPointerTip *tip,
+             gboolean       active)
 {
-  (void) self;
+  (void) tip;
   (void) active;
   //g_warning ("stub: _set_active\n");
 }
 
 static void
-_init_vulkan (XrdScenePointerTip  *self)
+_init_vulkan (XrdPointerTip *tip)
 {
-  (void) self;
+  (void) tip;
   g_warning ("stub: _init_vulkan\n");
 }
 
 static void
-_animate_pulse (XrdScenePointerTip  *self)
+_animate_pulse (XrdPointerTip *tip)
 {
-  (void) self;
+  (void) tip;
   g_warning ("stub: _animate_pulse\n");
 }
 
 static void
-_set_transformation (XrdScenePointerTip *self,
-                     graphene_matrix_t  *matrix)
+_set_transformation (XrdPointerTip     *tip,
+                     graphene_matrix_t *matrix)
 {
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
 }
 
 static void
-_show (XrdScenePointerTip *self)
+_show (XrdPointerTip *tip)
 {
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   obj->visible = TRUE;
 }
 
 static void
-_hide (XrdScenePointerTip *self)
+_hide (XrdPointerTip *tip)
 {
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   obj->visible = FALSE;
 }
 
 static void
-_set_width_meters (XrdScenePointerTip *self,
-                   float               meters)
+_set_width_meters (XrdPointerTip *tip,
+                   float          meters)
 {
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   XrdSceneWindow *window = XRD_SCENE_WINDOW (self);
   xrd_scene_window_set_width_meters (window, meters);
 }
@@ -127,13 +133,13 @@ _set_width_meters (XrdScenePointerTip *self,
 static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
-  iface->set_constant_width = (void*) _set_constant_width;
-  iface->update = (void*) _update;
-  iface->set_active = (void*) _set_active;
-  iface->init_vulkan = (void*) _init_vulkan;
-  iface->animate_pulse = (void*) _animate_pulse;
-  iface->set_transformation = (void*) _set_transformation;
-  iface->show = (void*) _show;
-  iface->hide = (void*) _hide;
-  iface->set_width_meters = (void*) _set_width_meters;
+  iface->set_constant_width = _set_constant_width;
+  iface->update = _update;
+  iface->set_active = _set_active;
+  iface->init_vulkan = _init_vulkan;
+  iface->animate_pulse = _animate_pulse;
+  iface->set_transformation = _set_transformation;
+  iface->show = _show;
+  iface->hide = _hide;
+  iface->set_width_meters = _set_width_meters;
 }
