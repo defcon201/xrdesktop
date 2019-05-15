@@ -42,9 +42,6 @@
                "path": "/user/hand/left/input/trackpad",
                "mode": "trackpad",
                "inputs": {
-                  "scroll": {
-                     "output": "/actions/mouse_synth/in/scroll_left"
-                  },
                   "position": {
                      "output": "/actions/mouse_synth/in/scroll_left"
                   }
@@ -54,9 +51,6 @@
                "path": "/user/hand/right/input/trackpad",
                "mode": "trackpad",
                "inputs": {
-                  "scroll": {
-                     "output": "/actions/mouse_synth/in/scroll_right"
-                  },
                   "position": {
                      "output": "/actions/mouse_synth/in/scroll_right"
                   }
@@ -110,9 +104,6 @@
                "inputs": {
                   "position": {
                      "output": "/actions/wm/in/push_pull_right"
-                  },
-                  "scroll": {
-                     "output": "/actions/wm/in/push_pull_right"
                   }
                }
             },
@@ -130,7 +121,7 @@
                "mode": "button",
                "inputs": {
                   "click": {
-                     "output": "/actions/wn/in/menu_left"
+                     "output": "/actions/wm/in/menu_left"
                   }
                }
             },
@@ -157,9 +148,6 @@
                "mode": "trackpad",
                "inputs": {
                   "position": {
-                     "output": "/actions/wm/in/push_pull_left"
-                  },
-                  "scroll": {
                      "output": "/actions/wm/in/push_pull_left"
                   }
                }

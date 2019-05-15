@@ -6,7 +6,7 @@
                "path": "/user/hand/right/input/trackpad",
                "mode": "trackpad",
                "inputs": {
-                  "scroll": {
+                  "position": {
                      "output": "/actions/mouse_synth/in/scroll_right"
                   }
                }
@@ -33,7 +33,7 @@
                "path": "/user/hand/left/input/trackpad",
                "mode": "trackpad",
                "inputs": {
-                  "scroll": {
+                  "position": {
                      "output": "/actions/mouse_synth/in/scroll_left"
                   }
                }
@@ -93,7 +93,7 @@
                "path": "/user/hand/right/input/trackpad",
                "mode": "trackpad",
                "inputs": {
-                  "scroll": {
+                  "position": {
                      "output": "/actions/wm/in/push_pull_right"
                   }
                }
@@ -120,7 +120,7 @@
                "path": "/user/hand/left/input/trackpad",
                "mode": "trackpad",
                "inputs": {
-                  "scroll": {
+                  "position": {
                      "output": "/actions/wm/in/push_pull_left"
                   }
                }
