@@ -49,42 +49,15 @@ struct _XrdOverlayPointerTip
 };
 
 static void
-xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *iface);
+xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, OPENVR_TYPE_OVERLAY,
+G_DEFINE_TYPE_WITH_CODE (XrdOverlayPointerTip, xrd_overlay_pointer_tip,
+                         OPENVR_TYPE_OVERLAY,
                          G_IMPLEMENT_INTERFACE (XRD_TYPE_POINTER_TIP,
-                                                xrd_overlay_pointer_tip_pointer_tip_interface_init))
+                                                xrd_overlay_pointer_tip_interface_init))
 
 static void
 xrd_overlay_pointer_tip_finalize (GObject *gobject);
-
-void
-xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self);
-
-void
-xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
-                                graphene_matrix_t    *pose,
-                                graphene_point3d_t   *intersection_point);
-
-void
-xrd_overlay_pointer_tip_set_active (XrdOverlayPointerTip  *self,
-                                    gboolean               active);
-
-void
-xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip  *self);
-
-void
-xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip  *self);
-
-void
-xrd_overlay_pointer_tip_set_transformation (XrdOverlayPointerTip *self,
-                                            graphene_matrix_t *matrix);
-
-void
-xrd_overlay_pointer_tip_show (XrdOverlayPointerTip *self);
-
-void
-xrd_overlay_pointer_tip_hide (XrdOverlayPointerTip *self);
 
 static void
 xrd_overlay_pointer_tip_class_init (XrdOverlayPointerTipClass *klass)
@@ -95,23 +68,10 @@ xrd_overlay_pointer_tip_class_init (XrdOverlayPointerTipClass *klass)
 }
 
 static void
-_set_width_meters (XrdOverlayPointerTip *self, float meters)
+_set_width_meters (XrdPointerTip *tip, float meters)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
   openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), meters);
-}
-
-static void
-xrd_overlay_pointer_tip_pointer_tip_interface_init (XrdPointerTipInterface *iface)
-{
-  iface->set_constant_width = (void*) xrd_overlay_pointer_tip_set_constant_width;
-  iface->update = (void*) xrd_overlay_pointer_tip_update;
-  iface->set_active = (void*) xrd_overlay_pointer_tip_set_active;
-  iface->init_vulkan = (void*) xrd_overlay_pointer_tip_init_vulkan;
-  iface->animate_pulse = (void*) xrd_overlay_pointer_tip_animate_pulse;
-  iface->set_transformation = (void*) xrd_overlay_pointer_tip_set_transformation;
-  iface->show = (void*) xrd_overlay_pointer_tip_show;
-  iface->hide = (void*) xrd_overlay_pointer_tip_hide;
-  iface->set_width_meters = (void*) _set_width_meters;
 }
 
 static void
@@ -249,12 +209,14 @@ _animate_cb (gpointer _animation)
   return TRUE;
 }
 
-void
-xrd_overlay_pointer_tip_animate_pulse (XrdOverlayPointerTip *self)
+static void
+_animate_pulse (XrdPointerTip *tip)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+
   if (self->animation_callback_id != 0)
     {
-      xrd_overlay_pointer_tip_set_active (self, self->active);
+      xrd_pointer_tip_set_active (XRD_POINTER_TIP (self), self->active);
     }
   Animation *animation =  g_malloc (sizeof *animation);
   animation->progress = 0;
@@ -273,7 +235,7 @@ _update_width (GSettings *settings, gchar *key, gpointer user_data)
   self->overlay_width *= self->texture_size_factor;
 
   if (self->use_constant_apparent_width)
-    xrd_overlay_pointer_tip_set_constant_width (self);
+      xrd_pointer_tip_set_constant_width (XRD_POINTER_TIP (self));
   else
     openvr_overlay_set_width_meters
         (OPENVR_OVERLAY (self), self->overlay_width);
@@ -286,7 +248,7 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
   XrdOverlayPointerTip *self = user_data;
   self->use_constant_apparent_width = g_settings_get_boolean (settings, key);
   if (self->use_constant_apparent_width)
-    xrd_overlay_pointer_tip_set_constant_width (self);
+    xrd_pointer_tip_set_constant_width (XRD_POINTER_TIP (self));
   else
     openvr_overlay_set_width_meters
         (OPENVR_OVERLAY (self), self->overlay_width);
@@ -321,7 +283,7 @@ _update_texture_res (GSettings *settings, gchar *key, gpointer user_data)
   if (self->texture)
     g_object_unref (self->texture);
 
-  xrd_overlay_pointer_tip_init_vulkan (self);
+  xrd_pointer_tip_init_vulkan (XRD_POINTER_TIP (self));
 }
 
 static void
@@ -386,9 +348,11 @@ xrd_overlay_pointer_tip_new (int controller_index,
   return self;
 }
 
-void
-xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip *self)
+static void
+_init_vulkan (XrdPointerTip *tip)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
   GdkPixbuf* pixbuf = _render_current_tip (self, 0.0);
@@ -402,10 +366,12 @@ xrd_overlay_pointer_tip_init_vulkan (XrdOverlayPointerTip *self)
 /** xrd_overlay_pointer_tip_set_active:
  * Changes whether the active or inactive style is rendered.
  * Also cancels animations. */
-void
-xrd_overlay_pointer_tip_set_active (XrdOverlayPointerTip *self,
-                                    gboolean active)
+static void
+_set_active (XrdPointerTip *tip,
+             gboolean       active)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+
   if (self->texture == NULL)
     return;
 
@@ -475,9 +441,11 @@ _get_hmd_pose (graphene_matrix_t *pose)
 }
 
 /* note: Move pointer tip to the desired location before calling. */
-void
-xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
+static void
+_set_constant_width (XrdPointerTip *tip)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+
   if (!self->use_constant_apparent_width)
     return;
 
@@ -509,34 +477,54 @@ xrd_overlay_pointer_tip_set_constant_width (XrdOverlayPointerTip *self)
   openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), new_width);
 }
 
-void
-xrd_overlay_pointer_tip_update (XrdOverlayPointerTip *self,
-                                graphene_matrix_t    *pose,
-                                graphene_point3d_t   *intersection_point)
+static void
+_update (XrdPointerTip      *tip,
+         graphene_matrix_t  *pose,
+         graphene_point3d_t *intersection_point)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+
   graphene_matrix_t transform;
   graphene_matrix_init_from_matrix (&transform, pose);
   xrd_math_matrix_set_translation_point (&transform, intersection_point);
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);
 
-  xrd_overlay_pointer_tip_set_constant_width (self);
+  xrd_pointer_tip_set_constant_width (XRD_POINTER_TIP (self));
 }
 
-void
-xrd_overlay_pointer_tip_set_transformation (XrdOverlayPointerTip *self,
-                                            graphene_matrix_t    *matrix)
+static void
+_set_transformation (XrdPointerTip     *tip,
+                     graphene_matrix_t *matrix)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), matrix);
 }
 
-void
-xrd_overlay_pointer_tip_show (XrdOverlayPointerTip *self)
+static void
+_show (XrdPointerTip *tip)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
   openvr_overlay_show (OPENVR_OVERLAY (self));
 }
 
-void
-xrd_overlay_pointer_tip_hide (XrdOverlayPointerTip *self)
+static void
+_hide (XrdPointerTip *tip)
 {
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
   openvr_overlay_hide (OPENVR_OVERLAY (self));
 }
+
+static void
+xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
+{
+  iface->set_constant_width = _set_constant_width;
+  iface->update = _update;
+  iface->set_active = _set_active;
+  iface->init_vulkan = _init_vulkan;
+  iface->animate_pulse = _animate_pulse;
+  iface->set_transformation = _set_transformation;
+  iface->show = _show;
+  iface->hide = _hide;
+  iface->set_width_meters = _set_width_meters;
+}
+
