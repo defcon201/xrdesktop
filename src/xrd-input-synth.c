@@ -253,19 +253,13 @@ _action_scroll_cb (OpenVRAction            *action,
       return;
     }
   
-  /* When z is not zero we get bogus data. We ignore this completely */
-  if (graphene_vec3_get_z (&event->state) != 0.0)
-    {
-      g_free (event);
-      return;
-    }
-
   static graphene_vec3_t last_touch_pos;
   gboolean initial_touch = graphene_vec3_get_x (&last_touch_pos) == 0.0 &&
                            graphene_vec3_get_y (&last_touch_pos) == 0.0;
   graphene_vec3_init_from_vec3 (&last_touch_pos, &event->state);
 
-  /* No touch, no need to waste processing power */
+  /* When stopping to touch the touchpad we get a deltea from where the
+   * touchpad is touched to (0,0). Ignore this bogus delta. */
   if (graphene_vec3_get_x (&event->state) == 0.0 &&
       graphene_vec3_get_y (&event->state) == 0.0)
     {
@@ -273,7 +267,7 @@ _action_scroll_cb (OpenVRAction            *action,
       return;
     }
 
-  /* when starting to touch the touchpad, we get a delta from (0,0) to where
+  /* When starting to touch the touchpad, we get a delta from (0,0) to where
    * the touchpad is touched. Ignore this bogus delta. */
   if (initial_touch)
     {

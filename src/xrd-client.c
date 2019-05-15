@@ -1073,7 +1073,9 @@ _manager_no_hover_cb (XrdWindowManager *manager,
 
   xrd_pointer_tip_set_active (pointer_tip, FALSE);
 
-  xrd_input_synth_reset_scroll (priv->input_synth);
+  if (xrd_input_synth_synthing_controller (priv->input_synth) ==
+      event->controller_index)
+    xrd_input_synth_reset_scroll (priv->input_synth);
 
   priv->hover_window[event->controller_index] = NULL;
 

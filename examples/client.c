@@ -340,7 +340,8 @@ _click_cb (XrdClient     *client,
 {
   (void) client;
   (void) self;
-  g_print ("click: %f, %f\n",
+  g_print ("button %d %s at %f, %f\n",
+           event->button, event->state ? "pressed" : "released",
            event->position->x, event->position->y);
 }
 
