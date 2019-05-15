@@ -24,22 +24,18 @@ struct _XrdPointerTipInterface
   (*set_constant_width) (XrdPointerTip *self);
 
   void
-  (*update) (XrdPointerTip      *self,
-             graphene_matrix_t  *pose,
-             graphene_point3d_t *intersection_point);
-
-  void
   (*set_active) (XrdPointerTip *self,
                  gboolean       active);
-
-  void
-  (*init_vulkan) (XrdPointerTip *self);
 
   void
   (*animate_pulse) (XrdPointerTip *self);
 
   void
-  (*set_transformation) (XrdPointerTip    *self,
+  (*set_transformation) (XrdPointerTip     *self,
+                         graphene_matrix_t *matrix);
+
+  void
+  (*get_transformation) (XrdPointerTip     *self,
                          graphene_matrix_t *matrix);
 
   void
@@ -66,13 +62,14 @@ xrd_pointer_tip_set_active (XrdPointerTip *self,
                             gboolean       active);
 
 void
-xrd_pointer_tip_init_vulkan (XrdPointerTip *self);
-
-void
 xrd_pointer_tip_animate_pulse (XrdPointerTip *self);
 
 void
-xrd_pointer_tip_set_transformation (XrdPointerTip    *self,
+xrd_pointer_tip_set_transformation (XrdPointerTip     *self,
+                                    graphene_matrix_t *matrix);
+
+void
+xrd_pointer_tip_get_transformation (XrdPointerTip     *self,
                                     graphene_matrix_t *matrix);
 
 void

@@ -183,7 +183,6 @@ xrd_overlay_client_init (XrdOverlayClient *self)
         }
       xrd_client_set_pointer_tip (XRD_CLIENT (self), pointer_tip, i);
 
-      xrd_pointer_tip_init_vulkan (pointer_tip);
       xrd_pointer_tip_set_active (pointer_tip, FALSE);
       xrd_pointer_tip_show (pointer_tip);
     }

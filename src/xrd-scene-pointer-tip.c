@@ -58,36 +58,12 @@ _set_constant_width (XrdPointerTip *tip)
 }
 
 static void
-_update (XrdPointerTip      *tip,
-         graphene_matrix_t  *pose,
-         graphene_point3d_t *intersection_point)
-{
-  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
-
-  graphene_matrix_t transform;
-  graphene_matrix_init_from_matrix (&transform, pose);
-  xrd_math_matrix_set_translation_point (&transform, intersection_point);
-
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  xrd_scene_object_set_transformation (obj, &transform);
-
-  // xrd_overlay_pointer_tip_set_constant_width (self);
-}
-
-static void
 _set_active (XrdPointerTip *tip,
              gboolean       active)
 {
   (void) tip;
   (void) active;
   //g_warning ("stub: _set_active\n");
-}
-
-static void
-_init_vulkan (XrdPointerTip *tip)
-{
-  (void) tip;
-  g_warning ("stub: _init_vulkan\n");
 }
 
 static void
@@ -104,6 +80,17 @@ _set_transformation (XrdPointerTip     *tip,
   XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
 }
+
+static void
+_get_transformation (XrdPointerTip     *tip,
+                     graphene_matrix_t *matrix)
+{
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
+  graphene_matrix_t transformation =
+    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
+  graphene_matrix_init_from_matrix (matrix, &transformation);
+}
+
 
 static void
 _show (XrdPointerTip *tip)
@@ -134,11 +121,10 @@ static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
   iface->set_constant_width = _set_constant_width;
-  iface->update = _update;
   iface->set_active = _set_active;
-  iface->init_vulkan = _init_vulkan;
   iface->animate_pulse = _animate_pulse;
   iface->set_transformation = _set_transformation;
+  iface->get_transformation = _get_transformation;
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
