@@ -25,12 +25,12 @@ typedef struct XrdPointerTipAnimation
  * Since the pulse animation surrounds the tip and would
  * exceed the canvas size, we need to scale it to fit the pulse.
  */
-#define VIEWPORT_SCALE 3
+#define XRD_TIP_VIEWPORT_SCALE 3
 
 /*
  * The distance in meters for which apparent size and regular size are equal.
  */
-#define APPARENT_SIZE_DISTANCE 3.0f
+#define XRD_TIP_APPARENT_SIZE_DISTANCE 3.0f
 
 struct _XrdOverlayPointerTip
 {
@@ -139,7 +139,7 @@ _render_cairo (int                 w,
   /* Draw pulse */
   if (progress != 1.0)
     {
-      float pulse_scale = VIEWPORT_SCALE * (1.0f - progress);
+      float pulse_scale = XRD_TIP_VIEWPORT_SCALE * (1.0f - progress);
       graphene_point3d_t white = { 1.0f, 1.0f, 1.0f };
       _draw_gradient_circle (cr, w, h, radius * pulse_scale, &white,
                              pulse_alpha, 0.0);
@@ -169,8 +169,8 @@ GdkPixbuf*
 _render (XrdOverlayPointerTip *self,
          float                 progress)
 {
-  int w = self->texture_width * VIEWPORT_SCALE;
-  int h = self->texture_height * VIEWPORT_SCALE;
+  int w = self->texture_width * XRD_TIP_VIEWPORT_SCALE;
+  int h = self->texture_height * XRD_TIP_VIEWPORT_SCALE;
 
   graphene_point3d_t *color =
     self->active ? &self->active_color : &self->passive_color;
@@ -234,7 +234,8 @@ _update_width_meters (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayPointerTip *self = user_data;
 
-  self->width_meters = g_settings_get_double (settings, key) * VIEWPORT_SCALE;
+  self->width_meters =
+    g_settings_get_double (settings, key) * XRD_TIP_VIEWPORT_SCALE;
 
   if (self->keep_apparent_size)
       xrd_pointer_tip_set_constant_width (XRD_POINTER_TIP (self));
@@ -453,9 +454,9 @@ _update_apparent_size (XrdPointerTip *tip)
 
   float distance = graphene_point3d_distance (&tip_point, &hmd_point, NULL);
 
-  float new_width = self->width_meters / APPARENT_SIZE_DISTANCE * distance;
+  float w = self->width_meters / XRD_TIP_APPARENT_SIZE_DISTANCE * distance;
 
-  openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), new_width);
+  openvr_overlay_set_width_meters (OPENVR_OVERLAY(self), w);
 }
 
 static void
