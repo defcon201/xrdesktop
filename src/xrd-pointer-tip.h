@@ -11,6 +11,9 @@
 #include <glib-object.h>
 #include <graphene.h>
 
+#include <gulkan-texture.h>
+#include <gulkan-client.h>
+
 G_BEGIN_DECLS
 
 #define XRD_TYPE_POINTER_TIP xrd_pointer_tip_get_type()
@@ -47,6 +50,11 @@ struct _XrdPointerTipInterface
   void
   (*set_width_meters) (XrdPointerTip *self,
                        float          meters);
+
+  void
+  (*submit_texture) (XrdPointerTip *self,
+                     GulkanClient  *client,
+                     GulkanTexture *texture);
 };
 
 void
@@ -81,6 +89,11 @@ xrd_pointer_tip_hide (XrdPointerTip *self);
 void
 xrd_pointer_tip_set_width_meters (XrdPointerTip *self,
                                   float          meters);
+
+void
+xrd_pointer_tip_submit_texture (XrdPointerTip *self,
+                                GulkanClient  *client,
+                                GulkanTexture *texture);
 
 G_END_DECLS
 

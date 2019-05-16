@@ -88,3 +88,12 @@ xrd_pointer_tip_set_width_meters (XrdPointerTip *self,
   XrdPointerTipInterface* iface = XRD_POINTER_TIP_GET_IFACE (self);
   iface->set_width_meters (self, meters);
 }
+
+void
+xrd_pointer_tip_submit_texture (XrdPointerTip *self,
+                                GulkanClient  *client,
+                                GulkanTexture *texture)
+{
+  XrdPointerTipInterface* iface = XRD_POINTER_TIP_GET_IFACE (self);
+  iface->submit_texture (self, client, texture);
+}
