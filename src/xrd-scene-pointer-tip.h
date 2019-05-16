@@ -18,11 +18,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdScenePointerTip, xrd_scene_pointer_tip,
                       XRD, SCENE_POINTER_TIP, XrdSceneWindow)
 
-struct _XrdScenePointerTip
-{
-  XrdSceneWindow parent;
-};
-
 XrdScenePointerTip *xrd_scene_pointer_tip_new (void);
 
 G_END_DECLS

@@ -643,7 +643,7 @@ _window_grab_cb (XrdWindow    *window,
     priv->pointer_tip[event->controller_index];
   xrd_pointer_tip_set_transformation (pointer_tip, &event->pose);
 
-  xrd_pointer_tip_set_constant_width (pointer_tip);
+  xrd_pointer_tip_update_apparent_size (pointer_tip);
   g_free (event);
 }
 
@@ -1069,7 +1069,7 @@ _manager_no_hover_cb (XrdWindowManager *manager,
 
   xrd_pointer_tip_set_transformation (pointer_tip, &tip_pose);
 
-  xrd_pointer_tip_set_constant_width (pointer_tip);
+  xrd_pointer_tip_update_apparent_size (pointer_tip);
 
   xrd_pointer_tip_set_active (pointer_tip, FALSE);
 

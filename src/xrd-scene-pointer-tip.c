@@ -9,6 +9,14 @@
 
 #include "xrd-pointer-tip.h"
 #include "xrd-math.h"
+#include "xrd-scene-renderer.h"
+
+struct _XrdScenePointerTip
+{
+  XrdSceneWindow parent;
+
+  XrdPointerTipData data;
+};
 
 static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface);
@@ -48,29 +56,6 @@ xrd_scene_pointer_tip_finalize (GObject *gobject)
   (void) self;
 
   G_OBJECT_CLASS (xrd_scene_pointer_tip_parent_class)->finalize (gobject);
-}
-
-static void
-_set_constant_width (XrdPointerTip *tip)
-{
-  (void) tip;
-  //g_warning ("stub: _set_constant_width\n");
-}
-
-static void
-_set_active (XrdPointerTip *tip,
-             gboolean       active)
-{
-  (void) tip;
-  (void) active;
-  //g_warning ("stub: _set_active\n");
-}
-
-static void
-_animate_pulse (XrdPointerTip *tip)
-{
-  (void) tip;
-  g_warning ("stub: _animate_pulse\n");
 }
 
 static void
@@ -127,16 +112,30 @@ _submit_texture (XrdPointerTip *tip,
   xrd_window_submit_texture (XRD_WINDOW (window), client, texture);
 }
 
+static XrdPointerTipData*
+_get_data (XrdPointerTip *tip)
+{
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
+  return &self->data;
+}
+
+static GulkanClient*
+_get_gulkan_client (XrdPointerTip *tip)
+{
+  (void) tip;
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  return GULKAN_CLIENT (renderer);
+}
+
 static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
-  iface->set_constant_width = _set_constant_width;
-  iface->set_active = _set_active;
-  iface->animate_pulse = _animate_pulse;
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
   iface->submit_texture = _submit_texture;
+  iface->get_data = _get_data;
+  iface->get_gulkan_client = _get_gulkan_client;
 }
