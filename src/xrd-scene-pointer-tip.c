@@ -118,6 +118,16 @@ _set_width_meters (XrdPointerTip *tip,
 }
 
 static void
+_submit_texture (XrdPointerTip *tip,
+                 GulkanClient  *client,
+                 GulkanTexture *texture)
+{
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
+  XrdSceneWindow *window = XRD_SCENE_WINDOW (self);
+  xrd_window_submit_texture (XRD_WINDOW (window), client, texture);
+}
+
+static void
 xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
   iface->set_constant_width = _set_constant_width;
@@ -128,4 +138,5 @@ xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
+  iface->submit_texture = _submit_texture;
 }

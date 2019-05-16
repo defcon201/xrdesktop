@@ -490,6 +490,17 @@ _hide (XrdPointerTip *tip)
 }
 
 static void
+_submit_texture (XrdPointerTip *tip,
+                 GulkanClient  *client,
+                 GulkanTexture *texture)
+{
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+  openvr_overlay_uploader_submit_frame (OPENVR_OVERLAY_UPLOADER (client),
+                                        OPENVR_OVERLAY (self),
+                                        texture);
+}
+
+static void
 xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
   iface->set_constant_width = _update_apparent_size;
@@ -500,5 +511,6 @@ xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
+  iface->submit_texture = _submit_texture;
 }
 
