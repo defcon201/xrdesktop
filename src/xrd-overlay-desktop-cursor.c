@@ -83,8 +83,8 @@ _update_keep_apparent_size (GSettings *settings, gchar *key, gpointer user_data)
       graphene_vec3_t cursor_point_vec;
       graphene_matrix_get_translation_vec3 (&cursor_pose, &cursor_point_vec);
       graphene_point3d_t cursor_point;
-      xrd_desktop_cursor_set_constant_width (XRD_DESKTOP_CURSOR (self),
-                                             &cursor_point);
+      xrd_desktop_cursor_update_apparent_size (XRD_DESKTOP_CURSOR (self),
+                                               &cursor_point);
     }
   else
     _set_width (self, self->data.width_meters);
@@ -125,9 +125,7 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
 XrdOverlayDesktopCursor *
 xrd_overlay_desktop_cursor_new ()
 {
-  XrdOverlayDesktopCursor *self =
-      (XrdOverlayDesktopCursor*) g_object_new (XRD_TYPE_OVERLAY_DESKTOP_CURSOR, 0);
-  return self;
+  return (XrdOverlayDesktopCursor*) g_object_new (XRD_TYPE_OVERLAY_DESKTOP_CURSOR, 0);
 }
 
 static void
@@ -163,8 +161,8 @@ _update (XrdDesktopCursor   *cursor,
    * so we can calculate the hotspot.
    * Setting the size first flickers sometimes a bit.
    * */
-  xrd_desktop_cursor_set_constant_width (XRD_DESKTOP_CURSOR (self),
-                                         intersection);
+  xrd_desktop_cursor_update_apparent_size (XRD_DESKTOP_CURSOR (self),
+                                           intersection);
 
   /* Calculate the position of the cursor in the space of the window it is "on",
    * because the cursor is rotated in 3d to lie on the overlay's plane:
@@ -211,8 +209,8 @@ _update (XrdDesktopCursor   *cursor,
 }
 
 static void
-_set_constant_width (XrdDesktopCursor   *cursor,
-                     graphene_point3d_t *cursor_point)
+_update_apparent_size (XrdDesktopCursor   *cursor,
+                       graphene_point3d_t *cursor_point)
 {
   XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
 
@@ -269,5 +267,5 @@ xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
   iface->update = _update;
   iface->show = _show;
   iface->hide = _hide;
-  iface->set_constant_width = _set_constant_width;
+  iface->update_apparent_size = _update_apparent_size;
 }

@@ -41,8 +41,8 @@ struct _XrdDesktopCursorInterface
   (*hide) (XrdDesktopCursor *self);
 
   void
-  (*set_constant_width) (XrdDesktopCursor   *self,
-                         graphene_point3d_t *cursor_point);
+  (*update_apparent_size) (XrdDesktopCursor   *self,
+                           graphene_point3d_t *cursor_point);
 };
 
 void
@@ -64,8 +64,8 @@ void
 xrd_desktop_cursor_hide (XrdDesktopCursor *self);
 
 void
-xrd_desktop_cursor_set_constant_width (XrdDesktopCursor   *self,
-                                       graphene_point3d_t *cursor_point);
+xrd_desktop_cursor_update_apparent_size (XrdDesktopCursor   *self,
+                                         graphene_point3d_t *cursor_point);
 
 G_END_DECLS
 

@@ -95,8 +95,8 @@ _hide (XrdSceneDesktopCursor *self)
 }
 
 static void
-_set_constant_width (XrdSceneDesktopCursor *self,
-                     graphene_point3d_t    *cursor_point)
+_update_apparent_size (XrdSceneDesktopCursor *self,
+                       graphene_point3d_t    *cursor_point)
 {
   (void) self;
   (void) cursor_point;
@@ -110,5 +110,5 @@ xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
   iface->update = (void*) _update;
   iface->show = (void*) _show;
   iface->hide = (void*) _hide;
-  iface->set_constant_width = (void*) _set_constant_width;
+  iface->update_apparent_size = (void*) _update_apparent_size;
 }

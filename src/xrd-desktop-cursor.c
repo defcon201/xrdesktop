@@ -51,9 +51,9 @@ xrd_desktop_cursor_hide (XrdDesktopCursor *self)
 }
 
 void
-xrd_desktop_cursor_set_constant_width (XrdDesktopCursor   *self,
-                                       graphene_point3d_t *cursor_point)
+xrd_desktop_cursor_update_apparent_size (XrdDesktopCursor   *self,
+                                         graphene_point3d_t *cursor_point)
 {
   XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
-  return iface->set_constant_width (self, cursor_point);
+  return iface->update_apparent_size (self, cursor_point);
 }
