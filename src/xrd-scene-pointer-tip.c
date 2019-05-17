@@ -43,6 +43,7 @@ xrd_scene_pointer_tip_init (XrdScenePointerTip *self)
   self->data.active = FALSE;
   self->data.texture = NULL;
   self->data.animation = NULL;
+  self->data.settings.width_meters = 1.0f;
 }
 
 XrdScenePointerTip *
