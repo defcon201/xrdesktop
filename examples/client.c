@@ -21,6 +21,7 @@ typedef struct Example
   XrdWindow *head_follow_window;
   XrdWindow *head_follow_button;
   GulkanTexture *hawk_big;
+  GulkanTexture *cursor_texture;
   XrdWindow *switch_button;
   guint64 click_source;
   guint64 move_source;
@@ -206,14 +207,14 @@ _init_cursor (Example *self, GulkanClient *gc)
       return FALSE;
     }
 
-  GulkanTexture *texture = gulkan_texture_new_from_pixbuf (
+  self->cursor_texture = gulkan_texture_new_from_pixbuf (
       gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
-  gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
+  gulkan_client_upload_pixbuf (gc, self->cursor_texture, cursor_pixbuf);
 
-  xrd_client_submit_cursor_texture (self->client, gc, texture, 3, 3);
+  xrd_client_submit_cursor_texture (self->client, gc,
+                                    self->cursor_texture, 3, 3);
 
   g_object_unref (cursor_pixbuf);
-  g_object_unref (texture);
 
   return TRUE;
 }
@@ -319,6 +320,8 @@ _cleanup (Example *self)
 
   g_object_unref (self->hawk_big);
   self->hawk_big = NULL;
+  g_object_unref (self->cursor_texture);
+  self->cursor_texture = NULL;
   g_object_unref (self->client);
   self->client = NULL;
   g_print ("Cleaned up!\n");
