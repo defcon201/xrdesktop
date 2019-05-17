@@ -51,6 +51,13 @@ xrd_scene_pointer_tip_new (void)
   XrdScenePointerTip* self =
     (XrdScenePointerTip*) g_object_new (XRD_TYPE_SCENE_POINTER_TIP, 0);
 
+  g_object_set (self,
+                "texture-width", 64,
+                "texture-height", 64,
+                NULL);
+
+  xrd_scene_window_initialize (XRD_SCENE_WINDOW (self));
+
   xrd_pointer_tip_init_settings (XRD_POINTER_TIP (self), &self->data);
 
   return self;

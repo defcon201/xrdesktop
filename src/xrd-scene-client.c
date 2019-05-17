@@ -256,6 +256,17 @@ _render_eye_cb (uint32_t         eye,
                                pipelines[PIPELINE_POINTER],
                                pipeline_layout, cmd_buffer, &vp);
 
+  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
+    {
+      XrdPointerTip *tip = xrd_client_get_pointer_tip (XRD_CLIENT (self), i);
+      XrdScenePointerTip *scene_tip = XRD_SCENE_POINTER_TIP (tip);
+      XrdSceneWindow *window = XRD_SCENE_WINDOW (scene_tip);
+      xrd_scene_window_draw (window, eye,
+                             pipelines[PIPELINE_WINDOWS],
+                             pipeline_layout,
+                             cmd_buffer, &vp);
+    }
+
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
     xrd_scene_vector_render (self->debug_vectors[i], eye,

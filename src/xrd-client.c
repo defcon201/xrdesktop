@@ -1203,6 +1203,14 @@ xrd_client_set_pointer_tip (XrdClient     *self,
   priv->pointer_tip[id] = pointer;
 }
 
+XrdPointerTip*
+xrd_client_get_pointer_tip (XrdClient     *self,
+                            uint32_t       id)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->pointer_tip[id];
+}
+
 void
 xrd_client_set_desktop_cursor (XrdClient        *self,
                                XrdDesktopCursor *cursor)
