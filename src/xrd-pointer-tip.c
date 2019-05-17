@@ -164,6 +164,8 @@ _init_texture (XrdPointerTip *self)
                                                   VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
   g_object_unref (pixbuf);
+
+  xrd_pointer_tip_submit_texture (self, client, data->texture);
 }
 
 static void
@@ -349,6 +351,20 @@ xrd_pointer_tip_animate_pulse (XrdPointerTip *self)
                                                 data->animation);
 }
 
+static void
+_update_texture (XrdPointerTip *self)
+{
+  XrdPointerTipData *data = xrd_pointer_tip_get_data (self);
+  GulkanClient *client = xrd_pointer_tip_get_gulkan_client (self);
+
+  GdkPixbuf* pixbuf = xrd_pointer_tip_render (self, 1.0f);
+
+  gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
+  g_object_unref (pixbuf);
+
+  xrd_pointer_tip_submit_texture (self, client, data->texture);
+}
+
 /** xrd_pointer_tip_set_active:
  * Changes whether the active or inactive style is rendered.
  * Also cancels animations. */
@@ -367,20 +383,15 @@ xrd_pointer_tip_set_active (XrdPointerTip *self,
       g_free (data->animation);
       data->animation = NULL;
     }
+  else if (data->active == active)
+    return;
 
   /* Do not skip renderint to the texture even when self->active == active.
    * An animation changes the texture, so when an animation is cancelled, we
    * want to re-render the current state. */
-
-  GulkanClient *client = xrd_pointer_tip_get_gulkan_client (self);
-
   data->active = active;
-  GdkPixbuf* pixbuf = xrd_pointer_tip_render (self, 1.0f);
 
-  gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
-  g_object_unref (pixbuf);
-
-  xrd_pointer_tip_submit_texture (self, client, data->texture);
+  _update_texture (self);
 }
 
 /* note: Move pointer tip to the desired location before calling. */
