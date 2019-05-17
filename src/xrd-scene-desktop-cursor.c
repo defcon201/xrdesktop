@@ -75,19 +75,6 @@ _submit_texture (XrdDesktopCursor *cursor,
 }
 
 static void
-_update (XrdDesktopCursor *cursor,
-         XrdWindow             *window,
-         graphene_point3d_t    *intersection)
-{
-  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  (void) window;
-  (void) intersection;
-
-  g_warning ("stub: _update\n");
-}
-
-static void
 _show (XrdDesktopCursor *cursor)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
@@ -102,16 +89,6 @@ _hide (XrdDesktopCursor *cursor)
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
   (void) self;
   g_warning ("stub: _hide\n");
-}
-
-static void
-_update_apparent_size (XrdDesktopCursor *cursor,
-                       graphene_point3d_t    *cursor_point)
-{
-  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  (void) cursor_point;
-  g_warning ("stub: _set_constant_width\n");
 }
 
 static void
@@ -131,13 +108,33 @@ _get_data (XrdDesktopCursor *cursor)
 }
 
 static void
+_get_transformation (XrdDesktopCursor  *cursor,
+                     graphene_matrix_t *matrix)
+{
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
+  (void) self;
+  (void) matrix;
+  g_warning ("stub: _get_transformation\n");
+}
+
+static void
+_set_transformation (XrdDesktopCursor  *cursor,
+                     graphene_matrix_t *matrix)
+{
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
+  (void) self;
+  (void) matrix;
+  g_warning ("stub: _set_transformation\n");
+}
+
+static void
 xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
   iface->submit_texture = _submit_texture;
-  iface->update = _update;
   iface->show = _show;
   iface->hide = _hide;
-  iface->update_apparent_size = _update_apparent_size;
   iface->set_width_meters = _set_width_meters;
   iface->get_data = _get_data;
+  iface->get_transformation = _get_transformation;
+  iface->set_transformation = _set_transformation;
 }

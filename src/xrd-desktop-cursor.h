@@ -16,10 +16,13 @@
 G_BEGIN_DECLS
 
 #define XRD_TYPE_DESKTOP_CURSOR xrd_desktop_cursor_get_type()
-G_DECLARE_INTERFACE (XrdDesktopCursor, xrd_desktop_cursor, XRD, DESKTOP_CURSOR, GObject)
+G_DECLARE_INTERFACE (XrdDesktopCursor, xrd_desktop_cursor,
+                     XRD, DESKTOP_CURSOR, GObject)
 
 typedef struct _XrdDesktopCursorData
 {
+  XrdDesktopCursor *cursor;
+
   gboolean keep_apparent_size;
   /* setting, either absolute size or the apparent size in 3 meter distance */
   float width_meters;
@@ -46,25 +49,24 @@ struct _XrdDesktopCursorInterface
                      int               hotspot_y);
 
   void
-  (*update) (XrdDesktopCursor   *self,
-             XrdWindow          *window,
-             graphene_point3d_t *intersection);
-
-  void
   (*show) (XrdDesktopCursor *self);
 
   void
   (*hide) (XrdDesktopCursor *self);
 
   void
-  (*update_apparent_size) (XrdDesktopCursor   *self,
-                           graphene_point3d_t *cursor_point);
-
-  void
   (*set_width_meters) (XrdDesktopCursor *self, float meters);
 
   XrdDesktopCursorData*
   (*get_data) (XrdDesktopCursor *self);
+
+  void
+  (*get_transformation) (XrdDesktopCursor  *self,
+                         graphene_matrix_t *matrix);
+
+  void
+  (*set_transformation) (XrdDesktopCursor  *self,
+                         graphene_matrix_t *matrix);
 };
 
 void
@@ -94,6 +96,17 @@ xrd_desktop_cursor_set_width_meters (XrdDesktopCursor *self, float meters);
 
 XrdDesktopCursorData*
 xrd_desktop_cursor_get_data (XrdDesktopCursor *self);
+
+void
+xrd_desktop_cursor_get_transformation (XrdDesktopCursor  *self,
+                                       graphene_matrix_t *matrix);
+
+void
+xrd_desktop_cursor_set_transformation (XrdDesktopCursor  *self,
+                                       graphene_matrix_t *matrix);
+
+void
+xrd_desktop_cursor_init_settings (XrdDesktopCursor *self);
 
 G_END_DECLS
 
