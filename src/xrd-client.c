@@ -1219,6 +1219,13 @@ xrd_client_set_desktop_cursor (XrdClient        *self,
   priv->cursor = cursor;
 }
 
+XrdDesktopCursor*
+xrd_client_get_desktop_cursor (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->cursor;
+}
+
 cairo_surface_t*
 xrd_client_create_button_surface (unsigned char *image, uint32_t width,
                                   uint32_t height, int lines,

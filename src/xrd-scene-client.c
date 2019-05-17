@@ -111,11 +111,6 @@ xrd_scene_client_init (XrdSceneClient *self)
       self->controllers[i].self = XRD_CLIENT (self);
       self->controllers[i].index = i;
     }
-
-  XrdDesktopCursor *cursor =
-    XRD_DESKTOP_CURSOR (xrd_scene_desktop_cursor_new ());
-
-  xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 }
 
 XrdSceneClient *
@@ -227,8 +222,7 @@ _render_eye_cb (uint32_t         eye,
   for (GSList *l = xrd_window_manager_get_windows (manager);
        l != NULL; l = l->next)
     {
-      XrdSceneWindow *window = XRD_SCENE_WINDOW (l->data);
-      xrd_scene_window_draw (window, eye,
+      xrd_scene_window_draw (XRD_SCENE_WINDOW (l->data), eye,
                              pipelines[PIPELINE_WINDOWS],
                              pipeline_layout,
                              cmd_buffer, &vp);
@@ -237,8 +231,7 @@ _render_eye_cb (uint32_t         eye,
   for (GSList *l = xrd_window_manager_get_buttons (manager);
        l != NULL; l = l->next)
     {
-      XrdSceneWindow *window = XRD_SCENE_WINDOW (l->data);
-      xrd_scene_window_draw (window, eye,
+      xrd_scene_window_draw (XRD_SCENE_WINDOW (l->data), eye,
                              pipelines[PIPELINE_WINDOWS],
                              pipeline_layout,
                              cmd_buffer, &vp);
@@ -260,12 +253,18 @@ _render_eye_cb (uint32_t         eye,
     {
       XrdPointerTip *tip = xrd_client_get_pointer_tip (XRD_CLIENT (self), i);
       XrdScenePointerTip *scene_tip = XRD_SCENE_POINTER_TIP (tip);
-      XrdSceneWindow *window = XRD_SCENE_WINDOW (scene_tip);
-      xrd_scene_window_draw (window, eye,
+      xrd_scene_window_draw (XRD_SCENE_WINDOW (scene_tip), eye,
                              pipelines[PIPELINE_WINDOWS],
                              pipeline_layout,
                              cmd_buffer, &vp);
     }
+
+  XrdDesktopCursor *cursor = xrd_client_get_desktop_cursor (XRD_CLIENT (self));
+  XrdSceneDesktopCursor *scene_cursor = XRD_SCENE_DESKTOP_CURSOR (cursor);
+  xrd_scene_window_draw (XRD_SCENE_WINDOW (scene_cursor), eye,
+                         pipelines[PIPELINE_WINDOWS],
+                         pipeline_layout,
+                         cmd_buffer, &vp);
 
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
@@ -315,6 +314,10 @@ _init_vulkan (XrdSceneClient *self)
       xrd_client_set_pointer_tip (XRD_CLIENT (self),
                                   XRD_POINTER_TIP (pointer_tip), i);
     }
+
+  XrdDesktopCursor *cursor =
+    XRD_DESKTOP_CURSOR (xrd_scene_desktop_cursor_new ());
+  xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 
   vkQueueWaitIdle (GULKAN_CLIENT (renderer)->device->queue);
 

@@ -40,13 +40,24 @@ xrd_scene_desktop_cursor_init (XrdSceneDesktopCursor *self)
 {
   self->data.texture_width = 0;
   self->data.texture_height = 0;
-  xrd_desktop_cursor_init_settings (XRD_DESKTOP_CURSOR (self));
 }
 
 XrdSceneDesktopCursor *
 xrd_scene_desktop_cursor_new (void)
 {
-  return (XrdSceneDesktopCursor*) g_object_new (XRD_TYPE_SCENE_DESKTOP_CURSOR, 0);
+  XrdSceneDesktopCursor *self =
+    (XrdSceneDesktopCursor*) g_object_new (XRD_TYPE_SCENE_DESKTOP_CURSOR, 0);
+
+  g_object_set (self,
+                "texture-width", 64,
+                "texture-height", 64,
+                NULL);
+
+  xrd_scene_window_initialize (XRD_SCENE_WINDOW (self));
+
+  xrd_desktop_cursor_init_settings (XRD_DESKTOP_CURSOR (self));
+
+  return self;
 }
 
 static void
