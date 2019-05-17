@@ -300,6 +300,12 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
                        VkCommandBuffer    cmd_buffer,
                        graphene_matrix_t *vp)
 {
+  if (!self->texture)
+    {
+      g_warning ("Trying to draw window with no texture.\n");
+      return;
+    }
+
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
