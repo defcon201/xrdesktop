@@ -58,12 +58,13 @@ xrd_scene_desktop_cursor_finalize (GObject *gobject)
 }
 
 static void
-_submit_texture (XrdSceneDesktopCursor *self,
-                 GulkanClient          *uploader,
-                 GulkanTexture         *texture,
-                 int                    hotspot_x,
-                 int                    hotspot_y)
+_submit_texture (XrdDesktopCursor *cursor,
+                 GulkanClient     *uploader,
+                 GulkanTexture    *texture,
+                 int               hotspot_x,
+                 int               hotspot_y)
 {
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
   (void) self;
   (void) uploader;
   (void) texture;
@@ -74,10 +75,11 @@ _submit_texture (XrdSceneDesktopCursor *self,
 }
 
 static void
-_update (XrdSceneDesktopCursor *self,
+_update (XrdDesktopCursor *cursor,
          XrdWindow             *window,
          graphene_point3d_t    *intersection)
 {
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
   (void) self;
   (void) window;
   (void) intersection;
@@ -86,24 +88,27 @@ _update (XrdSceneDesktopCursor *self,
 }
 
 static void
-_show (XrdSceneDesktopCursor *self)
+_show (XrdDesktopCursor *cursor)
 {
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
   (void) self;
 
   g_warning ("stub: _show\n");
 }
 
 static void
-_hide (XrdSceneDesktopCursor *self)
+_hide (XrdDesktopCursor *cursor)
 {
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
   (void) self;
   g_warning ("stub: _hide\n");
 }
 
 static void
-_update_apparent_size (XrdSceneDesktopCursor *self,
+_update_apparent_size (XrdDesktopCursor *cursor,
                        graphene_point3d_t    *cursor_point)
 {
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
   (void) self;
   (void) cursor_point;
   g_warning ("stub: _set_constant_width\n");
@@ -112,7 +117,8 @@ _update_apparent_size (XrdSceneDesktopCursor *self,
 static void
 _set_width_meters (XrdDesktopCursor *cursor, float width)
 {
-  (void) cursor;
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
+  (void) self;
   (void) width;
   g_warning ("stub: _set_width_meters\n");
 }
@@ -127,11 +133,11 @@ _get_data (XrdDesktopCursor *cursor)
 static void
 xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
-  iface->submit_texture = (void*) _submit_texture;
-  iface->update = (void*) _update;
-  iface->show = (void*) _show;
-  iface->hide = (void*) _hide;
-  iface->update_apparent_size = (void*) _update_apparent_size;
+  iface->submit_texture = _submit_texture;
+  iface->update = _update;
+  iface->show = _show;
+  iface->hide = _hide;
+  iface->update_apparent_size = _update_apparent_size;
   iface->set_width_meters = _set_width_meters;
   iface->get_data = _get_data;
 }
