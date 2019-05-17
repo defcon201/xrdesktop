@@ -12,23 +12,29 @@
 #include "xrd-math.h"
 #include "graphene-ext.h"
 #include "xrd-desktop-cursor.h"
+#include "xrd-pointer-tip.h"
 
-struct _XrdOverlayDesktopCursor
+typedef struct _XrdDesktopCursorData
 {
-  OpenVROverlay parent;
-
-  gboolean use_constant_apparent_width;
+  gboolean keep_apparent_size;
   /* setting, either absolute size or the apparent size in 3 meter distance */
-  float cursor_width_meter;
+  float width_meters;
 
   /* cached values set by apparent size and used in hotspot calculation */
-  float current_cursor_width_meter;
+  float cached_width_meters;
 
   int hotspot_x;
   int hotspot_y;
 
   int texture_width;
   int texture_height;
+} XrdDesktopCursorData;
+
+struct _XrdOverlayDesktopCursor
+{
+  OpenVROverlay parent;
+
+  XrdDesktopCursorData data;
 };
 
 static void
@@ -37,28 +43,6 @@ xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, OPENVR_TYPE_OVERLAY,
                          G_IMPLEMENT_INTERFACE (XRD_TYPE_DESKTOP_CURSOR,
                                                 xrd_overlay_desktop_cursor_interface_init))
-
-void
-xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
-                                           GulkanClient *uploader,
-                                           GulkanTexture *texture,
-                                           int hotspot_x,
-                                           int hotspot_y);
-
-void
-xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
-                                   XrdWindow               *window,
-                                   graphene_point3d_t      *intersection);
-
-void
-xrd_overlay_desktop_cursor_show (XrdOverlayDesktopCursor *self);
-
-void
-xrd_overlay_desktop_cursor_hide (XrdOverlayDesktopCursor *self);
-
-void
-xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
-                                               graphene_point3d_t *cursor_point);
 
 static void
 xrd_overlay_desktop_cursor_finalize (GObject *gobject);
@@ -71,28 +55,27 @@ xrd_overlay_desktop_cursor_class_init (XrdOverlayDesktopCursorClass *klass)
   object_class->finalize = xrd_overlay_desktop_cursor_finalize;
 }
 
-void
+static void
 _set_width (XrdOverlayDesktopCursor *self, float width)
 {
   openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width);
-  self->current_cursor_width_meter = width;
+  self->data.cached_width_meters = width;
 }
 
 static void
-_update_cursor_width (GSettings *settings, gchar *key, gpointer user_data)
+_update_width_meters (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayDesktopCursor *self = user_data;
-  self->cursor_width_meter = g_settings_get_double (settings, key);
-  _set_width (self, self->cursor_width_meter);
+  self->data.width_meters = g_settings_get_double (settings, key);
+  _set_width (self, self->data.width_meters);
 }
 
 static void
-_update_use_constant_apparent_width (GSettings *settings, gchar *key,
-                                     gpointer user_data)
+_update_keep_apparent_size (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayDesktopCursor *self = user_data;
-  self->use_constant_apparent_width = g_settings_get_boolean (settings, key);
-  if (self->use_constant_apparent_width)
+  self->data.keep_apparent_size = g_settings_get_boolean (settings, key);
+  if (self->data.keep_apparent_size)
     {
       graphene_matrix_t cursor_pose;
       openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), &cursor_pose);
@@ -100,17 +83,28 @@ _update_use_constant_apparent_width (GSettings *settings, gchar *key,
       graphene_vec3_t cursor_point_vec;
       graphene_matrix_get_translation_vec3 (&cursor_pose, &cursor_point_vec);
       graphene_point3d_t cursor_point;
-      xrd_overlay_desktop_cursor_set_constant_width (self, &cursor_point);
+      xrd_desktop_cursor_set_constant_width (XRD_DESKTOP_CURSOR (self),
+                                             &cursor_point);
     }
   else
-    _set_width (self, self->cursor_width_meter);
+    _set_width (self, self->data.width_meters);
+}
+
+static void
+_init_settings (XrdOverlayDesktopCursor *self)
+{
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_width_meters),
+                                  "desktop-cursor-width-meters", self);
+
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_keep_apparent_size),
+                                  "pointer-tip-keep-apparent-size", self);
 }
 
 static void
 xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
 {
-  self->texture_width = 0;
-  self->texture_height = 0;
+  self->data.texture_width = 0;
+  self->data.texture_height = 0;
 
   openvr_overlay_create (OPENVR_OVERLAY (self),
                          "org.xrdesktop.cursor", "XR Desktop Cursor");
@@ -120,13 +114,7 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
       return;
     }
 
-  xrd_settings_connect_and_apply (G_CALLBACK (_update_cursor_width),
-                                  "cursor-width", self);
-
-  xrd_settings_connect_and_apply (G_CALLBACK
-                                  (_update_use_constant_apparent_width),
-                                  "pointer-tip-keep-apparent-size",
-                                  self);
+  _init_settings (self);
 
   /* pointer ray is MAX, pointer tip is MAX - 1, so cursor is MAX - 2 */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 2);
@@ -142,36 +130,41 @@ xrd_overlay_desktop_cursor_new ()
   return self;
 }
 
-void
-xrd_overlay_desktop_cursor_submit_texture (XrdOverlayDesktopCursor *self,
-                                           GulkanClient *uploader,
-                                           GulkanTexture *texture,
-                                           int hotspot_x,
-                                           int hotspot_y)
+static void
+_submit_texture (XrdDesktopCursor *cursor,
+                 GulkanClient     *uploader,
+                 GulkanTexture    *texture,
+                 int               hotspot_x,
+                 int               hotspot_y)
 {
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
+
   openvr_overlay_uploader_submit_frame (OPENVR_OVERLAY_UPLOADER (uploader),
                                         OPENVR_OVERLAY (self), texture);
 
-  self->hotspot_x = hotspot_x;
-  self->hotspot_y = hotspot_y;
+  self->data.hotspot_x = hotspot_x;
+  self->data.hotspot_y = hotspot_y;
 
-  self->texture_width = texture->width;
-  self->texture_height = texture->height;
+  self->data.texture_width = texture->width;
+  self->data.texture_height = texture->height;
 }
 
-void
-xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
-                                   XrdWindow               *window,
-                                   graphene_point3d_t      *intersection)
+static void
+_update (XrdDesktopCursor   *cursor,
+         XrdWindow          *window,
+         graphene_point3d_t *intersection)
 {
-  if (self->texture_width == 0 || self->texture_height == 0)
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
+
+  if (self->data.texture_width == 0 || self->data.texture_height == 0)
     return;
 
   /* TODO: first we have to know the size of the cursor at the target  position
    * so we can calculate the hotspot.
    * Setting the size first flickers sometimes a bit.
    * */
-  xrd_overlay_desktop_cursor_set_constant_width (self, intersection);
+  xrd_desktop_cursor_set_constant_width (XRD_DESKTOP_CURSOR (self),
+                                         intersection);
 
   /* Calculate the position of the cursor in the space of the window it is "on",
    * because the cursor is rotated in 3d to lie on the overlay's plane:
@@ -196,14 +189,14 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
 
   graphene_point3d_t cursor_radius;
   graphene_point3d_init (&cursor_radius,
-                         self->current_cursor_width_meter / 2.,
-                         - self->current_cursor_width_meter / 2., 0);
+                         self->data.cached_width_meters / 2.,
+                         - self->data.cached_width_meters / 2., 0);
   graphene_matrix_translate (&transform, &cursor_radius);
 
-  float cursor_hotspot_meter_x = - self->hotspot_x /
-      ((float)self->texture_width) * self->current_cursor_width_meter;
-  float cursor_hotspot_meter_y = + self->hotspot_y /
-      ((float)self->texture_height) * self->current_cursor_width_meter;
+  float cursor_hotspot_meter_x = - self->data.hotspot_x /
+      ((float)self->data.texture_width) * self->data.cached_width_meters;
+  float cursor_hotspot_meter_y = + self->data.hotspot_y /
+      ((float)self->data.texture_height) * self->data.cached_width_meters;
 
   graphene_point3d_t cursor_hotspot;
   graphene_point3d_init (&cursor_hotspot, cursor_hotspot_meter_x,
@@ -217,45 +210,20 @@ xrd_overlay_desktop_cursor_update (XrdOverlayDesktopCursor *self,
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &transform);
 }
 
-/* TODO: scene app needs device poses too. Put in openvr_system? */
-static gboolean
-_get_hmd_pose (graphene_matrix_t *pose)
+static void
+_set_constant_width (XrdDesktopCursor   *cursor,
+                     graphene_point3d_t *cursor_point)
 {
-  OpenVRContext *context = openvr_context_get_instance ();
-  VRControllerState_t state;
-  if (context->system->IsTrackedDeviceConnected(k_unTrackedDeviceIndex_Hmd) &&
-      context->system->GetTrackedDeviceClass (k_unTrackedDeviceIndex_Hmd) ==
-          ETrackedDeviceClass_TrackedDeviceClass_HMD &&
-      context->system->GetControllerState (k_unTrackedDeviceIndex_Hmd,
-                                           &state, sizeof(state)))
-    {
-      /* k_unTrackedDeviceIndex_Hmd should be 0 => posearray[0] */
-      TrackedDevicePose_t openvr_pose;
-      context->system->GetDeviceToAbsoluteTrackingPose (context->origin, 0,
-                                                        &openvr_pose, 1);
-      openvr_math_matrix34_to_graphene (&openvr_pose.mDeviceToAbsoluteTracking,
-                                        pose);
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
 
-      return openvr_pose.bDeviceIsConnected &&
-             openvr_pose.bPoseIsValid &&
-             openvr_pose.eTrackingResult ==
-                 ETrackingResult_TrackingResult_Running_OK;
-    }
-  return FALSE;
-}
-
-void
-xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
-                                               graphene_point3d_t *cursor_point)
-{
-  if (!self->use_constant_apparent_width)
+  if (!self->data.keep_apparent_size)
     return;
 
   graphene_matrix_t hmd_pose;
-  gboolean has_pose = _get_hmd_pose (&hmd_pose);
+  gboolean has_pose = openvr_system_get_hmd_pose (&hmd_pose);
   if (!has_pose)
     {
-      _set_width (self, self->cursor_width_meter);
+      _set_width (self, self->data.width_meters);
       return;
     }
 
@@ -267,20 +235,23 @@ xrd_overlay_desktop_cursor_set_constant_width (XrdOverlayDesktopCursor *self,
   /* divide distance by 3 so the width and the apparent width are the same at
    * a distance of 3 meters. This makes e.g. self->width = 0.3 look decent in
    * both cases at typical usage distances. */
-  float new_width = self->cursor_width_meter / 3.0 * distance;
+  float new_width = self->data.width_meters
+                    / XRD_TIP_APPARENT_SIZE_DISTANCE * distance;
 
   _set_width (self, new_width);
 }
 
-void
-xrd_overlay_desktop_cursor_show (XrdOverlayDesktopCursor *self)
+static void
+_show (XrdDesktopCursor *cursor)
 {
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
   openvr_overlay_show (OPENVR_OVERLAY (self));
 }
 
-void
-xrd_overlay_desktop_cursor_hide (XrdOverlayDesktopCursor *self)
+static void
+_hide (XrdDesktopCursor *cursor)
 {
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
   openvr_overlay_hide (OPENVR_OVERLAY (self));
 }
 
@@ -294,9 +265,9 @@ xrd_overlay_desktop_cursor_finalize (GObject *gobject)
 static void
 xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
-  iface->submit_texture = (void*) xrd_overlay_desktop_cursor_submit_texture;
-  iface->update = (void*) xrd_overlay_desktop_cursor_update;
-  iface->show = (void*) xrd_overlay_desktop_cursor_show;
-  iface->hide = (void*) xrd_overlay_desktop_cursor_hide;
-  iface->set_constant_width = (void*) xrd_overlay_desktop_cursor_set_constant_width;
+  iface->submit_texture = _submit_texture;
+  iface->update = _update;
+  iface->show = _show;
+  iface->hide = _hide;
+  iface->set_constant_width = _set_constant_width;
 }

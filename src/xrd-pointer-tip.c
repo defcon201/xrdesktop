@@ -205,10 +205,8 @@ xrd_pointer_tip_init_settings (XrdPointerTip     *self,
   xrd_settings_connect_and_apply (G_CALLBACK (_update_pulse_alpha),
                                   "pointer-tip-pulse-alpha", data);
 
-  xrd_settings_connect_and_apply (G_CALLBACK
-                                  (_update_keep_apparent_size),
-                                  "pointer-tip-keep-apparent-size",
-                                  data);
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_keep_apparent_size),
+                                  "pointer-tip-keep-apparent-size", data);
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_width_meters),
                                   "pointer-tip-width-meters", data);

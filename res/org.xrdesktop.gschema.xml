@@ -130,7 +130,7 @@
       </description>
     </key>
 
-    <key name='cursor-width' type='d'>
+    <key name='desktop-cursor-width-meters' type='d'>
       <default>0.25</default>
       <summary>The width of the cursor that is copied from the desktop, respects pointer-tip-apparent-width-is-constant.</summary>
       <description>
