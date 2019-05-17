@@ -9,7 +9,12 @@
 
 #include "xrd-desktop-cursor.h"
 
-//G_DEFINE_TYPE (XrdSceneDesktopCursor, xrd_scene_desktop_cursor, G_TYPE_OBJECT)
+struct _XrdSceneDesktopCursor
+{
+  XrdSceneObject parent;
+
+  XrdDesktopCursorData data;
+};
 
 static void
 xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface);
@@ -33,7 +38,8 @@ xrd_scene_desktop_cursor_class_init (XrdSceneDesktopCursorClass *klass)
 static void
 xrd_scene_desktop_cursor_init (XrdSceneDesktopCursor *self)
 {
-  (void) self;
+  self->data.texture_width = 0;
+  self->data.texture_height = 0;
 }
 
 XrdSceneDesktopCursor *
@@ -104,6 +110,21 @@ _update_apparent_size (XrdSceneDesktopCursor *self,
 }
 
 static void
+_set_width_meters (XrdDesktopCursor *cursor, float width)
+{
+  (void) cursor;
+  (void) width;
+  g_warning ("stub: _set_width_meters\n");
+}
+
+static XrdDesktopCursorData*
+_get_data (XrdDesktopCursor *cursor)
+{
+  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
+  return &self->data;
+}
+
+static void
 xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
   iface->submit_texture = (void*) _submit_texture;
@@ -111,4 +132,6 @@ xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
   iface->show = (void*) _show;
   iface->hide = (void*) _hide;
   iface->update_apparent_size = (void*) _update_apparent_size;
+  iface->set_width_meters = _set_width_meters;
+  iface->get_data = _get_data;
 }

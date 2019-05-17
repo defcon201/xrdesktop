@@ -18,10 +18,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneDesktopCursor, xrd_scene_desktop_cursor,
                       XRD, SCENE_DESKTOP_CURSOR, XrdSceneObject)
 
-struct _XrdSceneDesktopCursor
-{
-  XrdSceneObject parent;
-};
 
 XrdSceneDesktopCursor *xrd_scene_desktop_cursor_new (void);
 

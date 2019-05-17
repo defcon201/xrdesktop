@@ -24,7 +24,7 @@ xrd_desktop_cursor_submit_texture (XrdDesktopCursor *self,
                                    int               hotspot_y)
 {
   XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
-  return iface->submit_texture (self, uploader, texture, hotspot_x, hotspot_y);
+  iface->submit_texture (self, uploader, texture, hotspot_x, hotspot_y);
 }
 
 void
@@ -33,21 +33,21 @@ xrd_desktop_cursor_update (XrdDesktopCursor   *self,
                            graphene_point3d_t *intersection)
 {
   XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
-  return iface->update (self, window, intersection);
+  iface->update (self, window, intersection);
 }
 
 void
 xrd_desktop_cursor_show (XrdDesktopCursor *self)
 {
   XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
-  return iface->show (self);
+  iface->show (self);
 }
 
 void
 xrd_desktop_cursor_hide (XrdDesktopCursor *self)
 {
   XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
-  return iface->hide (self);
+  iface->hide (self);
 }
 
 void
@@ -55,5 +55,19 @@ xrd_desktop_cursor_update_apparent_size (XrdDesktopCursor   *self,
                                          graphene_point3d_t *cursor_point)
 {
   XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
-  return iface->update_apparent_size (self, cursor_point);
+  iface->update_apparent_size (self, cursor_point);
+}
+
+void
+xrd_desktop_cursor_set_width_meters (XrdDesktopCursor *self, float meters)
+{
+  XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
+  iface->set_width_meters (self, meters);
+}
+
+XrdDesktopCursorData*
+xrd_desktop_cursor_get_data (XrdDesktopCursor *self)
+{
+  XrdDesktopCursorInterface* iface = XRD_DESKTOP_CURSOR_GET_IFACE (self);
+  return iface->get_data (self);
 }

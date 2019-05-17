@@ -18,6 +18,22 @@ G_BEGIN_DECLS
 #define XRD_TYPE_DESKTOP_CURSOR xrd_desktop_cursor_get_type()
 G_DECLARE_INTERFACE (XrdDesktopCursor, xrd_desktop_cursor, XRD, DESKTOP_CURSOR, GObject)
 
+typedef struct _XrdDesktopCursorData
+{
+  gboolean keep_apparent_size;
+  /* setting, either absolute size or the apparent size in 3 meter distance */
+  float width_meters;
+
+  /* cached values set by apparent size and used in hotspot calculation */
+  float cached_width_meters;
+
+  int hotspot_x;
+  int hotspot_y;
+
+  int texture_width;
+  int texture_height;
+} XrdDesktopCursorData;
+
 struct _XrdDesktopCursorInterface
 {
   GTypeInterface parent;
@@ -43,6 +59,12 @@ struct _XrdDesktopCursorInterface
   void
   (*update_apparent_size) (XrdDesktopCursor   *self,
                            graphene_point3d_t *cursor_point);
+
+  void
+  (*set_width_meters) (XrdDesktopCursor *self, float meters);
+
+  XrdDesktopCursorData*
+  (*get_data) (XrdDesktopCursor *self);
 };
 
 void
@@ -66,6 +88,12 @@ xrd_desktop_cursor_hide (XrdDesktopCursor *self);
 void
 xrd_desktop_cursor_update_apparent_size (XrdDesktopCursor   *self,
                                          graphene_point3d_t *cursor_point);
+
+void
+xrd_desktop_cursor_set_width_meters (XrdDesktopCursor *self, float meters);
+
+XrdDesktopCursorData*
+xrd_desktop_cursor_get_data (XrdDesktopCursor *self);
 
 G_END_DECLS
 

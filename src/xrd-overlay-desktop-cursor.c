@@ -14,22 +14,6 @@
 #include "xrd-desktop-cursor.h"
 #include "xrd-pointer-tip.h"
 
-typedef struct _XrdDesktopCursorData
-{
-  gboolean keep_apparent_size;
-  /* setting, either absolute size or the apparent size in 3 meter distance */
-  float width_meters;
-
-  /* cached values set by apparent size and used in hotspot calculation */
-  float cached_width_meters;
-
-  int hotspot_x;
-  int hotspot_y;
-
-  int texture_width;
-  int texture_height;
-} XrdDesktopCursorData;
-
 struct _XrdOverlayDesktopCursor
 {
   OpenVROverlay parent;
@@ -56,18 +40,12 @@ xrd_overlay_desktop_cursor_class_init (XrdOverlayDesktopCursorClass *klass)
 }
 
 static void
-_set_width (XrdOverlayDesktopCursor *self, float width)
-{
-  openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width);
-  self->data.cached_width_meters = width;
-}
-
-static void
 _update_width_meters (GSettings *settings, gchar *key, gpointer user_data)
 {
   XrdOverlayDesktopCursor *self = user_data;
   self->data.width_meters = g_settings_get_double (settings, key);
-  _set_width (self, self->data.width_meters);
+  xrd_desktop_cursor_set_width_meters (XRD_DESKTOP_CURSOR (self),
+                                       self->data.width_meters);
 }
 
 static void
@@ -87,7 +65,8 @@ _update_keep_apparent_size (GSettings *settings, gchar *key, gpointer user_data)
                                                &cursor_point);
     }
   else
-    _set_width (self, self->data.width_meters);
+    xrd_desktop_cursor_set_width_meters (XRD_DESKTOP_CURSOR (self),
+                                         self->data.width_meters);
 }
 
 static void
@@ -221,7 +200,8 @@ _update_apparent_size (XrdDesktopCursor   *cursor,
   gboolean has_pose = openvr_system_get_hmd_pose (&hmd_pose);
   if (!has_pose)
     {
-      _set_width (self, self->data.width_meters);
+      xrd_desktop_cursor_set_width_meters (XRD_DESKTOP_CURSOR (self),
+                                           self->data.width_meters);
       return;
     }
 
@@ -236,7 +216,7 @@ _update_apparent_size (XrdDesktopCursor   *cursor,
   float new_width = self->data.width_meters
                     / XRD_TIP_APPARENT_SIZE_DISTANCE * distance;
 
-  _set_width (self, new_width);
+  xrd_desktop_cursor_set_width_meters (XRD_DESKTOP_CURSOR (self), new_width);
 }
 
 static void
@@ -254,10 +234,25 @@ _hide (XrdDesktopCursor *cursor)
 }
 
 static void
+_set_width_meters (XrdDesktopCursor *cursor, float width)
+{
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
+  openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width);
+  self->data.cached_width_meters = width;
+}
+
+static void
 xrd_overlay_desktop_cursor_finalize (GObject *gobject)
 {
   XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (gobject);
   openvr_overlay_destroy (OPENVR_OVERLAY (self));
+}
+
+static XrdDesktopCursorData*
+_get_data (XrdDesktopCursor *cursor)
+{
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
+  return &self->data;
 }
 
 static void
@@ -268,4 +263,6 @@ xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
   iface->show = _show;
   iface->hide = _hide;
   iface->update_apparent_size = _update_apparent_size;
+  iface->set_width_meters = _set_width_meters;
+  iface->get_data = _get_data;
 }
