@@ -83,6 +83,22 @@ _make_texture (GulkanClient *gc, const gchar *resource)
   return texture;
 }
 
+static XrdWindow* _window_new_from_ppm (XrdClient *client, const char* title,
+                                        int w, int h, float ppm)
+{
+  XrdWindow *window;
+  if (XRD_IS_SCENE_CLIENT (client))
+    {
+      window = XRD_WINDOW (xrd_scene_window_new_from_ppm (title, w, h, ppm));
+      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+    }
+  else
+    {
+      window = XRD_WINDOW (xrd_overlay_window_new_from_ppm (title, w, h, ppm));
+    }
+  return window;
+}
+
 void
 _head_follow_press_cb (XrdWindow               *button,
                        XrdControllerIndexEvent *event,
@@ -97,23 +113,10 @@ _head_follow_press_cb (XrdWindow               *button,
     {
       float ppm = self->hawk_big->width / 0.5;
 
-      if (XRD_IS_SCENE_CLIENT (self->client))
-        {
-          self->head_follow_window =
-            XRD_WINDOW (xrd_scene_window_new_from_ppm ("Head Tracked window.",
-                                                       self->hawk_big->width,
-                                                       self->hawk_big->height,
-                                                       ppm));
-          xrd_scene_window_initialize (XRD_SCENE_WINDOW (self->head_follow_window));
-        }
-      else
-        {
-          self->head_follow_window =
-            XRD_WINDOW (xrd_overlay_window_new_from_ppm ("Head Tracked window.",
-                                                         self->hawk_big->width,
-                                                         self->hawk_big->height,
-                                                         ppm));
-          }
+      self->head_follow_window =
+        _window_new_from_ppm (self->client, "Head Tracked window.",
+                              self->hawk_big->width, self->hawk_big->height,
+                              ppm);
 
       xrd_client_add_window (self->client,
                              self->head_follow_window, FALSE, TRUE);
@@ -171,6 +174,80 @@ _button_switch_press_cb (XrdWindow               *window,
   g_free (event);
 }
 
+static void
+_init_child_window (Example      *self,
+                    GulkanClient *gc,
+                    XrdWindow    *window)
+{
+  GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg");
+  float ppm = cat_small->width / 0.25;
+  XrdWindow *child;
+
+  child = _window_new_from_ppm (self->client, "A child.",
+                                cat_small->width, cat_small->height, ppm);
+
+  xrd_client_add_window (self->client, child, TRUE, FALSE);
+
+  xrd_window_submit_texture (child, gc, cat_small);
+
+  graphene_point_t offset = { .x = 25, .y = 25 };
+  xrd_window_add_child (window, child, &offset);
+
+  g_object_unref (cat_small);
+}
+
+static gboolean
+_init_cursor (Example *self, GulkanClient *gc)
+{
+  GdkPixbuf *cursor_pixbuf = load_gdk_pixbuf ("/res/cursor.png");
+  if (cursor_pixbuf == NULL)
+    {
+      g_printerr ("Could not load image.\n");
+      return FALSE;
+    }
+
+  GulkanTexture *texture = gulkan_texture_new_from_pixbuf (
+      gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
+  gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
+
+  xrd_client_submit_cursor_texture (self->client, gc, texture, 3, 3);
+
+  g_object_unref (cursor_pixbuf);
+  g_object_unref (texture);
+
+  return TRUE;
+}
+
+static void
+_init_buttons (Example *self)
+{
+  graphene_point3d_t button_position = {
+    .x =  -0.75f,
+    .y =  0.0f,
+    .z = -1.0f
+  };
+  gchar *tracked_str[] =  { "Show", "modal"};
+  xrd_client_add_button (self->client, &self->head_follow_button,
+                         2, tracked_str,
+                         &button_position,
+                         (GCallback) _head_follow_press_cb,
+                         self);
+
+
+  graphene_point3d_t switch_pos = {
+    .x =  -0.75f,
+    .y =  -xrd_window_get_current_height_meters (self->head_follow_button),
+    .z = -1.0f
+  };
+
+  gchar *switch_str[] =  { "Switch", "Mode"};
+  xrd_client_add_button (self->client, &self->switch_button, 2,
+                         switch_str,
+                         &switch_pos,
+                         (GCallback) _button_switch_press_cb,
+                         self);
+}
+
 gboolean
 _init_windows (Example *self)
 {
@@ -185,25 +262,10 @@ _init_windows (Example *self)
         {
           // a window should have ~0.5 meter
           float ppm = self->hawk_big->width / 0.5;
-          XrdWindow *window;
-
-          if (XRD_IS_SCENE_CLIENT (self->client))
-            {
-              window =
-                XRD_WINDOW (xrd_scene_window_new_from_ppm ("A window.",
-                                                           self->hawk_big->width,
-                                                           self->hawk_big->height,
-                                                           ppm));
-              xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
-            }
-          else
-            {
-              window =
-                XRD_WINDOW (xrd_overlay_window_new_from_ppm ("A window.",
-                                                             self->hawk_big->width,
-                                                             self->hawk_big->height,
-                                                             ppm));
-            }
+          XrdWindow *window =
+            _window_new_from_ppm (self->client, "A window.",
+                                  self->hawk_big->width, self->hawk_big->height,
+                                  ppm);
 
           xrd_client_add_window (self->client, window, FALSE, FALSE);
 
@@ -229,83 +291,12 @@ _init_windows (Example *self)
 
           /* TODO: Fix in scene client */
           if (col == 0 && row == 0 && !XRD_IS_SCENE_CLIENT (self->client))
-            {
-              GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg");
-              float ppm = cat_small->width / 0.25;
-              XrdWindow *child;
-
-              if (XRD_IS_SCENE_CLIENT (self->client))
-                {
-                  child =
-                    XRD_WINDOW (xrd_scene_window_new_from_ppm ("A child.",
-                                                               cat_small->width,
-                                                               cat_small->height,
-                                                               ppm));
-                  xrd_scene_window_initialize (XRD_SCENE_WINDOW (child));
-                }
-              else
-                {
-                  child =
-                    XRD_WINDOW (xrd_overlay_window_new_from_ppm ("A child.",
-                                                                 cat_small->width,
-                                                                 cat_small->height,
-                                                                 ppm));
-                }
-
-              xrd_client_add_window (self->client, child, TRUE, FALSE);
-
-              xrd_window_submit_texture (child, gc, cat_small);
-
-              graphene_point_t offset = { .x = 25, .y = 25 };
-              xrd_window_add_child (window, child, &offset);
-
-              g_object_unref (cat_small);
-            }
+            _init_child_window (self, gc, window);
         }
       window_x = 0;
       window_y += max_window_height;
     }
 
-  graphene_point3d_t button_position = {
-    .x =  -0.75f,
-    .y =  0.0f,
-    .z = -1.0f
-  };
-  gchar *tracked_str[] =  { "Show", "modal"};
-  xrd_client_add_button (self->client, &self->head_follow_button,
-                         2, tracked_str,
-                         &button_position,
-                         (GCallback) _head_follow_press_cb,
-                         self);
-
-  GdkPixbuf *cursor_pixbuf = load_gdk_pixbuf ("/res/cursor.png");
-  if (cursor_pixbuf == NULL)
-    {
-      g_printerr ("Could not load image.\n");
-      return FALSE;
-    }
-
-  GulkanTexture *texture = gulkan_texture_new_from_pixbuf (
-      gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
-  gulkan_client_upload_pixbuf (gc, texture, cursor_pixbuf);
-
-  xrd_client_submit_cursor_texture (self->client, gc, texture, 3, 3);
-
-  g_object_unref (cursor_pixbuf);
-  g_object_unref (texture);
-
-  graphene_point3d_t switch_pos = {
-    .x =  -0.75f,
-    .y =  -xrd_window_get_current_height_meters (self->head_follow_button),
-    .z = -1.0f
-  };
-
-  gchar *switch_str[] =  { "Switch", "Mode"};
-  xrd_client_add_button (self->client, &self->switch_button, 2,
-                         switch_str,
-                         &switch_pos,
-                         (GCallback) _button_switch_press_cb,
-                         self);
   return TRUE;
 }
 
@@ -412,6 +403,11 @@ _init_example (Example *self, XrdClient *client)
   if (!_init_windows (self))
     return FALSE;
 
+  if (!_init_cursor (self, gc))
+    return FALSE;
+
+  _init_buttons (self);
+
   g_unix_signal_add (SIGINT, _sigint_cb, self);
 
   self->click_source = g_signal_connect (client, "click-event",
@@ -424,6 +420,7 @@ _init_example (Example *self, XrdClient *client)
   self->quit_source = g_signal_connect (client, "request-quit-event",
                                         (GCallback) _request_quit_cb, self);
 
+  self->render_source = 0;
   if (XRD_IS_SCENE_CLIENT (client))
     self->render_source = g_timeout_add (1, _iterate_cb, self);
 
