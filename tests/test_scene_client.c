@@ -8,6 +8,45 @@
 #include <glib.h>
 #include "xrd-scene-client.h"
 
+static GdkPixbuf *
+_load_gdk_pixbuf (const gchar* name)
+{
+  GError * error = NULL;
+  GdkPixbuf *pixbuf_rgb = gdk_pixbuf_new_from_resource (name, &error);
+
+  if (error != NULL)
+    {
+      g_printerr ("Unable to read file: %s\n", error->message);
+      g_error_free (error);
+      return NULL;
+    }
+
+  GdkPixbuf *pixbuf = gdk_pixbuf_add_alpha (pixbuf_rgb, false, 0, 0, 0);
+  g_object_unref (pixbuf_rgb);
+  return pixbuf;
+}
+
+static GulkanTexture *
+_make_texture (GulkanClient *gc, const gchar *resource)
+{
+  GdkPixbuf *pixbuf = _load_gdk_pixbuf (resource);
+  if (pixbuf == NULL)
+    {
+      g_printerr ("Could not load image.\n");
+      return FALSE;
+    }
+
+  GulkanTexture *texture =
+    gulkan_texture_new_from_pixbuf (gc->device, pixbuf,
+                                    VK_FORMAT_R8G8B8A8_UNORM);
+
+  gulkan_client_upload_pixbuf (gc, texture, pixbuf);
+
+  g_object_unref (pixbuf);
+
+  return texture;
+}
+
 int
 main ()
 {
@@ -19,6 +58,27 @@ main ()
       g_object_unref (client);
       return 1;
     }
+
+  GulkanClient *gc = xrd_client_get_uploader (XRD_CLIENT (client));
+
+  GulkanTexture *texture = _make_texture (gc, "/res/cat.jpg");
+
+  float ppm = texture->width / 0.25;
+
+  XrdSceneWindow *window = xrd_scene_window_new_from_ppm ("win.",
+                                                          texture->width,
+                                                          texture->height,
+                                                          ppm);
+  xrd_scene_window_initialize (window);
+
+  xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE, FALSE);
+
+  xrd_window_submit_texture (XRD_WINDOW (window), gc, texture);
+
+  g_object_unref (texture);
+
+  // TODO: Ref window in client
+  //g_object_unref (window);
 
   g_object_unref (client);
   return 0;

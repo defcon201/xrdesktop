@@ -1,5 +1,6 @@
 test_scene_client = executable(
-  'test_scene_client', ['test_scene_client.c', shader_resources],
+  'test_scene_client', ['test_scene_client.c', test_resources,
+                        shader_resources],
   dependencies: xrdesktop_deps,
   link_with: xrdesktop_lib,
   include_directories: xrdesktop_inc,
