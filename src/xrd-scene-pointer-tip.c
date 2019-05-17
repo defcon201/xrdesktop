@@ -40,20 +40,28 @@ xrd_scene_pointer_tip_class_init (XrdScenePointerTipClass *klass)
 static void
 xrd_scene_pointer_tip_init (XrdScenePointerTip *self)
 {
-  (void) self;
+  self->data.active = FALSE;
+  self->data.texture = NULL;
+  self->data.animation = NULL;
 }
 
 XrdScenePointerTip *
 xrd_scene_pointer_tip_new (void)
 {
-  return (XrdScenePointerTip*) g_object_new (XRD_TYPE_SCENE_POINTER_TIP, 0);
+  XrdScenePointerTip* self =
+    (XrdScenePointerTip*) g_object_new (XRD_TYPE_SCENE_POINTER_TIP, 0);
+
+  xrd_pointer_tip_init_settings (XRD_POINTER_TIP (self), &self->data);
+
+  return self;
 }
 
 static void
 xrd_scene_pointer_tip_finalize (GObject *gobject)
 {
   XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (gobject);
-  (void) self;
+  if (self->data.texture)
+    g_object_unref (self->data.texture);
 
   G_OBJECT_CLASS (xrd_scene_pointer_tip_parent_class)->finalize (gobject);
 }
