@@ -11,7 +11,7 @@
 
 struct _XrdSceneDesktopCursor
 {
-  XrdSceneObject parent;
+  XrdSceneWindow parent;
 
   XrdDesktopCursorData data;
 };
@@ -20,7 +20,7 @@ static void
 xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (XrdSceneDesktopCursor, xrd_scene_desktop_cursor,
-                         XRD_TYPE_SCENE_OBJECT,
+                         XRD_TYPE_SCENE_WINDOW,
                          G_IMPLEMENT_INTERFACE (XRD_TYPE_DESKTOP_CURSOR,
                                                 xrd_scene_desktop_cursor_interface_init))
 
@@ -40,6 +40,7 @@ xrd_scene_desktop_cursor_init (XrdSceneDesktopCursor *self)
 {
   self->data.texture_width = 0;
   self->data.texture_height = 0;
+  xrd_desktop_cursor_init_settings (XRD_DESKTOP_CURSOR (self));
 }
 
 XrdSceneDesktopCursor *
@@ -59,45 +60,44 @@ xrd_scene_desktop_cursor_finalize (GObject *gobject)
 
 static void
 _submit_texture (XrdDesktopCursor *cursor,
-                 GulkanClient     *uploader,
+                 GulkanClient     *client,
                  GulkanTexture    *texture,
                  int               hotspot_x,
                  int               hotspot_y)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  (void) uploader;
-  (void) texture;
-  (void) hotspot_x;
-  (void) hotspot_y;
+  XrdSceneWindow *window = XRD_SCENE_WINDOW (self);
+  xrd_window_submit_texture (XRD_WINDOW (window), client, texture);
 
-  // g_warning ("stub: _submit_texture\n");
+  self->data.hotspot_x = hotspot_x;
+  self->data.hotspot_y = hotspot_y;
+
+  self->data.texture_width = texture->width;
+  self->data.texture_height = texture->height;
 }
 
 static void
 _show (XrdDesktopCursor *cursor)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-
-  g_warning ("stub: _show\n");
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  obj->visible = TRUE;
 }
 
 static void
 _hide (XrdDesktopCursor *cursor)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  g_warning ("stub: _hide\n");
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  obj->visible = FALSE;
 }
 
 static void
-_set_width_meters (XrdDesktopCursor *cursor, float width)
+_set_width_meters (XrdDesktopCursor *cursor, float meters)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  (void) width;
-  g_warning ("stub: _set_width_meters\n");
+  XrdSceneWindow *window = XRD_SCENE_WINDOW (self);
+  xrd_scene_window_set_width_meters (window, meters);
 }
 
 static XrdDesktopCursorData*
@@ -112,9 +112,9 @@ _get_transformation (XrdDesktopCursor  *cursor,
                      graphene_matrix_t *matrix)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  (void) matrix;
-  g_warning ("stub: _get_transformation\n");
+  graphene_matrix_t transformation =
+    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
+  graphene_matrix_init_from_matrix (matrix, &transformation);
 }
 
 static void
@@ -122,9 +122,7 @@ _set_transformation (XrdDesktopCursor  *cursor,
                      graphene_matrix_t *matrix)
 {
   XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  (void) self;
-  (void) matrix;
-  g_warning ("stub: _set_transformation\n");
+  xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
 }
 
 static void
