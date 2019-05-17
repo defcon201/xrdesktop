@@ -204,6 +204,8 @@ xrd_scene_window_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
+/* TODO: Reenable mip map code */
+#if 0
 bool
 xrd_scene_window_init_texture (XrdSceneWindow *self,
                                GdkPixbuf      *pixbuf)
@@ -259,6 +261,7 @@ xrd_scene_window_init_texture (XrdSceneWindow *self,
 
   return true;
 }
+#endif
 
 void _append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
 {
@@ -284,10 +287,6 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
 
   if (!xrd_scene_object_initialize (obj, layout))
     return FALSE;
-
-  if (self->texture != NULL && self->sampler != VK_NULL_HANDLE)
-    xrd_scene_object_update_descriptors_texture (obj, self->sampler,
-                                                 self->texture->image_view);
 
   return TRUE;
 }

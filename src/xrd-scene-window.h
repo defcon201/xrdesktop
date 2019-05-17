@@ -60,10 +60,6 @@ xrd_scene_window_new_from_native (const gchar *title,
                                   uint32_t     height_pixels,
                                   float        ppm);
 
-bool
-xrd_scene_window_init_texture (XrdSceneWindow *self,
-                               GdkPixbuf      *pixbuf);
-
 gboolean
 xrd_scene_window_initialize (XrdSceneWindow *self);
 
