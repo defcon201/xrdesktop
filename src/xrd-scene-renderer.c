@@ -89,7 +89,7 @@ xrd_scene_renderer_finalize (GObject *gobject)
 {
   XrdSceneRenderer *self = XRD_SCENE_RENDERER (gobject);
 
-  VkDevice device = GULKAN_CLIENT (self)->device->device;
+  VkDevice device = gulkan_client_get_device_handle (GULKAN_CLIENT (self));
   if (device != VK_NULL_HANDLE)
     vkDeviceWaitIdle (device);
 
@@ -127,7 +127,8 @@ _init_vulkan_instance (XrdSceneRenderer *self)
 {
   GSList *extensions = NULL;
   openvr_compositor_get_instance_extensions (&extensions);
-  return gulkan_instance_create (GULKAN_CLIENT (self)->instance,
+  return gulkan_instance_create (gulkan_client_get_instance (
+                                   GULKAN_CLIENT (self)),
                                  use_validation, extensions);
 }
 
@@ -139,14 +140,15 @@ _init_vulkan_device (XrdSceneRenderer *self)
   OpenVRContext *context = openvr_context_get_instance ();
   context->system->GetOutputDevice (
       &physical_device, ETextureType_TextureType_Vulkan,
-      (struct VkInstance_T *) GULKAN_CLIENT (self)->instance->instance);
+      (struct VkInstance_T *)
+        gulkan_client_get_instance_handle (GULKAN_CLIENT (self)));
 
   GSList *extensions = NULL;
   openvr_compositor_get_device_extensions ((VkPhysicalDevice)physical_device,
                                            &extensions);
 
-  return gulkan_device_create (GULKAN_CLIENT (self)->device,
-                               GULKAN_CLIENT (self)->instance,
+  return gulkan_device_create (gulkan_client_get_device (GULKAN_CLIENT (self)),
+                               gulkan_client_get_instance (GULKAN_CLIENT (self)),
                                (VkPhysicalDevice)physical_device, extensions);
 }
 
@@ -164,7 +166,8 @@ _init_framebuffers (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 
   for (uint32_t eye = 0; eye < 2; eye++)
     gulkan_frame_buffer_initialize (self->framebuffer[eye],
-                                    GULKAN_CLIENT (self)->device,
+                                    gulkan_client_get_device (
+                                      GULKAN_CLIENT (self)),
                                     cmd_buffer,
                                     self->render_width, self->render_height,
                                     self->msaa_sample_count,
@@ -187,7 +190,7 @@ _init_shaders (XrdSceneRenderer *self)
         sprintf (path, "/shaders/%s.%s.spv", shader_names[i], stage_names[j]);
 
         if (!gulkan_renderer_create_shader_module (
-            GULKAN_CLIENT (self)->device->device, path,
+            gulkan_client_get_device_handle (GULKAN_CLIENT (self)), path,
            &self->shader_modules[i * 2 + j]))
           return false;
       }
@@ -217,7 +220,8 @@ _init_descriptor_layout (XrdSceneRenderer *self)
     }
   };
 
-  VkResult res = vkCreateDescriptorSetLayout (GULKAN_CLIENT (self)->device->device,
+  VkResult res = vkCreateDescriptorSetLayout (gulkan_client_get_device_handle (
+                                                GULKAN_CLIENT (self)),
                                              &info, NULL,
                                              &self->descriptor_set_layout);
   vk_check_error ("vkCreateDescriptorSetLayout", res);
@@ -236,7 +240,8 @@ _init_pipeline_layout (XrdSceneRenderer *self)
     .pPushConstantRanges = NULL
   };
 
-  VkResult res = vkCreatePipelineLayout (GULKAN_CLIENT (self)->device->device,
+  VkResult res = vkCreatePipelineLayout (gulkan_client_get_device_handle (
+                                           GULKAN_CLIENT (self)),
                                         &info, NULL, &self->pipeline_layout);
   vk_check_error ("vkCreatePipelineLayout", res);
 
@@ -249,7 +254,8 @@ _init_pipeline_cache (XrdSceneRenderer *self)
   VkPipelineCacheCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO
   };
-  VkResult res = vkCreatePipelineCache (GULKAN_CLIENT (self)->device->device,
+  VkResult res = vkCreatePipelineCache (gulkan_client_get_device_handle (
+                                          GULKAN_CLIENT (self)),
                                        &info, NULL, &self->pipeline_cache);
   vk_check_error ("vkCreatePipelineCache", res);
 
@@ -376,7 +382,8 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
             .pName = "main"
           }
         },
-        .renderPass = self->framebuffer[EVREye_Eye_Left]->render_pass,
+        .renderPass = gulkan_frame_buffer_get_render_pass (
+          self->framebuffer[EVREye_Eye_Left]),
         .pDynamicState = &(VkPipelineDynamicStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
           .dynamicStateCount = 2,
@@ -388,7 +395,8 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
         .subpass = VK_NULL_HANDLE
       };
 
-      VkResult res = vkCreateGraphicsPipelines (GULKAN_CLIENT (self)->device->device,
+      VkResult res = vkCreateGraphicsPipelines (gulkan_client_get_device_handle
+                                                  (GULKAN_CLIENT (self)),
                                                 self->pipeline_cache, 1,
                                                &pipeline_info,
                                                 NULL, &self->pipelines[i]);
@@ -496,25 +504,27 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
     .signalSemaphoreCount = 0
   };
 
-  vkQueueSubmit (GULKAN_CLIENT (self)->device->queue, 1,
+  GulkanDevice *device = gulkan_client_get_device (GULKAN_CLIENT (self));
+  VkDevice device_handle = gulkan_device_get_handle (device);
+  vkQueueSubmit (gulkan_device_get_queue_handle (device), 1,
                 &submit_info, cmd_buffer.fence);
 
-  vkQueueWaitIdle (GULKAN_CLIENT (self)->device->queue);
+  vkQueueWaitIdle (gulkan_device_get_queue_handle (device));
 
-  vkFreeCommandBuffers (GULKAN_CLIENT (self)->device->device,
-                        GULKAN_CLIENT (self)->command_pool,
+  vkFreeCommandBuffers (device_handle,
+                        gulkan_client_get_command_pool (GULKAN_CLIENT (self)),
                         1, &cmd_buffer.cmd_buffer);
-  vkDestroyFence (GULKAN_CLIENT (self)->device->device, cmd_buffer.fence, NULL);
-
-  GulkanDevice *device = GULKAN_CLIENT (self)->device;
+  vkDestroyFence (device_handle, cmd_buffer.fence, NULL);
 
   VRVulkanTextureData_t openvr_texture_data = {
-    .m_nImage = (uint64_t)self->framebuffer[EVREye_Eye_Left]->color_image,
-    .m_pDevice = (struct VkDevice_T *) device->device,
-    .m_pPhysicalDevice = (struct VkPhysicalDevice_T *) device->physical_device,
-    .m_pInstance = (struct VkInstance_T *) GULKAN_CLIENT (self)->instance->instance,
-    .m_pQueue = (struct VkQueue_T *) device->queue,
-    .m_nQueueFamilyIndex = device->queue_family_index,
+    .m_nImage = (uint64_t)gulkan_frame_buffer_get_color_image (
+      self->framebuffer[EVREye_Eye_Left]),
+    .m_pDevice = device_handle,
+    .m_pPhysicalDevice = gulkan_client_get_physical_device_handle (
+      GULKAN_CLIENT (self)),
+    .m_pInstance = gulkan_client_get_instance_handle (GULKAN_CLIENT (self)),
+    .m_pQueue = gulkan_device_get_queue_handle (device),
+    .m_nQueueFamilyIndex = gulkan_device_get_queue_family_index (device),
     .m_nWidth = self->render_width,
     .m_nHeight = self->render_height,
     .m_nFormat = VK_FORMAT_R8G8B8A8_UNORM,
@@ -539,7 +549,8 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
                                EVRSubmitFlags_Submit_Default);
 
   openvr_texture_data.m_nImage =
-    (uint64_t) self->framebuffer[EVREye_Eye_Right]->color_image;
+    (uint64_t) gulkan_frame_buffer_get_color_image (
+      self->framebuffer[EVREye_Eye_Right]);
   context->compositor->Submit (EVREye_Eye_Right, &texture, &bounds,
                                EVRSubmitFlags_Submit_Default);
 }

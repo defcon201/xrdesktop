@@ -42,7 +42,8 @@ xrd_scene_model_finalize (GObject *gobject)
   g_object_unref (self->texture);
 
   if (self->sampler != VK_NULL_HANDLE)
-    vkDestroySampler (self->vbo->device, self->sampler, NULL);
+    vkDestroySampler (gulkan_device_get_handle (self->device),
+                      self->sampler, NULL);
 }
 
 bool
@@ -107,10 +108,8 @@ _load_mesh (XrdSceneModel *self,
 
   if (!gulkan_vertex_buffer_alloc_index_data (
       self->vbo, device, vr_model->rIndexData,
-      sizeof (uint16_t) * vr_model->unTriangleCount * 3))
+      sizeof (uint16_t), vr_model->unTriangleCount * 3))
     return FALSE;
-
-  self->vbo->count = vr_model->unTriangleCount * 3;
 
   return TRUE;
 }
@@ -150,7 +149,8 @@ _load_texture (XrdSceneModel *self,
     .maxLod = (float) num_mipmaps,
   };
 
-  vkCreateSampler (device->device, &sampler_info, NULL, &self->sampler);
+  vkCreateSampler (gulkan_device_get_handle (device), &sampler_info, NULL,
+                   &self->sampler);
 
   return TRUE;
 }

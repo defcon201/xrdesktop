@@ -32,11 +32,11 @@ XrdOverlayModel *xrd_overlay_model_new (gchar* key, gchar* name);
 
 gboolean
 xrd_overlay_model_set_model (XrdOverlayModel *self, gchar *name,
-                             struct HmdColor_t *color);
+                             graphene_vec4_t *color);
 
 gboolean
 xrd_overlay_model_get_model (XrdOverlayModel *self, gchar *name,
-                             struct HmdColor_t *color, uint32_t *id);
+                             graphene_vec4_t *color, uint32_t *id);
 
 gboolean
 xrd_overlay_model_initialize (XrdOverlayModel *self, gchar* key, gchar* name);

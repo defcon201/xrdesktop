@@ -108,28 +108,16 @@ xrd_overlay_model_finalize (GObject *gobject)
  */
 gboolean
 xrd_overlay_model_set_model (XrdOverlayModel *self, gchar *name,
-                          struct HmdColor_t *color)
+                             graphene_vec4_t *color)
 {
-  GET_OVERLAY_FUNCTIONS
-
-  err = f->SetOverlayRenderModel (OPENVR_OVERLAY (self)->overlay_handle,
-                                  name, color);
-
-  OVERLAY_CHECK_ERROR ("SetOverlayRenderModel", err);
-  return TRUE;
+  return openvr_overlay_set_model (OPENVR_OVERLAY (self), name, color);
 }
 
 gboolean
 xrd_overlay_model_get_model (XrdOverlayModel *self, gchar *name,
-                        struct HmdColor_t *color, uint32_t *id)
+                             graphene_vec4_t *color, uint32_t *id)
 {
-  GET_OVERLAY_FUNCTIONS
-
-  *id = f->GetOverlayRenderModel (OPENVR_OVERLAY (self)->overlay_handle,
-                                  name, k_unMaxPropertyStringSize,
-                                  color, &err);
-
-  OVERLAY_CHECK_ERROR ("GetOverlayRenderModel", err);
+  openvr_overlay_get_model (OPENVR_OVERLAY (self), name, color, id);
   return TRUE;
 }
 

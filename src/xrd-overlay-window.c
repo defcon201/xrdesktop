@@ -17,7 +17,6 @@ struct _XrdOverlayWindow
 {
   OpenVROverlay parent;
   gboolean      recreate;
-  gboolean      flip_y;
   gboolean      hidden;
 
   XrdWindowData window_data;
@@ -42,8 +41,7 @@ G_DEFINE_TYPE_WITH_CODE (XrdOverlayWindow, xrd_overlay_window, OPENVR_TYPE_OVERL
                          G_IMPLEMENT_INTERFACE (XRD_TYPE_WINDOW,
                                                 xrd_overlay_window_window_interface_init))
 
-static struct VRTextureBounds_t defaultBounds = { 0., 0., 1., 1. };
-static struct VRTextureBounds_t flippedBounds = { 0., 1., 1., 0. };
+
 
 static void
 _scale_move_child (XrdOverlayWindow *self);
@@ -202,10 +200,6 @@ xrd_overlay_window_set_color (XrdOverlayWindow *self,
                               graphene_vec3_t *color);
 
 void
-xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
-                               gboolean flip_y);
-
-void
 xrd_overlay_window_set_hidden (XrdOverlayWindow *self,
                                gboolean hidden);
 
@@ -247,7 +241,7 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
       (void*)xrd_overlay_window_intersection_to_2d_offset_meter;
   iface->add_child = (void*)xrd_overlay_window_add_child;
   iface->set_color = (void*)xrd_overlay_window_set_color;
-  iface->set_flip_y = (void*)xrd_overlay_window_set_flip_y;
+  iface->set_flip_y = (void*)openvr_overlay_set_flip_y;
   iface->set_hidden = (void*)xrd_overlay_window_set_hidden;
   iface->get_hidden = (void*)xrd_overlay_window_get_hidden;
 }
@@ -309,14 +303,20 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
 {
   OpenVROverlayUploader *uploader = OPENVR_OVERLAY_UPLOADER (client);
 
-  uint32_t w, h;
-  g_object_get (self, "texture-width", &w, "texture-height", &h, NULL);
+  uint32_t current_width, current_height;
+  g_object_get (self,
+                "texture-width", &current_width,
+                "texture-height", &current_height,
+                NULL);
 
-  if (w != texture->width || h != texture->height)
+  guint new_width = gulkan_texture_get_width (texture);
+  guint new_height = gulkan_texture_get_height (texture);
+
+  if (current_width != new_width || current_height != new_height)
     {
       g_object_set (self,
-                    "texture-width", texture->width,
-                    "texture-height", texture->height,
+                    "texture-width", new_width,
+                    "texture-height", new_height,
                     NULL);
 
       float width_meters =
@@ -326,8 +326,7 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
 
       /* Mouse scale is required for the intersection test */
       openvr_overlay_set_mouse_scale (OPENVR_OVERLAY (self),
-                                      texture->width,
-                                      texture->height);
+                                      new_width, new_height);
     }
 
   openvr_overlay_uploader_submit_frame (uploader,
@@ -400,7 +399,6 @@ xrd_overlay_window_intersection_to_2d_offset_meter (XrdOverlayWindow *self,
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
-  self->flip_y = false;
   self->hidden = false;
   self->window_data.child_window = NULL;
   self->window_data.parent_window = NULL;
@@ -471,21 +469,6 @@ xrd_overlay_window_set_color (XrdOverlayWindow *self,
                               graphene_vec3_t *color)
 {
   openvr_overlay_set_color (OPENVR_OVERLAY (self), color);
-}
-
-void
-xrd_overlay_window_set_flip_y (XrdOverlayWindow *self,
-                               gboolean flip_y)
-{
-  if (flip_y != self->flip_y)
-    {
-      OpenVRContext *openvrContext = openvr_context_get_instance();
-      VRTextureBounds_t *bounds = flip_y ? &flippedBounds : &defaultBounds;
-      openvrContext->overlay->SetOverlayTextureBounds (
-          OPENVR_OVERLAY (self)->overlay_handle, bounds);
-
-      self->flip_y = flip_y;
-    }
 }
 
 void

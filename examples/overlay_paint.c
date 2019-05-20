@@ -237,7 +237,8 @@ _init_paint_overlay (Example *self)
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
   self->texture =
-    gulkan_texture_new_from_pixbuf (client->device, self->draw_pixbuf,
+    gulkan_texture_new_from_pixbuf (gulkan_client_get_device (client),
+                                    self->draw_pixbuf,
                                     VK_FORMAT_R8G8B8A8_UNORM);
 
   gulkan_client_upload_pixbuf (client, self->texture, self->draw_pixbuf);

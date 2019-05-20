@@ -287,7 +287,7 @@ _init_vulkan (XrdSceneClient *self)
   _update_matrices (self);
   _init_device_models (self);
 
-  GulkanDevice *device = GULKAN_CLIENT (renderer)->device;
+  GulkanDevice *device = gulkan_client_get_device (GULKAN_CLIENT (renderer));
 
   VkDescriptorSetLayout *descriptor_set_layout =
     xrd_scene_renderer_get_descriptor_set_layout (renderer);
@@ -319,7 +319,7 @@ _init_vulkan (XrdSceneClient *self)
     XRD_DESKTOP_CURSOR (xrd_scene_desktop_cursor_new ());
   xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 
-  vkQueueWaitIdle (GULKAN_CLIENT (renderer)->device->queue);
+  vkQueueWaitIdle (gulkan_device_get_queue_handle (device));
 
   xrd_scene_renderer_set_render_cb (renderer, _render_eye_cb, self);
 

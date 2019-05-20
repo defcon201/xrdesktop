@@ -160,7 +160,9 @@ _init_texture (XrdPointerTip *self)
   if (data->texture)
     g_object_unref (data->texture);
 
-  data->texture = gulkan_texture_new_from_pixbuf (client->device, pixbuf,
+  data->texture = gulkan_texture_new_from_pixbuf (gulkan_client_get_device (
+                                                    client),
+                                                  pixbuf,
                                                   VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
   g_object_unref (pixbuf);

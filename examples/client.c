@@ -74,7 +74,7 @@ _make_texture (GulkanClient *gc, const gchar *resource)
     }
 
   GulkanTexture *texture =
-    gulkan_texture_new_from_pixbuf (gc->device, pixbuf,
+    gulkan_texture_new_from_pixbuf (gulkan_client_get_device (gc), pixbuf,
                                     VK_FORMAT_R8G8B8A8_UNORM);
 
   gulkan_client_upload_pixbuf (gc, texture, pixbuf);
@@ -112,12 +112,13 @@ _head_follow_press_cb (XrdWindow               *button,
 
   if (self->head_follow_window == NULL)
     {
-      float ppm = self->hawk_big->width / 0.5;
+      guint texture_width = gulkan_texture_get_width (self->hawk_big);
+      guint texture_height = gulkan_texture_get_height (self->hawk_big);
+      float ppm = texture_width / 0.5;
 
       self->head_follow_window =
         _window_new_from_ppm (self->client, "Head Tracked window.",
-                              self->hawk_big->width, self->hawk_big->height,
-                              ppm);
+                              texture_width, texture_height, ppm);
 
       xrd_client_add_window (self->client,
                              self->head_follow_window, FALSE, TRUE);
@@ -181,11 +182,14 @@ _init_child_window (Example      *self,
                     XrdWindow    *window)
 {
   GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg");
-  float ppm = cat_small->width / 0.25;
+  guint texture_width = gulkan_texture_get_width (cat_small);
+  guint texture_height = gulkan_texture_get_height (cat_small);
+
+  float ppm = texture_width / 0.25;
   XrdWindow *child;
 
   child = _window_new_from_ppm (self->client, "A child.",
-                                cat_small->width, cat_small->height, ppm);
+                                texture_width, texture_height, ppm);
 
   xrd_client_add_window (self->client, child, TRUE, FALSE);
 
@@ -208,7 +212,7 @@ _init_cursor (Example *self, GulkanClient *gc)
     }
 
   self->cursor_texture = gulkan_texture_new_from_pixbuf (
-      gc->device, cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
+      gulkan_client_get_device (gc), cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_pixbuf (gc, self->cursor_texture, cursor_pixbuf);
 
   xrd_client_submit_cursor_texture (self->client, gc,
@@ -254,6 +258,9 @@ _init_windows (Example *self)
 {
   GulkanClient *gc = xrd_client_get_uploader (self->client);
 
+  guint texture_width = gulkan_texture_get_width (self->hawk_big);
+  guint texture_height = gulkan_texture_get_height (self->hawk_big);
+
   float window_x = 0;
   float window_y = 0;
   for (int col = 0; col < GRID_WIDTH; col++)
@@ -262,11 +269,10 @@ _init_windows (Example *self)
       for (int row = 0; row < GRID_HEIGHT; row++)
         {
           // a window should have ~0.5 meter
-          float ppm = self->hawk_big->width / 0.5;
+          float ppm = texture_width / 0.5;
           XrdWindow *window =
             _window_new_from_ppm (self->client, "A window.",
-                                  self->hawk_big->width, self->hawk_big->height,
-                                  ppm);
+                                  texture_width, texture_height, ppm);
 
           xrd_client_add_window (self->client, window, FALSE, FALSE);
 

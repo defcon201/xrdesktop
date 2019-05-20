@@ -69,12 +69,7 @@ _append_star (GulkanVertexBuffer *self,
     }
 
   for (uint32_t i = 0; i < sections; i++)
-    {
-      gulkan_vertex_buffer_append_vec4 (self, &points[i]);
-      gulkan_vertex_buffer_append_vec3 (self, color);
-    }
-
-  self->count += sections;
+    gulkan_vertex_buffer_append_with_color (self, &points[i], color);
 
   g_free(points);
 }
@@ -103,12 +98,7 @@ _append_circle (GulkanVertexBuffer *self,
     }
 
   for (uint32_t i = 0; i < edges * 2; i++)
-    {
-      gulkan_vertex_buffer_append_vec4 (self, &points[i]);
-      gulkan_vertex_buffer_append_vec3 (self, color);
-    }
-
-  self->count += edges * 2;
+    gulkan_vertex_buffer_append_with_color (self, &points[i], color);
 
   g_free(points);
 }
@@ -161,7 +151,7 @@ xrd_scene_background_render (XrdSceneBackground *self,
                              VkCommandBuffer     cmd_buffer,
                              graphene_matrix_t  *vp)
 {
-  if (self->vertex_buffer->buffer == VK_NULL_HANDLE)
+  if (!gulkan_vertex_buffer_is_initialized (self->vertex_buffer))
     return;
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);

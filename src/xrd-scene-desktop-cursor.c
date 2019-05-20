@@ -83,8 +83,8 @@ _submit_texture (XrdDesktopCursor *cursor,
   self->data.hotspot_x = hotspot_x;
   self->data.hotspot_y = hotspot_y;
 
-  self->data.texture_width = texture->width;
-  self->data.texture_height = texture->height;
+  self->data.texture_width = gulkan_texture_get_width (texture);
+  self->data.texture_height = gulkan_texture_get_height (texture);
 }
 
 static void

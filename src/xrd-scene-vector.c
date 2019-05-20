@@ -48,13 +48,8 @@ _append_vector (GulkanVertexBuffer *buffer,
                 graphene_vec4_t    *end,
                 graphene_vec3_t    *color)
 {
-  gulkan_vertex_buffer_append_vec4 (buffer, start);
-  gulkan_vertex_buffer_append_vec3 (buffer, color);
-
-  gulkan_vertex_buffer_append_vec4 (buffer, end);
-  gulkan_vertex_buffer_append_vec3 (buffer, color);
-
-  buffer->count += 2;
+  gulkan_vertex_buffer_append_with_color (buffer, start, color);
+  gulkan_vertex_buffer_append_with_color (buffer, end, color);
 }
 
 void
@@ -72,17 +67,13 @@ xrd_scene_vector_append_plane (GulkanVertexBuffer *buffer,
   graphene_vec4_t start;
   graphene_vec4_init (&start, 0, 0, 0, 1);
 
-  gulkan_vertex_buffer_append_vec4 (buffer, &start);
-  gulkan_vertex_buffer_append_vec3 (buffer, color);
 
   graphene_vec4_t end;
   graphene_vec4_init_from_vec3 (&end, &normal, 1);
   graphene_vec4_negate (&end, &end);
 
-  gulkan_vertex_buffer_append_vec4 (buffer, &end);
-  gulkan_vertex_buffer_append_vec3 (buffer, color);
-
-  buffer->count += 2;
+  gulkan_vertex_buffer_append_with_color (buffer, &start, color);
+  gulkan_vertex_buffer_append_with_color (buffer, &end, color);
 }
 
 gboolean
@@ -175,7 +166,7 @@ xrd_scene_vector_render (XrdSceneVector    *self,
                          VkCommandBuffer    cmd_buffer,
                          graphene_matrix_t *vp)
 {
-  if (self->vertex_buffer->buffer == VK_NULL_HANDLE)
+  if (!gulkan_vertex_buffer_is_initialized (self->vertex_buffer))
     return;
 
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);

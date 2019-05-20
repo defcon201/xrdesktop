@@ -63,12 +63,8 @@ _pose_cb (OpenVRAction    *action,
 gboolean
 _update_model (Example *self)
 {
-  struct HmdColor_t color = {
-    .r = 1.0f,
-    .g = 1.0f,
-    .b = 1.0f,
-    .a = 1.0f
-  };
+  graphene_vec4_t color;
+  graphene_vec4_init (&color, 1., 1., 1., 1.);
 
   GSList* name = g_slist_nth (self->models, self->current_model_list_index);
   g_print ("Setting Model '%s' [%d/%d]\n",
@@ -152,12 +148,8 @@ _init_model_overlay (Example *self)
 {
   self->model_overlay = xrd_overlay_model_new ("model", "A 3D model overlay");
 
-  struct HmdColor_t color = {
-    .r = 1.0f,
-    .g = 1.0f,
-    .b = 1.0f,
-    .a = 1.0f
-  };
+  graphene_vec4_t color;
+  graphene_vec4_init (&color, 1., 1., 1., 1.);
 
   GSList* model_name = g_slist_nth (self->models,
                                     self->current_model_list_index);
@@ -166,7 +158,7 @@ _init_model_overlay (Example *self)
     return FALSE;
 
   char name_ret[k_unMaxPropertyStringSize];
-  struct HmdColor_t color_ret = {};
+  graphene_vec4_t color_ret = {};
 
   uint32_t id;
   if (!xrd_overlay_model_get_model (self->model_overlay, name_ret, &color_ret, &id))

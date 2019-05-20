@@ -99,7 +99,8 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
                           VkCommandBuffer    cmd_buffer,
                           graphene_matrix_t *vp)
 {
-  if (self->vertex_buffer->buffer == VK_NULL_HANDLE)
+
+  if (!gulkan_vertex_buffer_is_initialized (self->vertex_buffer))
     return;
 
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);

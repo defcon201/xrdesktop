@@ -197,7 +197,8 @@ xrd_scene_window_finalize (GObject *gobject)
 
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
-  vkDestroySampler (GULKAN_CLIENT (renderer)->device->device, self->sampler, NULL);
+  vkDestroySampler (gulkan_client_get_device_handle (GULKAN_CLIENT (renderer)),
+                    self->sampler, NULL);
 
   g_object_unref (self->vertex_buffer);
 
@@ -279,7 +280,8 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
 
   _append_plane (self->vertex_buffer, self->aspect_ratio);
   if (!gulkan_vertex_buffer_alloc_array (self->vertex_buffer,
-                                         GULKAN_CLIENT (renderer)->device))
+                                         gulkan_client_get_device (
+                                           GULKAN_CLIENT (renderer))))
     return FALSE;
 
   VkDescriptorSetLayout *layout =
@@ -367,11 +369,12 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
                                  GulkanClient   *client,
                                  GulkanTexture  *texture)
 {
-  VkDevice device = client->device->device;
+  VkDevice device = gulkan_client_get_device_handle (client);
 
   uint32_t mip_levels = 1;
 
-  float aspect_ratio = (float) texture->width / (float) texture->height;
+  float aspect_ratio = (float) gulkan_texture_get_width (texture) /
+    (float) gulkan_texture_get_height (texture);
 
   if (self->aspect_ratio != aspect_ratio)
     {
@@ -403,7 +406,8 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   xrd_scene_object_update_descriptors_texture (obj, self->sampler,
-                                               self->texture->image_view);
+                                               gulkan_texture_get_image_view (
+                                                 self->texture));
 }
 
 void

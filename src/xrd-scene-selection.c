@@ -71,11 +71,8 @@ _append_lines_quad (GulkanVertexBuffer *self,
 
   for (uint32_t i = 0; i < G_N_ELEMENTS (points); i++)
     {
-      gulkan_vertex_buffer_append_vec4 (self, &points[i]);
-      gulkan_vertex_buffer_append_vec3 (self, color);
+      gulkan_vertex_buffer_append_with_color (self, &points[i], color);
     }
-
-  self->count += G_N_ELEMENTS (points);
 }
 
 void
@@ -127,7 +124,7 @@ xrd_scene_selection_render (XrdSceneSelection *self,
                             VkCommandBuffer    cmd_buffer,
                             graphene_matrix_t *vp)
 {
-  if (self->vertex_buffer->buffer == VK_NULL_HANDLE)
+  if (!gulkan_vertex_buffer_is_initialized (self->vertex_buffer))
     return;
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);

@@ -56,7 +56,7 @@ _load_content (XrdSceneDeviceManager *self,
   if (!gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer))
     return NULL;
   content = xrd_scene_model_new ();
-  if (!xrd_scene_model_load (content, client->device,
+  if (!xrd_scene_model_load (content, gulkan_client_get_device (client),
                                  cmd_buffer.cmd_buffer, model_name))
     return NULL;
 

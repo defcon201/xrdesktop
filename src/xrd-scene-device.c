@@ -59,7 +59,7 @@ xrd_scene_device_initialize (XrdSceneDevice        *self,
 
   xrd_scene_object_update_descriptors_texture (
     obj, self->model->sampler,
-    self->model->texture->image_view);
+    gulkan_texture_get_image_view (self->model->texture));
 
   return TRUE;
 }

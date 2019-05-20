@@ -200,7 +200,8 @@ xrd_button_set_text (XrdWindow    *button,
   cairo_surface_t* surface =
     xrd_client_create_button_surface (image, width, height, label_count, label);
   GulkanTexture *texture =
-    gulkan_texture_new_from_cairo_surface (client->device, surface,
+    gulkan_texture_new_from_cairo_surface (gulkan_client_get_device (client),
+                                           surface,
                                            VK_FORMAT_R8G8B8A8_UNORM);
   gulkan_client_upload_cairo_surface (client, texture, surface);
 

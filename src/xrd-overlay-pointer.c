@@ -59,12 +59,8 @@ xrd_overlay_pointer_new (int controller_index)
    */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX);
 
-  struct HmdColor_t color = {
-    .r = 1.0f,
-    .g = 1.0f,
-    .b = 1.0f,
-    .a = 1.0f
-  };
+  graphene_vec4_t color;
+  graphene_vec4_init (&color, 1., 1., 1., 1.);
 
   if (!xrd_overlay_model_set_model (XRD_OVERLAY_MODEL (self),
                                     "{system}laser_pointer",

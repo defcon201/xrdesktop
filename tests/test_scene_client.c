@@ -37,7 +37,7 @@ _make_texture (GulkanClient *gc, const gchar *resource)
     }
 
   GulkanTexture *texture =
-    gulkan_texture_new_from_pixbuf (gc->device, pixbuf,
+    gulkan_texture_new_from_pixbuf (gulkan_client_get_device (gc), pixbuf,
                                     VK_FORMAT_R8G8B8A8_UNORM);
 
   gulkan_client_upload_pixbuf (gc, texture, pixbuf);
@@ -63,11 +63,14 @@ main ()
 
   GulkanTexture *texture = _make_texture (gc, "/res/cat.jpg");
 
-  float ppm = texture->width / 0.25;
+  guint texture_width = gulkan_texture_get_width (texture);
+  guint texture_height = gulkan_texture_get_height (texture);
+
+  float ppm = texture_width / 0.25;
 
   XrdSceneWindow *window = xrd_scene_window_new_from_ppm ("win.",
-                                                          texture->width,
-                                                          texture->height,
+                                                          texture_width,
+                                                          texture_height,
                                                           ppm);
   xrd_scene_window_initialize (window);
 
