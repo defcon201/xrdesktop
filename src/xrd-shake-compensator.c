@@ -155,7 +155,11 @@ void
 xrd_shake_compensator_reset (XrdShakeCompensator *self)
 {
   if (self->queue)
-    g_queue_clear_full (self->queue, g_free);
+    {
+      for (graphene_point_t *p = g_queue_pop_tail (self->queue); p != NULL;
+           p = g_queue_pop_tail (self->queue))
+        g_free (p);
+    }
   self->queue = NULL;
 
   self->last_press_button = -1;
