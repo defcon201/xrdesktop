@@ -1,5 +1,5 @@
 /*
- * Xrd GLib
+ * xrdesktop
  * Copyright 2019 Collabora Ltd.
  * Author: Christoph Haag <christoph.haag@collabora.com>
  * SPDX-License-Identifier: MIT
