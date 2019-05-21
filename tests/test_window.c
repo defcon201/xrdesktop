@@ -8,8 +8,7 @@
 #include <glib.h>
 #include <openvr-glib.h>
 
-#include "xrd-window.h"
-#include "xrd-overlay-window.h"
+#include "xrd.h"
 
 int
 main ()

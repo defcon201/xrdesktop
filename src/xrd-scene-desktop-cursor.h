@@ -8,6 +8,10 @@
 #ifndef XRD_SCENE_DESKTOP_CURSOR_H_
 #define XRD_SCENE_DESKTOP_CURSOR_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include <glib-object.h>
 
 #include "xrd-scene-window.h"

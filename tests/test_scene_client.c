@@ -6,7 +6,7 @@
  */
 
 #include <glib.h>
-#include "xrd-scene-client.h"
+#include "xrd.h"
 
 static GdkPixbuf *
 _load_gdk_pixbuf (const gchar* name)

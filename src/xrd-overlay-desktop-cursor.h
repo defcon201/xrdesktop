@@ -8,6 +8,10 @@
 #ifndef XRD_GLIB_OVERLAY_DESKTOP_CURSOR_H_
 #define XRD_GLIB_OVERLAY_DESKTOP_CURSOR_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include <glib-object.h>
 
 #include "xrd-overlay-window.h"

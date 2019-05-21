@@ -8,6 +8,10 @@
 #ifndef XRD_OVERLAY_POINTER_H_
 #define XRD_OVERLAY_POINTER_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include <glib-object.h>
 #include "xrd-overlay-model.h"
 

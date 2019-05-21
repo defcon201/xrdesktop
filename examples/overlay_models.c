@@ -9,7 +9,7 @@
 #include <glib-unix.h>
 
 #include <openvr-glib.h>
-#include "xrd-overlay-model.h"
+#include "xrd.h"
 
 typedef struct Example
 {

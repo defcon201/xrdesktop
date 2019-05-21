@@ -102,6 +102,7 @@ xrdesktop_lib = shared_library(api_path,
   soversion: so_version,
   dependencies: xrdesktop_deps,
   install: true,
+  c_args : ['-DXRD_COMPILATION']
 )
 
 xrdesktop_inc = include_directories('.')

@@ -9,6 +9,10 @@
 #ifndef XRD_MATH_H_
 #define XRD_MATH_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include <graphene.h>
 #include <glib.h>
 #include "xrd-window.h"

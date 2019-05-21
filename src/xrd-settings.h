@@ -8,6 +8,10 @@
 #ifndef XRD_GLIB_SETTINGS_H_
 #define XRD_GLIB_SETTINGS_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include <gio/gio.h>
 
 GSettings *

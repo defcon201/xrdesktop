@@ -8,6 +8,10 @@
 #ifndef XRD_SHAKE_COMPENSATOR_H_
 #define XRD_SHAKE_COMPENSATOR_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include <glib-object.h>
 #include "xrd-window.h"
 #include "xrd-input-synth.h"

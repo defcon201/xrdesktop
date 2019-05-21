@@ -16,13 +16,7 @@
 
 #include <openvr-glib.h>
 
-#include "xrd-overlay-pointer.h"
-#include "xrd-overlay-pointer-tip.h"
-#include "xrd-window-manager.h"
-#include "xrd-pointer.h"
-
-#include "xrd-overlay-window.h"
-#include "xrd-pointer-tip.h"
+#include "xrd.h"
 
 typedef struct Example
 {

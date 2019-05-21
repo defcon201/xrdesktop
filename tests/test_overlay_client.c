@@ -6,7 +6,7 @@
  */
 
 #include <glib.h>
-#include "xrd-overlay-client.h"
+#include "xrd.h"
 
 int
 main ()

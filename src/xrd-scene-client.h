@@ -8,6 +8,10 @@
 #ifndef XRD_SCENE_CLIENT_H_
 #define XRD_SCENE_CLIENT_H_
 
+#if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
+#error "Only <xrd.h> can be included directly."
+#endif
+
 #include "xrd-client.h"
 
 #include <glib-object.h>

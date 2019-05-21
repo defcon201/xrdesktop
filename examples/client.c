@@ -8,8 +8,7 @@
 #include <glib.h>
 #include <glib-unix.h>
 
-#include "xrd-scene-client.h"
-#include "xrd-overlay-client.h"
+#include "xrd.h"
 
 #define GRID_WIDTH 4
 #define GRID_HEIGHT 4
