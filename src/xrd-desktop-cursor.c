@@ -7,7 +7,7 @@
 
 #include "xrd-desktop-cursor.h"
 
-#include <openvr-system.h>
+#include <openvr-glib.h>
 
 #include "xrd-settings.h"
 #include "graphene-ext.h"

@@ -6,7 +6,7 @@
  */
 
 #include "xrd-scene-object.h"
-#include <gulkan-descriptor-set.h>
+#include <gulkan.h>
 
 #include "xrd-scene-renderer.h"
 #include "graphene-ext.h"

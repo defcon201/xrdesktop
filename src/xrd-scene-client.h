@@ -10,18 +10,10 @@
 
 #include "xrd-client.h"
 
-#include "openvr-context.h"
 #include <glib-object.h>
 
-#include <openvr-action-set.h>
-
-#include <gulkan-client.h>
-#include <gulkan-device.h>
-#include <gulkan-instance.h>
-#include <gulkan-texture.h>
-#include <gulkan-frame-buffer.h>
-#include <gulkan-vertex-buffer.h>
-#include <gulkan-uniform-buffer.h>
+#include <openvr-glib.h>
+#include <gulkan.h>
 
 #include "xrd-scene-device.h"
 #include "xrd-scene-device-manager.h"

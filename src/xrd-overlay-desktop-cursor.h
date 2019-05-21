@@ -10,9 +10,7 @@
 
 #include <glib-object.h>
 
-#include "openvr-overlay-uploader.h"
 #include "xrd-overlay-window.h"
-#include "openvr-overlay.h"
 
 G_BEGIN_DECLS
 

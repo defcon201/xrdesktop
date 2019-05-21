@@ -6,8 +6,7 @@
  */
 
 #include "xrd-scene-selection.h"
-#include "gulkan-geometry.h"
-#include <gulkan-descriptor-set.h>
+#include <gulkan.h>
 
 G_DEFINE_TYPE (XrdSceneSelection, xrd_scene_selection, XRD_TYPE_SCENE_OBJECT)
 

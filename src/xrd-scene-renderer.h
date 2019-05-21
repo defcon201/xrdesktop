@@ -10,7 +10,7 @@
 
 #include <glib-object.h>
 
-#include <gulkan-client.h>
+#include <gulkan.h>
 
 G_BEGIN_DECLS
 

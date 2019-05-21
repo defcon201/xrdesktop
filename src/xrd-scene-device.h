@@ -12,9 +12,8 @@
 
 
 #include <graphene.h>
-#include <openvr_capi.h>
 
-#include <gulkan-uniform-buffer.h>
+#include <gulkan.h>
 
 #include "xrd-scene-model.h"
 

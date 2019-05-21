@@ -7,10 +7,7 @@
 
 #include "xrd-follow-head-container.h"
 
-#include <openvr-context.h>
-
-#include "openvr-math.h"
-#include <openvr-system.h>
+#include <openvr-glib.h>
 
 #include "xrd-math.h"
 #include "graphene-ext.h"

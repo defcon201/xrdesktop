@@ -7,9 +7,8 @@
 
 #include "xrd-scene-pointer.h"
 
-#include <gulkan-descriptor-set.h>
+#include <gulkan.h>
 
-#include "gulkan-geometry.h"
 #include "graphene-ext.h"
 #include "xrd-pointer.h"
 

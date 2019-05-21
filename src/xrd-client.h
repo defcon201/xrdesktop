@@ -11,7 +11,7 @@
 #include <glib-object.h>
 #include <gdk/gdk.h>
 
-#include <openvr-context.h>
+#include <openvr-glib.h>
 
 #include "xrd-window.h"
 #include "xrd-input-synth.h"

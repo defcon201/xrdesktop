@@ -6,8 +6,9 @@
  */
 
 #include "xrd-scene-device.h"
-#include "openvr-context.h"
-#include <gulkan-descriptor-set.h>
+
+#include <openvr-glib.h>
+#include <gulkan.h>
 
 G_DEFINE_TYPE (XrdSceneDevice, xrd_scene_device, XRD_TYPE_SCENE_OBJECT)
 

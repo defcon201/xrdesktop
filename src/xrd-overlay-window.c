@@ -9,7 +9,7 @@
 
 #include <glib/gprintf.h>
 
-#include <openvr-overlay-uploader.h>
+#include <openvr-glib.h>
 #include "xrd-math.h"
 #include "graphene-ext.h"
 

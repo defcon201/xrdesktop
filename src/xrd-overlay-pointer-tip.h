@@ -9,10 +9,9 @@
 #define XRD_OVERLAY_POINTER_TIP_H_
 
 #include <glib-object.h>
-#include <gulkan-texture.h>
 
-#include "openvr-overlay-uploader.h"
-#include "openvr-overlay.h"
+#include <gulkan.h>
+#include <openvr-glib.h>
 
 G_BEGIN_DECLS
 

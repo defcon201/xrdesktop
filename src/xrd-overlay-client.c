@@ -7,10 +7,10 @@
 
 #include "xrd-overlay-client.h"
 
+#include <openvr-glib.h>
+
 #include <gdk/gdk.h>
-#include <openvr-io.h>
 #include <glib/gprintf.h>
-#include <openvr-math.h>
 #include "xrd-math.h"
 #include "xrd-client.h"
 #include "graphene-ext.h"

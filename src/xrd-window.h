@@ -11,8 +11,7 @@
 #include <glib-object.h>
 
 #include <graphene.h>
-#include <gulkan-client.h>
-#include <gulkan-texture.h>
+#include <gulkan.h>
 
 typedef struct XrdPixelSize
 {

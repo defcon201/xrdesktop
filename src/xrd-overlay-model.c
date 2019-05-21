@@ -6,7 +6,7 @@
  */
 
 #include "xrd-overlay-model.h"
-#include "openvr-context.h"
+#include <openvr-glib.h>
 
 G_DEFINE_TYPE (XrdOverlayModel, xrd_overlay_model, OPENVR_TYPE_OVERLAY)
 

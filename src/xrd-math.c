@@ -2,8 +2,8 @@
 
 #include <inttypes.h>
 
-#include <openvr-math.h>
-#include <openvr-system.h>
+#include <openvr-glib.h>
+
 #include "graphene-ext.h"
 
 float

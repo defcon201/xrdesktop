@@ -9,10 +9,11 @@
 
 #include <gdk/gdk.h>
 
+#include <openvr-glib.h>
+
 #include "xrd-math.h"
 #include "xrd-settings.h"
 #include "graphene-ext.h"
-#include <openvr-system.h>
 
 G_DEFINE_INTERFACE (XrdPointerTip, xrd_pointer_tip, G_TYPE_OBJECT)
 

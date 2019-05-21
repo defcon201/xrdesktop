@@ -12,7 +12,7 @@
 
 #include "xrd-scene-device.h"
 #include "xrd-scene-pointer.h"
-#include <gulkan-client.h>
+#include <gulkan.h>
 
 G_BEGIN_DECLS
 

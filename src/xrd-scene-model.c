@@ -6,7 +6,7 @@
  */
 
 #include "xrd-scene-model.h"
-#include "openvr-context.h"
+#include <openvr-glib.h>
 
 G_DEFINE_TYPE (XrdSceneModel, xrd_scene_model, G_TYPE_OBJECT)
 

@@ -10,8 +10,9 @@
 
 #include <glib-object.h>
 
+#include <openvr-glib.h>
+
 #include "xrd-window.h"
-#include "openvr-action.h"
 
 G_BEGIN_DECLS
 

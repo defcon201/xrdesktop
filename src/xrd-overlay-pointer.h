@@ -11,7 +11,7 @@
 #include <glib-object.h>
 #include "xrd-overlay-model.h"
 
-#include "openvr-action.h"
+#include <openvr-glib.h>
 
 G_BEGIN_DECLS
 

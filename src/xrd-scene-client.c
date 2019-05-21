@@ -10,14 +10,9 @@
 #include "xrd-scene-client.h"
 
 #include <gmodule.h>
-#include <gulkan-texture.h>
-#include <gulkan-renderer.h>
-#include <gulkan-geometry.h>
 
-#include "openvr-compositor.h"
-#include "openvr-system.h"
-#include "openvr-math.h"
-#include "openvr-io.h"
+#include <gulkan.h>
+#include <openvr-glib.h>
 
 #include <signal.h>
 

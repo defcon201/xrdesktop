@@ -16,14 +16,6 @@
 
 #include <openvr-glib.h>
 
-#include "openvr-context.h"
-#include "openvr-io.h"
-#include "openvr-compositor.h"
-#include "openvr-math.h"
-#include "openvr-overlay.h"
-#include "openvr-overlay-uploader.h"
-#include "openvr-action.h"
-#include "openvr-action-set.h"
 #include "xrd-overlay-pointer.h"
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-window-manager.h"

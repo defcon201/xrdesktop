@@ -6,8 +6,8 @@
  */
 
 #include "xrd-scene-vector.h"
-#include "gulkan-geometry.h"
-#include <gulkan-descriptor-set.h>
+
+#include <gulkan.h>
 
 G_DEFINE_TYPE (XrdSceneVector, xrd_scene_vector, XRD_TYPE_SCENE_OBJECT)
 

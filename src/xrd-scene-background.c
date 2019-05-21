@@ -6,8 +6,7 @@
  */
 
 #include "xrd-scene-background.h"
-#include "gulkan-geometry.h"
-#include <gulkan-descriptor-set.h>
+#include <gulkan.h>
 #include "graphene-ext.h"
 
 G_DEFINE_TYPE (XrdSceneBackground, xrd_scene_background, XRD_TYPE_SCENE_OBJECT)

@@ -8,10 +8,7 @@
 
 #include <glib-unix.h>
 
-#include "openvr-context.h"
-#include "openvr-overlay.h"
-#include "openvr-io.h"
-#include "openvr-action-set.h"
+#include <openvr-glib.h>
 #include "xrd-overlay-model.h"
 
 typedef struct Example

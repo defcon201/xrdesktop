@@ -6,7 +6,7 @@
  */
 
 #include <glib.h>
-#include <openvr-context.h>
+#include <openvr-glib.h>
 
 #include "xrd-window.h"
 #include "xrd-overlay-window.h"

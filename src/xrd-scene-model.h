@@ -10,8 +10,7 @@
 
 #include <glib-object.h>
 
-#include <gulkan-texture.h>
-#include "gulkan-vertex-buffer.h"
+#include <gulkan.h>
 
 G_BEGIN_DECLS
 

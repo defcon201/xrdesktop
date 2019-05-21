@@ -10,10 +10,8 @@
 
 #include <glib-object.h>
 
-#include <gulkan-vertex-buffer.h>
-
-#include "openvr-context.h"
-#include <gulkan-uniform-buffer.h>
+#include <openvr-glib.h>
+#include <gulkan.h>
 
 #include "xrd-scene-object.h"
 

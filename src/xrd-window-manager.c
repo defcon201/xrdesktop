@@ -8,8 +8,9 @@
 #include <gdk/gdk.h>
 #include <math.h>
 
+#include <openvr-glib.h>
+
 #include "xrd-window-manager.h"
-#include "openvr-math.h"
 #include "xrd-math.h"
 #include "graphene-ext.h"
 

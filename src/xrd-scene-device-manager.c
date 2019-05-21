@@ -7,8 +7,8 @@
 
 #include "xrd-scene-device-manager.h"
 #include "xrd-scene-model.h"
-#include "openvr-system.h"
-#include "openvr-math.h"
+
+#include <openvr-glib.h>
 
 G_DEFINE_TYPE (XrdSceneDeviceManager, xrd_scene_device_manager, G_TYPE_OBJECT)
 

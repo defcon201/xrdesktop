@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <gulkan-geometry.h>
+#include <gulkan.h>
 
 #include "graphene-ext.h"
 #include "xrd-scene-window.h"

@@ -7,7 +7,8 @@
 
 #include "xrd-overlay-desktop-cursor.h"
 
-#include "openvr-math.h"
+#include <openvr-glib.h>
+
 #include "xrd-settings.h"
 #include "xrd-math.h"
 #include "graphene-ext.h"

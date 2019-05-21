@@ -9,7 +9,7 @@
 #define XRD_GLIB_SCENE_OBJECT_H_
 
 #include <glib-object.h>
-#include <gulkan-uniform-buffer.h>
+#include <gulkan.h>
 #include <graphene.h>
 #include <openvr_capi.h>
 

@@ -10,7 +10,7 @@
 
 #include <glib-object.h>
 
-#include "openvr-overlay.h"
+#include <openvr-glib.h>
 
 G_BEGIN_DECLS
 

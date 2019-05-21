@@ -9,10 +9,8 @@
 
 #include <graphene.h>
 
-#include <gulkan-frame-buffer.h>
-#include <openvr-compositor.h>
-#include <openvr-context.h>
-#include <gulkan-renderer.h>
+#include <gulkan.h>
+#include <openvr-glib.h>
 
 static bool use_validation = true;
 

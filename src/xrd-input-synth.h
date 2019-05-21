@@ -10,7 +10,7 @@
 
 #include <glib-object.h>
 
-#include <openvr-action-set.h>
+#include <openvr-glib.h>
 
 #include "xrd-window.h"
 #include "xrd-overlay-window.h"
