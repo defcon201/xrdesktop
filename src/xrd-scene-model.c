@@ -98,8 +98,8 @@ _load_openvr_texture (TextureID_t                id,
 
 gboolean
 _load_mesh (XrdSceneModel *self,
-            GulkanDevice             *device,
-            RenderModel_t            *vr_model)
+            GulkanDevice  *device,
+            RenderModel_t *vr_model)
 {
   if (!gulkan_vertex_buffer_alloc_data (
       self->vbo, device, vr_model->rVertexData,

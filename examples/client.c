@@ -126,8 +126,7 @@ _head_follow_press_cb (XrdWindow               *button,
       graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
       graphene_matrix_t transform;
       graphene_matrix_init_translate (&transform, &point);
-      xrd_window_set_transformation (self->head_follow_window,
-                                            &transform);
+      xrd_window_set_transformation (self->head_follow_window, &transform);
       gchar *hide_str[] =  { "Hide", "modal" };
       xrd_button_set_text (self->head_follow_button, gc, layout, 2, hide_str);
     }
