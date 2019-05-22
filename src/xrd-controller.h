@@ -36,19 +36,28 @@ typedef struct GrabState
   graphene_point3d_t offset_translation_point;
 } GrabState;
 
-struct _XrdController
-{
-  GObject parent;
-
-  guint64 controller_handle;
-  XrdWindow *hover_window;
-  XrdPointer *pointer_ray;
-  XrdPointerTip *pointer_tip;
-  HoverState hover_state;
-  GrabState grab_state;
-};
-
 XrdController *xrd_controller_new (guint64 controller_handle);
+
+XrdPointer *
+xrd_controller_get_pointer (XrdController *self);
+
+XrdPointerTip *
+xrd_controller_get_pointer_tip (XrdController *self);
+
+void
+xrd_controller_set_pointer (XrdController *self, XrdPointer *pointer);
+
+void
+xrd_controller_set_pointer_tip (XrdController *self, XrdPointerTip *tip);
+
+guint64
+xrd_controller_get_handle (XrdController *self);
+
+HoverState *
+xrd_controller_get_hover_state (XrdController *self);
+
+GrabState *
+xrd_controller_get_grab_state (XrdController *self);
 
 G_END_DECLS
 

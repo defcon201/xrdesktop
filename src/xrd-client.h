@@ -197,6 +197,8 @@ xrd_client_set_upload_layout (XrdClient *self, VkImageLayout layout);
 
 VkImageLayout
 xrd_client_get_upload_layout (XrdClient *self);
+
+void
 xrd_client_init_controller (XrdClient *self,
                             XrdController *controller);
 

@@ -320,7 +320,7 @@ xrd_client_get_synth_hovered (XrdClient *self)
   guint64 controller_handle =
     xrd_input_synth_synthing_controller (priv->input_synth);
   XrdController *controller = _lookup_controller (self, controller_handle);
-  XrdWindow *parent = controller->hover_state.window;
+  XrdWindow *parent = xrd_controller_get_hover_state (controller)->window;
   return parent;
 }
 
@@ -462,18 +462,21 @@ xrd_client_remove_window (XrdClient *self,
     {
       XrdController *controller = XRD_CONTROLLER (value);
 
-      if (controller->hover_state.window == XRD_WINDOW (window))
+      if (xrd_controller_get_hover_state (controller)->window ==
+          XRD_WINDOW (window))
         {
           XrdControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (XrdControllerIndexEvent));
-          hover_end_event->controller_handle = controller->controller_handle;
+          hover_end_event->controller_handle =
+            xrd_controller_get_handle (controller);
           xrd_window_emit_hover_end (window, hover_end_event);
 
-          controller->hover_state.window = NULL;
+          xrd_controller_get_hover_state (controller)->window = NULL;
         }
 
-      if (controller->grab_state.window == XRD_WINDOW (window))
-        controller->grab_state.window = NULL;
+      if (xrd_controller_get_grab_state (controller)->window ==
+          XRD_WINDOW (window))
+        xrd_controller_get_grab_state (controller)->window = NULL;
     }
 }
 
@@ -555,13 +558,13 @@ _action_hand_pose_cb (OpenVRAction            *action,
 
   xrd_window_manager_update_pose (priv->manager, &event->pose, controller);
 
-  xrd_pointer_move (controller->pointer_ray, &event->pose);
+  xrd_pointer_move (xrd_controller_get_pointer (controller), &event->pose);
 
   /* show cursor while synth controller hovers window, but doesn't grab */
-  if (controller->controller_handle ==
+  if (xrd_controller_get_handle (controller) ==
           xrd_input_synth_synthing_controller (priv->input_synth) &&
-      controller->hover_window != NULL &&
-      controller->grab_state.window == NULL)
+      xrd_controller_get_hover_state (controller)->window != NULL &&
+      xrd_controller_get_grab_state (controller)->window == NULL)
     xrd_desktop_cursor_show (priv->cursor);
 
   g_free (event);
@@ -579,7 +582,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   if (controller == NULL)
     return;
 
-  GrabState *grab_state = &controller->grab_state;
+  GrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   float x_state = graphene_vec3_get_x (&event->state);
   if (grab_state->window && fabs (x_state) > priv->analog_threshold)
@@ -592,14 +595,15 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   float y_state = graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
     {
-      HoverState *hover_state = &controller->hover_state;
+      HoverState *hover_state = xrd_controller_get_hover_state (controller);
       hover_state->distance +=
         priv->scroll_to_push_ratio *
         hover_state->distance *
         graphene_vec3_get_y (&event->state) *
         (priv->poll_input_rate_ms / 1000.);
 
-      xrd_pointer_set_length (controller->pointer_ray, hover_state->distance);
+      xrd_pointer_set_length (xrd_controller_get_pointer (controller),
+                              hover_state->distance);
     }
 
   g_free (event);
@@ -640,7 +644,7 @@ _action_menu_cb (OpenVRAction        *action,
     return;
 
   if (event->changed && event->state == 1 &&
-      !controller->hover_window)
+      !xrd_controller_get_hover_state (controller)->window)
     {
       XrdWindowManager *manager = xrd_client_get_manager (self);
       gboolean controls = xrd_window_manager_is_controls_shown (manager);
@@ -660,7 +664,7 @@ _action_rotate_cb (OpenVRAction        *action,
   if (controller == NULL)
     return;
 
-  GrabState *grab_state = &controller->grab_state;
+  GrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   float force = graphene_vec3_get_x (&event->state);
 
@@ -729,9 +733,11 @@ _window_grab_cb (XrdWindow    *window,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
-  xrd_pointer_tip_set_transformation (controller->pointer_tip, &event->pose);
+  xrd_pointer_tip_set_transformation (
+    xrd_controller_get_pointer_tip (controller), &event->pose);
 
-  xrd_pointer_tip_update_apparent_size (controller->pointer_tip);
+  xrd_pointer_tip_update_apparent_size (
+    xrd_controller_get_pointer_tip (controller));
   g_free (event);
 }
 
@@ -800,8 +806,8 @@ _button_hover_cb (XrdWindow     *window,
 
   xrd_window_mark_color (window, .8f, .4f, .2f);
 
-  XrdPointer *pointer = controller->pointer_ray;
-  XrdPointerTip *pointer_tip = controller->pointer_tip;
+  XrdPointer *pointer = xrd_controller_get_pointer (controller);
+  XrdPointerTip *pointer_tip = xrd_controller_get_pointer_tip (controller);
 
   /* update pointer length and pointer tip */
   graphene_matrix_t window_pose;
@@ -825,12 +831,13 @@ _window_hover_end_cb (XrdWindow               *window,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
-  xrd_pointer_reset_length (controller->pointer_ray);
+  xrd_pointer_reset_length (xrd_controller_get_pointer (controller));
 
   /* When leaving this window but now hovering another, the tip should
    * still be active because it is now hovering another window. */
-  gboolean active = controller->hover_state.window != NULL;
-  xrd_pointer_tip_set_active (controller->pointer_tip, active);
+  gboolean active = xrd_controller_get_hover_state (controller)->window != NULL;
+  xrd_pointer_tip_set_active (xrd_controller_get_pointer_tip (controller),
+                              active);
 
   XrdInputSynth *input_synth = xrd_client_get_input_synth (self);
   xrd_input_synth_reset_press_state (input_synth);
@@ -1059,7 +1066,8 @@ _action_show_keyboard_cb (OpenVRAction       *action,
         xrd_input_synth_synthing_controller (priv->input_synth);
       XrdController *controller = _lookup_controller (self, controller_handle);
 
-      priv->keyboard_window = controller->hover_state.window;
+      priv->keyboard_window =
+        xrd_controller_get_hover_state (controller)->window;
 
       priv->keyboard_press_signal =
           g_signal_connect (context, "keyboard-press-event",
@@ -1082,11 +1090,13 @@ _window_hover_cb (XrdWindow     *window,
                                                   event->controller_handle);
   graphene_matrix_t window_pose;
   xrd_window_get_transformation (window, &window_pose);
-  xrd_pointer_tip_update (controller->pointer_tip, &window_pose, &event->point);
+  xrd_pointer_tip_update (xrd_controller_get_pointer_tip (controller),
+                          &window_pose, &event->point);
 
-  xrd_pointer_set_length (controller->pointer_ray, event->distance);
+  xrd_pointer_set_length (xrd_controller_get_pointer (controller),
+                          event->distance);
 
-  controller->hover_window = window;
+  xrd_controller_get_hover_state (controller)->window = window;
 
   if (event->controller_handle ==
       xrd_input_synth_synthing_controller (priv->input_synth))
@@ -1096,7 +1106,7 @@ _window_hover_cb (XrdWindow     *window,
 
       xrd_desktop_cursor_update (priv->cursor, window, &event->point);
 
-      if (controller->hover_window != window)
+      if (xrd_controller_get_hover_state (controller)->window != window)
         xrd_input_synth_reset_scroll (priv->input_synth);
     }
 
@@ -1113,7 +1123,8 @@ _window_hover_start_cb (XrdWindow               *window,
 
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
-  xrd_pointer_tip_set_active (controller->pointer_tip, TRUE);
+  xrd_pointer_tip_set_active (xrd_controller_get_pointer_tip (controller),
+                              TRUE);
 
   g_free (event);
 }
@@ -1129,9 +1140,9 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
-  XrdPointerTip *pointer_tip = controller->pointer_tip;
+  XrdPointerTip *pointer_tip = xrd_controller_get_pointer_tip (controller);
 
-  XrdPointer *pointer_ray = controller->pointer_ray;
+  XrdPointer *pointer_ray = xrd_controller_get_pointer (controller);
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,
@@ -1163,7 +1174,7 @@ _manager_no_hover_cb (XrdWindowManager *manager,
       event->controller_handle)
     xrd_input_synth_reset_scroll (priv->input_synth);
 
-  controller->hover_window = NULL;
+  xrd_controller_get_hover_state (controller)->window = NULL;
 
   g_free (event);
 }
@@ -1196,16 +1207,18 @@ _synth_click_cb (XrdInputSynth *synth,
   if (priv->selection_mode)
     return;
 
-  if (controller->hover_window)
+  if (xrd_controller_get_hover_state (controller)->window)
     {
-      event->window = controller->hover_window;
+      event->window = xrd_controller_get_hover_state (controller)->window;
       xrd_client_emit_click (self, event);
 
       if (event->button == 1)
         {
-          if (controller->hover_state.window != NULL && event->state)
+          if (xrd_controller_get_hover_state (controller)->window != NULL &&
+              event->state)
             {
-              xrd_pointer_tip_animate_pulse (controller->pointer_tip);
+              xrd_pointer_tip_animate_pulse (
+                xrd_controller_get_pointer_tip (controller));
             }
         }
     }
@@ -1433,8 +1446,8 @@ _device_deactivate_cb (OpenVRContext          *context,
       /* just take the first one that is available */
       g_hash_table_iter_next (&iter, &key, &value);
       XrdController *controller = XRD_CONTROLLER (value);
-      xrd_input_synth_hand_off_to_controller (priv->input_synth,
-                                              controller->controller_handle);
+      xrd_input_synth_hand_off_to_controller (
+        priv->input_synth, xrd_controller_get_handle (controller));
     }
 
 }
@@ -1570,7 +1583,7 @@ xrd_client_is_hovering (XrdClient *self)
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       XrdController *controller = XRD_CONTROLLER (value);
-      if (controller->hover_state.window != NULL)
+      if (xrd_controller_get_hover_state (controller)->window != NULL)
         return TRUE;
     }
   return FALSE;
@@ -1586,7 +1599,7 @@ xrd_client_is_grabbing (XrdClient *self)
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       XrdController *controller = XRD_CONTROLLER (value);
-      if (controller->grab_state.window != NULL)
+      if (xrd_controller_get_grab_state (controller)->window != NULL)
         return TRUE;
     }
   return FALSE;
@@ -1603,7 +1616,7 @@ xrd_client_is_grabbed (XrdClient *self,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       XrdController *controller = XRD_CONTROLLER (value);
-      if (controller->grab_state.window == window)
+      if (xrd_controller_get_grab_state (controller)->window == window)
         return TRUE;
     }
   return FALSE;
@@ -1620,7 +1633,7 @@ xrd_client_is_hovered (XrdClient *self,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       XrdController *controller = XRD_CONTROLLER (value);
-      if (controller->hover_state.window == window)
+      if (xrd_controller_get_hover_state (controller)->window == window)
         return TRUE;
     }
   return FALSE;

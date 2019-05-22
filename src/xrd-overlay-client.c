@@ -179,24 +179,27 @@ void
 xrd_overlay_client_init_controller (XrdOverlayClient *self,
                                     XrdController *controller)
 {
-  guint64 controller_handle = controller->controller_handle;
-  controller->pointer_ray =
+  guint64 controller_handle = xrd_controller_get_handle (controller);
+  XrdPointer *pointer_ray =
     XRD_POINTER (xrd_overlay_pointer_new (controller_handle));
-  if (controller->pointer_ray == NULL)
+  if (pointer_ray == NULL)
     {
       g_printerr ("Error: Could not init pointer %lu\n", controller_handle);
       return;
     }
+  xrd_controller_set_pointer (controller, pointer_ray);
 
-  controller->pointer_tip =
+  XrdPointerTip *pointer_tip =
     XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (controller_handle,
                                                   self->uploader));
-  if (controller->pointer_tip == NULL)
+  if (pointer_tip == NULL)
     {
       g_printerr ("Error: Could not init pointer tip %lu\n", controller_handle);
       return;
     }
 
-  xrd_pointer_tip_set_active (controller->pointer_tip, FALSE);
-  xrd_pointer_tip_show (controller->pointer_tip);
+  xrd_pointer_tip_set_active (pointer_tip, FALSE);
+  xrd_pointer_tip_show (pointer_tip);
+
+  xrd_controller_set_pointer_tip (controller, pointer_tip);
 }

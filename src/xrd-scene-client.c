@@ -199,7 +199,8 @@ _render_pointers (XrdSceneClient    *self,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       XrdController *controller = XRD_CONTROLLER (value);
-      XrdScenePointer *pointer = XRD_SCENE_POINTER (controller->pointer_ray);
+      XrdScenePointer *pointer =
+        XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
       xrd_scene_pointer_render (pointer, eye, pipeline,
                                 pipeline_layout, cmd_buffer, vp);
     }
@@ -256,7 +257,7 @@ _render_eye_cb (uint32_t         eye,
     {
       XrdController *controller = XRD_CONTROLLER (value);
       XrdScenePointerTip *scene_tip =
-        XRD_SCENE_POINTER_TIP (controller->pointer_tip);
+        XRD_SCENE_POINTER_TIP (xrd_controller_get_pointer_tip (controller));
       xrd_scene_window_draw (XRD_SCENE_WINDOW (scene_tip), eye,
                              pipelines[PIPELINE_WINDOWS],
                              pipeline_layout,
@@ -332,10 +333,10 @@ xrd_scene_client_init_controller (XrdSceneClient *self,
   XrdScenePointer *pointer = xrd_scene_pointer_new ();
   xrd_scene_pointer_initialize (pointer, device,
                                 descriptor_set_layout);
-  controller->pointer_ray = XRD_POINTER (pointer);
+  xrd_controller_set_pointer (controller, XRD_POINTER (pointer));
 
   XrdScenePointerTip *pointer_tip = xrd_scene_pointer_tip_new ();
-  controller->pointer_tip = XRD_POINTER_TIP (pointer_tip);
+  xrd_controller_set_pointer_tip (controller, XRD_POINTER_TIP (pointer_tip));
 }
 
 bool
@@ -402,7 +403,7 @@ _test_intersection (XrdSceneClient *self)
       XrdController *controller = XRD_CONTROLLER (value);
 
       XrdScenePointer *pointer =
-        XRD_SCENE_POINTER (controller->pointer_ray);
+        XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
       if (pointer == NULL)
         continue;
 

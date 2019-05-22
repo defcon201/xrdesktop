@@ -7,6 +7,17 @@
 
 #include "xrd-controller.h"
 
+struct _XrdController
+{
+  GObject parent;
+
+  guint64 controller_handle;
+  XrdPointer *pointer_ray;
+  XrdPointerTip *pointer_tip;
+  HoverState hover_state;
+  GrabState grab_state;
+};
+
 G_DEFINE_TYPE (XrdController, xrd_controller, G_TYPE_OBJECT)
 
 static void
@@ -23,7 +34,6 @@ xrd_controller_class_init (XrdControllerClass *klass)
 static void
 xrd_controller_init (XrdController *self)
 {
-  self->hover_window = NULL;
   self->hover_state.distance = 1.0f;
   self->hover_state.window = NULL;
   self->grab_state.window = NULL;
@@ -45,4 +55,46 @@ xrd_controller_finalize (GObject *gobject)
   g_object_unref (self->pointer_ray);
   g_object_unref (self->pointer_tip);
   (void) self;
+}
+
+XrdPointer *
+xrd_controller_get_pointer (XrdController *self)
+{
+  return self->pointer_ray;
+}
+
+XrdPointerTip *
+xrd_controller_get_pointer_tip (XrdController *self)
+{
+  return self->pointer_tip;
+}
+
+void
+xrd_controller_set_pointer (XrdController *self, XrdPointer *pointer)
+{
+  self->pointer_ray = pointer;
+}
+
+void
+xrd_controller_set_pointer_tip (XrdController *self, XrdPointerTip *tip)
+{
+  self->pointer_tip = tip;
+}
+
+guint64
+xrd_controller_get_handle (XrdController *self)
+{
+  return self->controller_handle;
+}
+
+HoverState *
+xrd_controller_get_hover_state (XrdController *self)
+{
+  return &self->hover_state;
+}
+
+GrabState *
+xrd_controller_get_grab_state (XrdController *self)
+{
+  return &self->grab_state;
 }
