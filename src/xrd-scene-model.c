@@ -6,7 +6,10 @@
  */
 
 #include "xrd-scene-model.h"
+
 #include <openvr-glib.h>
+
+#include "xrd-scene-renderer.h"
 
 G_DEFINE_TYPE (XrdSceneModel, xrd_scene_model, G_TYPE_OBJECT)
 
@@ -41,8 +44,10 @@ xrd_scene_model_finalize (GObject *gobject)
   g_object_unref (self->vbo);
   g_object_unref (self->texture);
 
+  GulkanDevice *device = xrd_scene_renderer_get_device ();
+
   if (self->sampler != VK_NULL_HANDLE)
-    vkDestroySampler (gulkan_device_get_handle (self->device),
+    vkDestroySampler (gulkan_device_get_handle (device),
                       self->sampler, NULL);
 }
 
