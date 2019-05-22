@@ -378,23 +378,13 @@ xrd_input_synth_init (XrdInputSynth *self)
   self->synth_actions = openvr_action_set_new_from_url ("/actions/mouse_synth");
 
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/left_click_left",
+                             "/actions/mouse_synth/in/left_click",
                              (GCallback) _action_left_click_cb, self);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/right_click_left",
+                             "/actions/mouse_synth/in/right_click",
                              (GCallback) _action_right_click_cb, self);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/mouse_synth/in/scroll_left",
-                             (GCallback) _action_scroll_cb, self);
-
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/left_click_right",
-                             (GCallback) _action_left_click_cb, self);
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/mouse_synth/in/right_click_right",
-                             (GCallback) _action_right_click_cb, self);
-  openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/mouse_synth/in/scroll_right",
+                             "/actions/mouse_synth/in/scroll",
                              (GCallback) _action_scroll_cb, self);
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_threshold),

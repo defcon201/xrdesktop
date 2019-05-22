@@ -536,7 +536,6 @@ _action_hand_pose_cb (OpenVRAction            *action,
                       XrdClient               *self)
 {
   (void) action;
-
   if (!event->device_connected || !event->valid || !event->active)
     return;
 
@@ -1515,64 +1514,31 @@ xrd_client_post_openvr_init (XrdClient *self)
   _init_buttons (self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_left",
+                             "/actions/wm/in/hand_pose",
                              (GCallback) _action_hand_pose_cb,
                              self);
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
-                             "/actions/wm/in/hand_pose_right",
-                             (GCallback) _action_hand_pose_cb,
-                             self);
-
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/grab_window_left",
+    openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
+                             "/actions/wm/in/grab_window",
                              (GCallback) _action_grab_cb,
                              self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/grab_window_right",
-                             (GCallback) _action_grab_cb,
-                             self);
-
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/menu_left",
+                             "/actions/wm/in/menu",
                              (GCallback) _action_menu_cb,
                              self);
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/menu_right",
-                             (GCallback) _action_menu_cb,
-                             self);
-
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/rotate_window_left",
+                             "/actions/wm/in/rotate_window",
                              (GCallback) _action_rotate_cb,
                              self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/rotate_window_right",
-                             (GCallback) _action_rotate_cb,
-                             self);
-
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_scale_left",
+                             "/actions/wm/in/push_pull_scale",
                              (GCallback) _action_push_pull_scale_cb,
                              self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_scale_right",
+                             "/actions/wm/in/push_pull",
                              (GCallback) _action_push_pull_scale_cb,
                              self);
-
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_left",
-                             (GCallback) _action_push_pull_scale_cb,
-                             self);
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/push_pull_right",
-                             (GCallback) _action_push_pull_scale_cb,
-                             self);
-
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/show_keyboard_left",
-                             (GCallback) _action_show_keyboard_cb, self);
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
-                             "/actions/wm/in/show_keyboard_right",
+                             "/actions/wm/in/show_keyboard",
                              (GCallback) _action_show_keyboard_cb, self);
 
   g_signal_connect (priv->manager, "no-hover-event",
