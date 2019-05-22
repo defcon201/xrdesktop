@@ -28,18 +28,18 @@ typedef struct XrdHoverEvent
   graphene_point3d_t point;
   graphene_matrix_t  pose;
   float              distance;
-  int                controller_index;
+  guint64            controller_handle;
 } XrdHoverEvent;
 
 typedef struct XrdGrabEvent
 {
   graphene_matrix_t  pose;
-  int                controller_index;
+  guint64            controller_handle;
 } XrdGrabEvent;
 
 typedef struct XrdControllerIndexEvent
 {
-  int index;
+  guint64 controller_handle;
 } XrdControllerIndexEvent;
 
 

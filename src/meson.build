@@ -3,6 +3,7 @@ api_version = '0.11'
 api_path = 'xrdesktop-' + api_version
 
 xrdesktop_sources = [
+  'xrd-controller.c',
   'xrd-overlay-model.c',
   'xrd-overlay-pointer-tip.c',
   'xrd-overlay-desktop-cursor.c',
@@ -39,6 +40,7 @@ xrdesktop_sources = [
 
 xrdesktop_headers = [
   'xrd.h',
+  'xrd-controller.h',
   'xrd-overlay-model.h',
   'xrd-overlay-pointer-tip.h',
   'xrd-overlay-desktop-cursor.h',

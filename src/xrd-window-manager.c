@@ -15,6 +15,7 @@
 #include "graphene-ext.h"
 
 #include "xrd-follow-head-container.h"
+#include "xrd-controller.h"
 
 struct _XrdWindowManager
 {
@@ -35,9 +36,6 @@ struct _XrdWindowManager
   GSList *pinned_windows;
 
   gboolean controls_shown;
-
-  HoverState hover_state[OPENVR_CONTROLLER_COUNT];
-  GrabState grab_state[OPENVR_CONTROLLER_COUNT];
 
   GHashTable *reset_transforms;
   GHashTable *reset_scalings;
@@ -92,13 +90,6 @@ xrd_window_manager_init (XrdWindowManager *self)
                                                   NULL, _free_matrix_cb);
   self->reset_scalings = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                                 NULL, g_free);
-
-  for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    {
-      self->hover_state[i].distance = 1.0f;
-      self->hover_state[i].window = NULL;
-      self->grab_state[i].window = NULL;
-    }
 
   /* TODO: possible steamvr issue: When input poll rate is high and buttons are
    * immediately hidden after creation, they may not reappear on show().
@@ -412,21 +403,6 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
   }
   g_hash_table_remove (self->reset_transforms, window);
 
-  for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    {
-      if (self->hover_state[i].window == XRD_WINDOW (window))
-        {
-          XrdControllerIndexEvent *hover_end_event =
-              g_malloc (sizeof (XrdControllerIndexEvent));
-          hover_end_event->index = i;
-          xrd_window_emit_hover_end (window, hover_end_event);
-
-          self->hover_state[i].window = NULL;
-        }
-      if (self->grab_state[i].window == XRD_WINDOW (window))
-        self->grab_state[i].window = NULL;
-    }
-
   /* remove the window manager's reference to the window */
   g_object_unref (window);
 }
@@ -434,7 +410,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
 void
 _test_hover (XrdWindowManager  *self,
              graphene_matrix_t *pose,
-             int                controller_index)
+             XrdController     *controller)
 {
   XrdHoverEvent *hover_event = g_malloc (sizeof (XrdHoverEvent));
   hover_event->distance = FLT_MAX;
@@ -464,7 +440,7 @@ _test_hover (XrdWindowManager  *self,
         }
     }
 
-  HoverState *hover_state = &self->hover_state[controller_index];
+  HoverState *hover_state = &controller->hover_state;
 
   if (closest != NULL)
     {
@@ -481,7 +457,7 @@ _test_hover (XrdWindowManager  *self,
         {
           XrdControllerIndexEvent *hover_start_event =
               g_malloc (sizeof (XrdControllerIndexEvent));
-          hover_start_event->index = controller_index;
+          hover_start_event->controller_handle = controller->controller_handle;
           xrd_window_emit_hover_start (closest, hover_start_event);
         }
 
@@ -490,14 +466,14 @@ _test_hover (XrdWindowManager  *self,
         {
           XrdControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (XrdControllerIndexEvent));
-          hover_end_event->index = controller_index;
+          hover_end_event->controller_handle = controller->controller_handle;
           xrd_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
 
       xrd_window_intersection_to_2d_offset_meter (
         closest, &hover_event->point, &hover_state->intersection_offset);
 
-      hover_event->controller_index = controller_index;
+      hover_event->controller_handle = controller->controller_handle;
       xrd_window_emit_hover (closest, hover_event);
     }
   else
@@ -512,13 +488,13 @@ _test_hover (XrdWindowManager  *self,
           hover_state->window = NULL;
           XrdControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (XrdControllerIndexEvent));
-          hover_end_event->index = controller_index;
+          hover_end_event->controller_handle = controller->controller_handle;
           xrd_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
 
       /* Emit no hover event every time when hovering nothing */
       XrdNoHoverEvent *no_hover_event = g_malloc (sizeof (XrdNoHoverEvent));
-      no_hover_event->controller_index = controller_index;
+      no_hover_event->controller_handle = controller->controller_handle;
       graphene_matrix_init_from_matrix (&no_hover_event->pose, pose);
       g_signal_emit (self, manager_signals[NO_HOVER_EVENT], 0, no_hover_event);
     }
@@ -527,10 +503,11 @@ _test_hover (XrdWindowManager  *self,
 void
 _drag_window (XrdWindowManager  *self,
               graphene_matrix_t *pose,
-              int                controller_index)
+              XrdController     *controller)
 {
-  HoverState *hover_state = &self->hover_state[controller_index];
-  GrabState *grab_state = &self->grab_state[controller_index];
+  (void) self;
+  HoverState *hover_state = &controller->hover_state;
+  GrabState *grab_state = &controller->grab_state;
 
   graphene_point3d_t controller_translation_point;
   graphene_matrix_get_translation_point3d (pose, &controller_translation_point);
@@ -549,7 +526,7 @@ _drag_window (XrdWindowManager  *self,
                              &grab_state->offset_translation_point);
 
   XrdGrabEvent *event = g_malloc (sizeof (XrdGrabEvent));
-  event->controller_index = controller_index;
+  event->controller_handle = controller->controller_handle;
   graphene_matrix_init_identity (&event->pose);
 
   /* then apply the rotation that the overlay had when it was grabbed */
@@ -587,10 +564,10 @@ _drag_window (XrdWindowManager  *self,
 
 void
 xrd_window_manager_drag_start (XrdWindowManager *self,
-                               int               controller_index)
+                               XrdController    *controller)
 {
-  HoverState *hover_state = &self->hover_state[controller_index];
-  GrabState *grab_state = &self->grab_state[controller_index];
+  HoverState *hover_state = &controller->hover_state;
+  GrabState *grab_state = &controller->grab_state;
 
   if (!_is_in_list (self->draggable_windows, hover_state->window))
     return;
@@ -682,31 +659,33 @@ xrd_window_manager_scale (XrdWindowManager *self,
 
 void
 xrd_window_manager_check_grab (XrdWindowManager *self,
-                               int               controller_index)
+                               XrdController    *controller)
 {
-  HoverState *hover_state = &self->hover_state[controller_index];
+  (void) self;
+  HoverState *hover_state = &controller->hover_state;
 
   if (hover_state->window == NULL)
     return;
 
    XrdControllerIndexEvent *grab_event =
       g_malloc (sizeof (XrdControllerIndexEvent));
-  grab_event->index = controller_index;
+  grab_event->controller_handle = controller->controller_handle;
   xrd_window_emit_grab_start (hover_state->window, grab_event);
 }
 
 void
 xrd_window_manager_check_release (XrdWindowManager *self,
-                                  int               controller_index)
+                                  XrdController    *controller)
 {
-  GrabState *grab_state = &self->grab_state[controller_index];
+  (void) self;
+  GrabState *grab_state = &controller->grab_state;
 
   if (grab_state->window == NULL)
     return;
 
   XrdControllerIndexEvent *release_event =
       g_malloc (sizeof (XrdControllerIndexEvent));
-  release_event->index = controller_index;
+  release_event->controller_handle = controller->controller_handle;
   xrd_window_emit_release (grab_state->window, release_event);
   grab_state->window = NULL;
 }
@@ -714,65 +693,13 @@ xrd_window_manager_check_release (XrdWindowManager *self,
 void
 xrd_window_manager_update_pose (XrdWindowManager  *self,
                                 graphene_matrix_t *pose,
-                                int                controller_index)
+                                XrdController      *controller)
 {
   /* Drag test */
-  if (self->grab_state[controller_index].window != NULL)
-    _drag_window (self, pose, controller_index);
+  if (controller->grab_state.window != NULL)
+    _drag_window (self, pose, controller);
   else
-    _test_hover (self, pose, controller_index);
-}
-
-gboolean
-xrd_window_manager_is_hovering (XrdWindowManager *self)
-{
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->hover_state[i].window != NULL)
-      return TRUE;
-  return FALSE;
-}
-
-gboolean
-xrd_window_manager_is_grabbing (XrdWindowManager *self)
-{
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->grab_state[i].window != NULL)
-      return TRUE;
-  return FALSE;
-}
-
-gboolean
-xrd_window_manager_is_grabbed (XrdWindowManager *self,
-                               XrdWindow        *window)
-{
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->grab_state[i].window == window)
-      return TRUE;
-  return FALSE;
-}
-
-gboolean
-xrd_window_manager_is_hovered (XrdWindowManager *self,
-                               XrdWindow        *window)
-{
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    if (self->hover_state[i].window == window)
-      return TRUE;
-  return FALSE;
-}
-
-GrabState *
-xrd_window_manager_get_grab_state (XrdWindowManager *self,
-                                   int controller_index)
-{
-  return &self->grab_state[controller_index];
-}
-
-HoverState *
-xrd_window_manager_get_hover_state (XrdWindowManager *self,
-                                    int controller_index)
-{
-  return &self->hover_state[controller_index];
+    _test_hover (self, pose, controller);
 }
 
 void

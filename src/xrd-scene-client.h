@@ -46,4 +46,8 @@ VkDescriptorSetLayout*
 xrd_scene_client_get_descriptor_set_layout ();
 G_END_DECLS
 
+void
+xrd_scene_client_init_controller (XrdSceneClient *self,
+                                  XrdController *controller);
+
 #endif /* XRD_SCENE_CLIENT_H_ */

@@ -29,12 +29,6 @@ G_BEGIN_DECLS
 #define XRD_TYPE_CLIENT xrd_client_get_type()
 G_DECLARE_DERIVABLE_TYPE (XrdClient, xrd_client, XRD, CLIENT, GObject)
 
-typedef struct _XrdClientController
-{
-  XrdClient *self;
-  int        index;
-} XrdClientController;
-
 struct _XrdClientClass
 {
   GObjectClass parent;
@@ -50,6 +44,10 @@ struct _XrdClientClass
 
   GulkanClient *
   (*get_uploader) (XrdClient *self);
+
+  void
+  (*init_controller) (XrdClient *self,
+                      XrdController *controller);
 };
 
 XrdClient *xrd_client_new (void);
@@ -199,6 +197,25 @@ xrd_client_set_upload_layout (XrdClient *self, VkImageLayout layout);
 
 VkImageLayout
 xrd_client_get_upload_layout (XrdClient *self);
+xrd_client_init_controller (XrdClient *self,
+                            XrdController *controller);
+
+GHashTable *
+xrd_client_get_controllers (XrdClient *self);
+
+gboolean
+xrd_client_is_hovering (XrdClient *self);
+
+gboolean
+xrd_client_is_grabbing (XrdClient *self);
+
+gboolean
+xrd_client_is_grabbed (XrdClient *self,
+                       XrdWindow *window);
+
+gboolean
+xrd_client_is_hovered (XrdClient *self,
+                       XrdWindow *window);
 
 G_END_DECLS
 

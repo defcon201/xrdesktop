@@ -57,6 +57,8 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
       (void*) xrd_overlay_client_add_button;
   xrd_client_class->get_uploader =
       (void*) xrd_overlay_client_get_uploader;
+  xrd_client_class->init_controller =
+      (void*) xrd_overlay_client_init_controller;
 }
 
 XrdOverlayClient *
@@ -167,32 +169,34 @@ xrd_overlay_client_init (XrdOverlayClient *self)
 
   xrd_client_post_openvr_init (XRD_CLIENT (self));
 
-  for (int i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    {
-      XrdPointer *pointer = XRD_POINTER (xrd_overlay_pointer_new (i));
-      if (pointer == NULL)
-        {
-          g_printerr ("Error: Could not init pointer %d\n", i);
-          return;
-        }
-      xrd_client_set_pointer (XRD_CLIENT (self), pointer, i);
-
-
-      XrdPointerTip *pointer_tip =
-        XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (i, self->uploader));
-      if (pointer == NULL)
-        {
-          g_printerr ("Error: Could not init pointer tip %d\n", i);
-          return;
-        }
-      xrd_client_set_pointer_tip (XRD_CLIENT (self), pointer_tip, i);
-
-      xrd_pointer_tip_set_active (pointer_tip, FALSE);
-      xrd_pointer_tip_show (pointer_tip);
-    }
-
   XrdDesktopCursor *cursor =
     XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->uploader));
 
   xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
+}
+
+void
+xrd_overlay_client_init_controller (XrdOverlayClient *self,
+                                    XrdController *controller)
+{
+  guint64 controller_handle = controller->controller_handle;
+  controller->pointer_ray =
+    XRD_POINTER (xrd_overlay_pointer_new (controller_handle));
+  if (controller->pointer_ray == NULL)
+    {
+      g_printerr ("Error: Could not init pointer %lu\n", controller_handle);
+      return;
+    }
+
+  controller->pointer_tip =
+    XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (controller_handle,
+                                                  self->uploader));
+  if (controller->pointer_tip == NULL)
+    {
+      g_printerr ("Error: Could not init pointer tip %lu\n", controller_handle);
+      return;
+    }
+
+  xrd_pointer_tip_set_active (controller->pointer_tip, FALSE);
+  xrd_pointer_tip_show (controller->pointer_tip);
 }

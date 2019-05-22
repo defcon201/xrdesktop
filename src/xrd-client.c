@@ -15,6 +15,7 @@
 #include "xrd-pointer-tip.h"
 #include "xrd-desktop-cursor.h"
 #include "xrd-settings.h"
+#include "xrd-controller.h"
 
 enum {
   KEYBOARD_PRESS_EVENT,
@@ -44,7 +45,6 @@ typedef struct _XrdClientPrivate
   gboolean selection_mode;
   XrdWindow *select_pinned_button;
 
-  XrdWindow *hover_window[OPENVR_CONTROLLER_COUNT];
   XrdWindow *keyboard_window;
 
   guint keyboard_press_signal;
@@ -61,13 +61,10 @@ typedef struct _XrdClientPrivate
 
   double pixel_per_meter;
 
-  XrdPointer *pointer_ray[OPENVR_CONTROLLER_COUNT];
-  XrdPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
   XrdDesktopCursor *cursor;
 
   VkImageLayout upload_layout;
-
-  XrdClientController controllers[OPENVR_CONTROLLER_COUNT];
+  GHashTable *controllers;
 
 } XrdClientPrivate;
 
@@ -250,6 +247,31 @@ xrd_client_show_pinned_only (XrdClient *self,
     }
 }
 
+static void
+_device_activate_cb (OpenVRContext          *context,
+                     OpenVRDeviceIndexEvent *event,
+                     gpointer               _self);
+
+static void
+_activate_controller (XrdClient *self,
+                      guint64 controller_handle)
+{
+  OpenVRContext *context = openvr_context_get_instance ();
+  OpenVRDeviceIndexEvent event = {
+    .controller_handle = controller_handle
+  };
+  _device_activate_cb (context, &event, self);
+}
+
+static XrdController *
+_lookup_controller (XrdClient *self,
+                    guint64    controller_handle)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = g_hash_table_lookup (priv->controllers,
+                                                   &controller_handle);
+  return controller;
+}
 
 /**
  * xrd_client_get_keyboard_window
@@ -273,6 +295,16 @@ xrd_client_get_uploader (XrdClient *self)
   return klass->get_uploader (self);
 }
 
+void
+xrd_client_init_controller (XrdClient *self,
+                            XrdController *controller)
+{
+  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
+  if (klass->init_controller == NULL)
+      return;
+  return klass->init_controller (self, controller);
+}
+
 /**
  * xrd_client_get_synth_hovered:
  * @self: The #XrdClient
@@ -285,9 +317,10 @@ xrd_client_get_synth_hovered (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  int controller = xrd_input_synth_synthing_controller (priv->input_synth);
-  XrdWindow *parent =
-      xrd_window_manager_get_hover_state (priv->manager, controller)->window;
+  guint64 controller_handle =
+    xrd_input_synth_synthing_controller (priv->input_synth);
+  XrdController *controller = _lookup_controller (self, controller_handle);
+  XrdWindow *parent = controller->hover_state.window;
   return parent;
 }
 
@@ -362,11 +395,8 @@ xrd_client_finalize (GObject *gobject)
   g_object_unref (priv->manager);
   g_object_unref (priv->wm_actions);
 
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    {
-      g_object_unref (priv->pointer_ray[i]);
-      g_object_unref (priv->pointer_tip[i]);
-    }
+  /* TODO check for controller unref */
+  g_hash_table_unref (priv->controllers);
 
   g_object_unref (priv->cursor);
 
@@ -424,6 +454,27 @@ xrd_client_remove_window (XrdClient *self,
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   xrd_window_manager_remove_window (priv->manager, window);
+
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init (&iter, priv->controllers);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      XrdController *controller = XRD_CONTROLLER (value);
+
+      if (controller->hover_state.window == XRD_WINDOW (window))
+        {
+          XrdControllerIndexEvent *hover_end_event =
+              g_malloc (sizeof (XrdControllerIndexEvent));
+          hover_end_event->controller_handle = controller->controller_handle;
+          xrd_window_emit_hover_end (window, hover_end_event);
+
+          controller->hover_state.window = NULL;
+        }
+
+      if (controller->grab_state.window == XRD_WINDOW (window))
+        controller->grab_state.window = NULL;
+    }
 }
 
 OpenVRActionSet *
@@ -463,8 +514,7 @@ xrd_client_poll_input_events (XrdClient *self)
   if (!openvr_action_set_poll (priv->wm_actions))
     return FALSE;
 
-  if (xrd_window_manager_is_hovering (priv->manager) &&
-      !xrd_window_manager_is_grabbing (priv->manager))
+  if (xrd_client_is_hovering (self) && !xrd_client_is_grabbing (self))
     if (!xrd_input_synth_poll_events (priv->input_synth))
       return FALSE;
 
@@ -483,24 +533,36 @@ xrd_client_get_cursor (XrdClient *self)
 static void
 _action_hand_pose_cb (OpenVRAction            *action,
                       OpenVRPoseEvent         *event,
-                      XrdClientController     *controller)
+                      XrdClient               *self)
 {
   (void) action;
-  XrdClient *self = controller->self;
+
+  if (!event->device_connected || !event->valid || !event->active)
+    return;
+
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    {
+      g_print ("Pose callback: activating %lu\n", event->controller_handle);
+      _activate_controller (self, event->controller_handle);
+      controller = _lookup_controller (self, event->controller_handle);
+    }
 
-  xrd_window_manager_update_pose (priv->manager, &event->pose,
-                                  controller->index);
 
-  XrdPointer *pointer = priv->pointer_ray[controller->index];
-  xrd_pointer_move (pointer, &event->pose);
+  if (controller == NULL)
+    return;
+
+  xrd_window_manager_update_pose (priv->manager, &event->pose, controller);
+
+  xrd_pointer_move (controller->pointer_ray, &event->pose);
 
   /* show cursor while synth controller hovers window, but doesn't grab */
-  if (controller->index ==
+  if (controller->controller_handle ==
           xrd_input_synth_synthing_controller (priv->input_synth) &&
-      priv->hover_window[controller->index] != NULL &&
-      xrd_window_manager_get_grab_state
-          (priv->manager, controller->index)->window == NULL)
+      controller->hover_window != NULL &&
+      controller->grab_state.window == NULL)
     xrd_desktop_cursor_show (priv->cursor);
 
   g_free (event);
@@ -509,14 +571,16 @@ _action_hand_pose_cb (OpenVRAction            *action,
 static void
 _action_push_pull_scale_cb (OpenVRAction        *action,
                             OpenVRAnalogEvent   *event,
-                            XrdClientController *controller)
+                            XrdClient           *self)
 {
   (void) action;
-  XrdClient *self = controller->self;
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    return;
 
-  GrabState *grab_state =
-      xrd_window_manager_get_grab_state (priv->manager, controller->index);
+  GrabState *grab_state = &controller->grab_state;
 
   float x_state = graphene_vec3_get_x (&event->state);
   if (grab_state->window && fabs (x_state) > priv->analog_threshold)
@@ -529,16 +593,14 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   float y_state = graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
     {
-      HoverState *hover_state =
-        xrd_window_manager_get_hover_state (priv->manager, controller->index);
+      HoverState *hover_state = &controller->hover_state;
       hover_state->distance +=
         priv->scroll_to_push_ratio *
         hover_state->distance *
         graphene_vec3_get_y (&event->state) *
         (priv->poll_input_rate_ms / 1000.);
 
-      XrdPointer *pointer_ray = priv->pointer_ray[controller->index];
-      xrd_pointer_set_length (pointer_ray, hover_state->distance);
+      xrd_pointer_set_length (controller->pointer_ray, hover_state->distance);
     }
 
   g_free (event);
@@ -547,18 +609,21 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
 static void
 _action_grab_cb (OpenVRAction        *action,
                  OpenVRDigitalEvent  *event,
-                 XrdClientController *controller)
+                 XrdClient           *self)
 {
   (void) action;
-  XrdClient *self = controller->self;
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    return;
 
   if (event->changed)
     {
       if (event->state == 1)
-        xrd_window_manager_check_grab (priv->manager, controller->index);
+        xrd_window_manager_check_grab (priv->manager, controller);
       else
-        xrd_window_manager_check_release (priv->manager, controller->index);
+        xrd_window_manager_check_release (priv->manager, controller);
     }
 
   g_free (event);
@@ -567,13 +632,16 @@ _action_grab_cb (OpenVRAction        *action,
 static void
 _action_menu_cb (OpenVRAction        *action,
                  OpenVRDigitalEvent  *event,
-                 XrdClientController *controller)
+                 XrdClient           *self)
 {
   (void) action;
-  XrdClient *self = controller->self;
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    return;
+
   if (event->changed && event->state == 1 &&
-      !priv->hover_window[controller->index])
+      !controller->hover_window)
     {
       XrdWindowManager *manager = xrd_client_get_manager (self);
       gboolean controls = xrd_window_manager_is_controls_shown (manager);
@@ -585,14 +653,15 @@ _action_menu_cb (OpenVRAction        *action,
 static void
 _action_rotate_cb (OpenVRAction        *action,
                    OpenVRAnalogEvent   *event,
-                   XrdClientController *controller)
+                   XrdClient           *self)
 {
   (void) action;
-  XrdClient *self = controller->self;
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    return;
 
-  GrabState *grab_state =
-      xrd_window_manager_get_grab_state (priv->manager, controller->index);
+  GrabState *grab_state = &controller->grab_state;
 
   float force = graphene_vec3_get_x (&event->state);
 
@@ -624,6 +693,8 @@ _window_grab_start_cb (XrdWindow               *window,
 {
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
 
   /* don't grab if this window is already grabbed */
   if (priv->selection_mode)
@@ -634,16 +705,16 @@ _window_grab_start_cb (XrdWindow               *window,
       return;
     }
 
-
-  if (xrd_window_manager_is_grabbed (priv->manager, window))
+  if (xrd_client_is_grabbed (self, window))
     {
       g_free (event);
       return;
     }
 
-  xrd_window_manager_drag_start (priv->manager, event->index);
+  xrd_window_manager_drag_start (priv->manager, controller);
 
-  if (event->index == xrd_input_synth_synthing_controller (priv->input_synth))
+  if (event->controller_handle ==
+      xrd_input_synth_synthing_controller (priv->input_synth))
     xrd_desktop_cursor_hide (priv->cursor);
 
   g_free (event);
@@ -656,13 +727,12 @@ _window_grab_cb (XrdWindow    *window,
 {
   (void) window;
   XrdClient *self = XRD_CLIENT (_self);
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
 
-  XrdPointerTip *pointer_tip =
-    priv->pointer_tip[event->controller_index];
-  xrd_pointer_tip_set_transformation (pointer_tip, &event->pose);
+  xrd_pointer_tip_set_transformation (controller->pointer_tip, &event->pose);
 
-  xrd_pointer_tip_update_apparent_size (pointer_tip);
+  xrd_pointer_tip_update_apparent_size (controller->pointer_tip);
   g_free (event);
 }
 
@@ -726,14 +796,13 @@ _button_hover_cb (XrdWindow     *window,
                   gpointer       _self)
 {
   XrdClient *self = XRD_CLIENT (_self);
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
 
   xrd_window_mark_color (window, .8f, .4f, .2f);
 
-  XrdPointer *pointer =
-      priv->pointer_ray[event->controller_index];
-  XrdPointerTip *pointer_tip =
-      priv->pointer_tip[event->controller_index];
+  XrdPointer *pointer = controller->pointer_ray;
+  XrdPointerTip *pointer_tip = controller->pointer_tip;
 
   /* update pointer length and pointer tip */
   graphene_matrix_t window_pose;
@@ -754,23 +823,21 @@ _window_hover_end_cb (XrdWindow               *window,
   (void) window;
   XrdClient *self = XRD_CLIENT (_self);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
 
-  XrdPointer *pointer_ray = priv->pointer_ray[event->index];
-  xrd_pointer_reset_length (pointer_ray);
+  xrd_pointer_reset_length (controller->pointer_ray);
 
   /* When leaving this window but now hovering another, the tip should
    * still be active because it is now hovering another window. */
-  gboolean active =
-      xrd_window_manager_get_hover_state (priv->manager, event->index)->window
-          != NULL;
-
-  XrdPointerTip *pointer_tip = priv->pointer_tip[event->index];
-  xrd_pointer_tip_set_active (pointer_tip, active);
+  gboolean active = controller->hover_state.window != NULL;
+  xrd_pointer_tip_set_active (controller->pointer_tip, active);
 
   XrdInputSynth *input_synth = xrd_client_get_input_synth (self);
   xrd_input_synth_reset_press_state (input_synth);
 
-  if (event->index == xrd_input_synth_synthing_controller (input_synth))
+  if (event->controller_handle ==
+      xrd_input_synth_synthing_controller (input_synth))
     xrd_desktop_cursor_hide (priv->cursor);
 
   g_free (event);
@@ -783,10 +850,10 @@ _button_hover_end_cb (XrdWindow               *window,
 {
   (void) event;
   XrdClient *self = XRD_CLIENT (_self);
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  //XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   /* unmark if no controller is hovering over this button */
-  if (!xrd_window_manager_is_hovered (priv->manager, window))
+  if (!xrd_client_is_hovered (self, window))
     xrd_window_unmark (window);
 
   _window_hover_end_cb (window, event, _self);
@@ -989,10 +1056,11 @@ _action_show_keyboard_cb (OpenVRAction       *action,
 
       /* TODO: Perhaps there is a better way to get the window that should
                receive keyboard input */
-      int controller = xrd_input_synth_synthing_controller (priv->input_synth);
+      guint64 controller_handle =
+        xrd_input_synth_synthing_controller (priv->input_synth);
+      XrdController *controller = _lookup_controller (self, controller_handle);
 
-      priv->keyboard_window = xrd_window_manager_get_hover_state
-          (priv->manager, controller)->window;
+      priv->keyboard_window = controller->hover_state.window;
 
       priv->keyboard_press_signal =
           g_signal_connect (context, "keyboard-press-event",
@@ -1011,21 +1079,17 @@ _window_hover_cb (XrdWindow     *window,
                   XrdClient     *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-
-  /* update pointer length and pointer tip */
-  XrdPointerTip *pointer_tip =
-    priv->pointer_tip[event->controller_index];
-
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
   graphene_matrix_t window_pose;
   xrd_window_get_transformation (window, &window_pose);
-  xrd_pointer_tip_update (pointer_tip, &window_pose, &event->point);
+  xrd_pointer_tip_update (controller->pointer_tip, &window_pose, &event->point);
 
-  XrdPointer *pointer = priv->pointer_ray[event->controller_index];
-  xrd_pointer_set_length (pointer, event->distance);
+  xrd_pointer_set_length (controller->pointer_ray, event->distance);
 
-  priv->hover_window[event->controller_index] = window;
+  controller->hover_window = window;
 
-  if (event->controller_index ==
+  if (event->controller_handle ==
       xrd_input_synth_synthing_controller (priv->input_synth))
     {
       xrd_input_synth_move_cursor (priv->input_synth, window,
@@ -1033,7 +1097,7 @@ _window_hover_cb (XrdWindow     *window,
 
       xrd_desktop_cursor_update (priv->cursor, window, &event->point);
 
-      if (priv->hover_window[event->controller_index] != window)
+      if (controller->hover_window != window)
         xrd_input_synth_reset_scroll (priv->input_synth);
     }
 
@@ -1048,10 +1112,9 @@ _window_hover_start_cb (XrdWindow               *window,
   (void) window;
   (void) event;
 
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-
-  XrdPointerTip *pointer_tip = priv->pointer_tip[event->index];
-  xrd_pointer_tip_set_active (pointer_tip, TRUE);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  xrd_pointer_tip_set_active (controller->pointer_tip, TRUE);
 
   g_free (event);
 }
@@ -1064,11 +1127,12 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   (void) manager;
 
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
 
-  XrdPointerTip *pointer_tip =
-    priv->pointer_tip[event->controller_index];
+  XrdPointerTip *pointer_tip = controller->pointer_tip;
 
-  XrdPointer *pointer_ray = priv->pointer_ray[event->controller_index];
+  XrdPointer *pointer_ray = controller->pointer_ray;
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,
@@ -1097,10 +1161,10 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   xrd_pointer_tip_set_active (pointer_tip, FALSE);
 
   if (xrd_input_synth_synthing_controller (priv->input_synth) ==
-      event->controller_index)
+      event->controller_handle)
     xrd_input_synth_reset_scroll (priv->input_synth);
 
-  priv->hover_window[event->controller_index] = NULL;
+  controller->hover_window = NULL;
 
   g_free (event);
 }
@@ -1128,26 +1192,21 @@ _synth_click_cb (XrdInputSynth *synth,
 {
   (void) synth;
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
   if (priv->selection_mode)
     return;
 
-  if (priv->hover_window[event->controller_index])
+  if (controller->hover_window)
     {
-      event->window = priv->hover_window[event->controller_index];
+      event->window = controller->hover_window;
       xrd_client_emit_click (self, event);
 
       if (event->button == 1)
         {
-          XrdWindowManager *manager = xrd_client_get_manager (self);
-          HoverState *hover_state =
-              xrd_window_manager_get_hover_state
-                  (manager, event->controller_index);
-          if (hover_state->window != NULL && event->state)
+          if (controller->hover_state.window != NULL && event->state)
             {
-              XrdPointerTip *pointer_tip =
-                  priv->pointer_tip[event->controller_index];
-              xrd_pointer_tip_animate_pulse (pointer_tip);
+              xrd_pointer_tip_animate_pulse (controller->pointer_tip);
             }
         }
     }
@@ -1198,40 +1257,6 @@ xrd_client_add_window_callbacks (XrdClient *self,
                     (GCallback) _window_hover_cb, self);
   g_signal_connect (window, "hover-end-event",
                     (GCallback) _window_hover_end_cb, self);
-}
-
-void
-xrd_client_set_pointer (XrdClient  *self,
-                        XrdPointer *pointer,
-                        uint32_t    id)
-{
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  priv->pointer_ray[id] = pointer;
-}
-
-XrdPointer*
-xrd_client_get_pointer (XrdClient  *self,
-                        uint32_t    id)
-{
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  return priv->pointer_ray[id];
-}
-
-void
-xrd_client_set_pointer_tip (XrdClient     *self,
-                            XrdPointerTip *pointer,
-                            uint32_t       id)
-{
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  priv->pointer_tip[id] = pointer;
-}
-
-XrdPointerTip*
-xrd_client_get_pointer_tip (XrdClient     *self,
-                            uint32_t       id)
-{
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  return priv->pointer_tip[id];
 }
 
 void
@@ -1348,10 +1373,80 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
   return surface;
 }
 
+GHashTable *
+xrd_client_get_controllers (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->controllers;
+}
+
+static void
+_device_activate_cb (OpenVRContext          *context,
+                     OpenVRDeviceIndexEvent *event,
+                     gpointer               _self)
+{
+  (void) context;
+  XrdClient *self = _self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  guint64 handle = event->controller_handle;
+
+  if (g_hash_table_contains (priv->controllers, &handle))
+    {
+      g_print ("Controller %lu already active\n", handle);
+      return;
+    }
+
+  g_print ("Controller %lu activated.\n", handle);
+  XrdController *controller = xrd_controller_new (handle);
+
+  guint64 *key = g_malloc (sizeof (guint64));
+  *key = handle;
+  g_hash_table_insert (priv->controllers, key, controller);
+
+  xrd_client_init_controller (self, controller);
+
+  if (g_hash_table_size (priv->controllers) == 1)
+    xrd_input_synth_hand_off_to_controller (priv->input_synth, handle);
+}
+
+static void
+_device_deactivate_cb (OpenVRContext          *context,
+                       OpenVRDeviceIndexEvent *event,
+                       gpointer               _self)
+{
+  (void) context;
+  XrdClient *self = _self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  guint64 handle = event->controller_handle;
+  g_print ("Controller %lu deactivated..\n", handle);
+
+  /* hashmap destroys key & val
+  g_object_unref (controller); */
+
+  g_hash_table_remove (priv->controllers, &handle);
+
+  if (xrd_input_synth_synthing_controller (priv->input_synth) == handle &&
+      g_hash_table_size (priv->controllers) > 0)
+    {
+      GHashTableIter iter;
+      gpointer key, value;
+      g_hash_table_iter_init (&iter, priv->controllers);
+      /* just take the first one that is available */
+      g_hash_table_iter_next (&iter, &key, &value);
+      XrdController *controller = XRD_CONTROLLER (value);
+      xrd_input_synth_hand_off_to_controller (priv->input_synth,
+                                              controller->controller_handle);
+    }
+
+}
+
 static void
 xrd_client_init (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  priv->controllers = g_hash_table_new_full (g_int64_hash, g_int64_equal,
+                                             g_free, g_object_unref);
 
   xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "scroll-to-push-ratio",
@@ -1373,13 +1468,12 @@ xrd_client_init (XrdClient *self)
   priv->context = openvr_context_get_instance ();
   priv->manager = xrd_window_manager_new ();
 
-  for (uint32_t i = 0; i < OPENVR_CONTROLLER_COUNT; i++)
-    {
-      priv->hover_window[i] = NULL;
-      priv->controllers[i].self = self;
-      priv->controllers[i].index = i;
-    }
+  OpenVRContext *context = openvr_context_get_instance ();
 
+  g_signal_connect (context, "device-activate-event",
+                    (GCallback) _device_activate_cb, self);
+  g_signal_connect (context, "device-deactivate-event",
+                    (GCallback) _device_deactivate_cb, self);
 }
 
 static void _system_quit_cb (OpenVRContext *context,
@@ -1423,56 +1517,56 @@ xrd_client_post_openvr_init (XrdClient *self)
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_left",
                              (GCallback) _action_hand_pose_cb,
-                             &priv->controllers[0]);
+                             self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose_right",
                              (GCallback) _action_hand_pose_cb,
-                             &priv->controllers[1]);
+                             self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window_left",
                              (GCallback) _action_grab_cb,
-                             &priv->controllers[0]);
+                             self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window_right",
                              (GCallback) _action_grab_cb,
-                             &priv->controllers[1]);
+                             self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/menu_left",
                              (GCallback) _action_menu_cb,
-                             &priv->controllers[0]);
+                             self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/menu_right",
                              (GCallback) _action_menu_cb,
-                             &priv->controllers[1]);
+                             self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/rotate_window_left",
                              (GCallback) _action_rotate_cb,
-                             &priv->controllers[0]);
+                             self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/rotate_window_right",
                              (GCallback) _action_rotate_cb,
-                             &priv->controllers[1]);
+                             self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_scale_left",
                              (GCallback) _action_push_pull_scale_cb,
-                            &priv->controllers[0]);
+                             self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_scale_right",
                              (GCallback) _action_push_pull_scale_cb,
-                            &priv->controllers[1]);
+                             self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_left",
                              (GCallback) _action_push_pull_scale_cb,
-                            &priv->controllers[0]);
+                             self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_right",
                              (GCallback) _action_push_pull_scale_cb,
-                            &priv->controllers[1]);
+                             self);
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/show_keyboard_left",
@@ -1498,3 +1592,71 @@ xrd_client_post_openvr_init (XrdClient *self)
   g_signal_connect (priv->input_synth, "move-cursor-event",
                     (GCallback) _synth_move_cursor_cb, self);
 }
+
+
+gboolean
+xrd_client_is_hovering (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init (&iter, priv->controllers);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      XrdController *controller = XRD_CONTROLLER (value);
+      if (controller->hover_state.window != NULL)
+        return TRUE;
+    }
+  return FALSE;
+}
+
+gboolean
+xrd_client_is_grabbing (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init (&iter, priv->controllers);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      XrdController *controller = XRD_CONTROLLER (value);
+      if (controller->grab_state.window != NULL)
+        return TRUE;
+    }
+  return FALSE;
+}
+
+gboolean
+xrd_client_is_grabbed (XrdClient *self,
+                       XrdWindow *window)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init (&iter, priv->controllers);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      XrdController *controller = XRD_CONTROLLER (value);
+      if (controller->grab_state.window == window)
+        return TRUE;
+    }
+  return FALSE;
+}
+
+gboolean
+xrd_client_is_hovered (XrdClient *self,
+                       XrdWindow *window)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init (&iter, priv->controllers);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      XrdController *controller = XRD_CONTROLLER (value);
+      if (controller->hover_state.window == window)
+        return TRUE;
+    }
+  return FALSE;
+}
+

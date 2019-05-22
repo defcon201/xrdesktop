@@ -29,7 +29,7 @@ typedef struct XrdClickEvent {
   graphene_point_t *position;
   int               button;
   gboolean          state;
-  int               controller_index;
+  guint64           controller_handle;
 } XrdClickEvent;
 
 typedef struct XrdMoveCursorEvent {
@@ -39,12 +39,6 @@ typedef struct XrdMoveCursorEvent {
    * does not appear frozen, but don't actually synthesize mouse move events. */
   gboolean ignore;
 } XrdMoveCursorEvent;
-
-typedef struct XrdInputSynthController
-{
-  XrdInputSynth *self;
-  int            index;
-} XrdInputSynthController;
 
 struct _XrdInputSynth;
 
@@ -66,12 +60,12 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              graphene_matrix_t *controller_pose,
                              graphene_point3d_t *intersection);
 
-int
+guint64
 xrd_input_synth_synthing_controller (XrdInputSynth *self);
 
 void
 xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
-                                        int controller_index);
+                                        guint64 controller_handle);
 
 
 G_END_DECLS

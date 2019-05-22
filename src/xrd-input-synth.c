@@ -17,9 +17,6 @@ struct _XrdInputSynth
 {
   GObject parent;
 
-  XrdInputSynthController left;
-  XrdInputSynthController right;
-
   /* hover_position is relative to hover_window */
   graphene_point_t hover_position;
   XrdWindow *hover_window;
@@ -29,7 +26,7 @@ struct _XrdInputSynth
 
   double scroll_threshold;
 
-  int synthing_controller_index;
+  guint64 synthing_controller_handle;
 
   OpenVRActionSet *synth_actions;
 
@@ -114,7 +111,7 @@ _emit_click (XrdInputSynth    *self,
   click_event->position = position;
   click_event->button = button;
   click_event->state = state;
-  click_event->controller_index = self->synthing_controller_index;
+  click_event->controller_handle = self->synthing_controller_handle;
   g_signal_emit (self, signals[CLICK_EVENT], 0, click_event);
 }
 
@@ -149,21 +146,22 @@ xrd_input_synth_reset_press_state (XrdInputSynth *self)
 static void
 _action_left_click_cb (OpenVRAction             *action,
                        OpenVRDigitalEvent       *event,
-                       XrdInputSynthController  *controller)
+                       XrdInputSynth            *self)
 {
   (void) action;
-  XrdInputSynth *self = controller->self;
 
   /* when left clicking with a controller that is *not* used to do input
    * synth, make this controller do input synth */
-  if (event->state && self->synthing_controller_index != controller->index)
+  if (event->state && self->synthing_controller_handle !=
+      event->controller_handle)
     {
       g_free (event);
-      xrd_input_synth_hand_off_to_controller (self, controller->index);
+      xrd_input_synth_hand_off_to_controller (self,
+                                              event->controller_handle);
       return;
     }
 
-  if (self->synthing_controller_index != controller->index)
+  if (self->synthing_controller_handle != event->controller_handle)
     {
       g_free (event);
       return;
@@ -185,12 +183,11 @@ _action_left_click_cb (OpenVRAction             *action,
 static void
 _action_right_click_cb (OpenVRAction            *action,
                         OpenVRDigitalEvent      *event,
-                        XrdInputSynthController *controller)
+                        XrdInputSynth           *self)
 {
   (void) action;
-  XrdInputSynth *self = controller->self;
 
-  if (self->synthing_controller_index != controller->index)
+  if (self->synthing_controller_handle != event->controller_handle)
     {
       g_free (event);
       return;
@@ -242,12 +239,11 @@ _do_scroll (XrdInputSynth *self, int steps_x, int steps_y)
 static void
 _action_scroll_cb (OpenVRAction            *action,
                    OpenVRAnalogEvent       *event,
-                   XrdInputSynthController *controller)
+                   XrdInputSynth           *self)
 {
   (void) action;
-  XrdInputSynth *self = controller->self;
 
-  if (self->synthing_controller_index != controller->index)
+  if (self->synthing_controller_handle != event->controller_handle)
     {
       g_free (event);
       return;
@@ -381,31 +377,25 @@ xrd_input_synth_init (XrdInputSynth *self)
 
   self->synth_actions = openvr_action_set_new_from_url ("/actions/mouse_synth");
 
-  self->left.self = self;
-  self->left.index = 0;
-
-  self->right.self = self;
-  self->right.index = 1;
-
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/mouse_synth/in/left_click_left",
-                             (GCallback) _action_left_click_cb, &self->left);
+                             (GCallback) _action_left_click_cb, self);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/mouse_synth/in/right_click_left",
-                             (GCallback) _action_right_click_cb, &self->left);
+                             (GCallback) _action_right_click_cb, self);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
                              "/actions/mouse_synth/in/scroll_left",
-                             (GCallback) _action_scroll_cb, &self->left);
+                             (GCallback) _action_scroll_cb, self);
 
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/mouse_synth/in/left_click_right",
-                             (GCallback) _action_left_click_cb, &self->right);
+                             (GCallback) _action_left_click_cb, self);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/mouse_synth/in/right_click_right",
-                             (GCallback) _action_right_click_cb, &self->right);
+                             (GCallback) _action_right_click_cb, self);
   openvr_action_set_connect (self->synth_actions, OPENVR_ACTION_ANALOG,
                              "/actions/mouse_synth/in/scroll_right",
-                             (GCallback) _action_scroll_cb, &self->right);
+                             (GCallback) _action_scroll_cb, self);
 
   xrd_settings_connect_and_apply (G_CALLBACK (_update_scroll_threshold),
                                   "scroll-threshold", self);
@@ -415,7 +405,7 @@ xrd_input_synth_init (XrdInputSynth *self)
        "shake-compensation-enabled",
        self);
 
-  self->synthing_controller_index = 1;
+  self->synthing_controller_handle = 0;
 }
 
 /**
@@ -424,10 +414,10 @@ xrd_input_synth_init (XrdInputSynth *self)
  *
  * Returns: The index of the controller that is used for input synth.
  */
-int
+guint64
 xrd_input_synth_synthing_controller (XrdInputSynth *self)
 {
-  return self->synthing_controller_index;
+  return self->synthing_controller_handle;
 }
 
 /**
@@ -438,11 +428,11 @@ xrd_input_synth_synthing_controller (XrdInputSynth *self)
  */
 void
 xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
-                                        int controller_index)
+                                        guint64 controller_handle)
 {
   xrd_input_synth_reset_scroll (self);
   xrd_input_synth_reset_press_state (self);
-  self->synthing_controller_index = controller_index;
+  self->synthing_controller_handle = controller_handle;
 }
 
 /**

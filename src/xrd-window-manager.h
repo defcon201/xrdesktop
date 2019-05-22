@@ -17,6 +17,7 @@
 #include <openvr-glib.h>
 
 #include "xrd-window.h"
+#include "xrd-controller.h"
 
 G_BEGIN_DECLS
 
@@ -27,7 +28,7 @@ G_DECLARE_FINAL_TYPE (XrdWindowManager, xrd_window_manager, XRD,
 typedef struct XrdNoHoverEvent
 {
   graphene_matrix_t pose;
-  int controller_index;
+  guint64 controller_handle;
 } XrdNoHoverEvent;
 
 typedef struct TransformTransition
@@ -39,23 +40,6 @@ typedef struct TransformTransition
   float to_scaling;
   float interpolate;
 } TransformTransition;
-
-typedef struct HoverState
-{
-  XrdWindow *window;
-  graphene_matrix_t pose;
-  float             distance;
-  graphene_point_t  intersection_offset;
-} HoverState;
-
-typedef struct GrabState
-{
-  XrdWindow    *window;
-  graphene_quaternion_t window_rotation;
-  /* the rotation induced by the overlay being moved on the controller arc */
-  graphene_quaternion_t window_transformed_rotation_neg;
-  graphene_point3d_t offset_translation_point;
-} GrabState;
 
 typedef enum
 {
@@ -88,7 +72,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
 
 void
 xrd_window_manager_drag_start (XrdWindowManager *self,
-                               int controller_index);
+                               XrdController *controller);
 
 void
 xrd_window_manager_scale (XrdWindowManager *self,
@@ -98,45 +82,31 @@ xrd_window_manager_scale (XrdWindowManager *self,
 
 void
 xrd_window_manager_check_grab (XrdWindowManager *self,
-                               int controller_index);
+                               XrdController *controller);
 
 void
 xrd_window_manager_check_release (XrdWindowManager *self,
-                                 int controller_index);
+                                 XrdController *controller);
 
 void
 xrd_window_manager_update_pose (XrdWindowManager *self,
                                 graphene_matrix_t *pose,
-                                int controller_index);
+                                XrdController *controller);
 
 void
 xrd_window_manager_save_reset_transform (XrdWindowManager *self,
                                          XrdWindow *window);
-
-gboolean
-xrd_window_manager_is_hovering (XrdWindowManager *self);
-
-gboolean
-xrd_window_manager_is_grabbing (XrdWindowManager *self);
-
-gboolean
-xrd_window_manager_is_grabbed (XrdWindowManager *self,
-                               XrdWindow *window);
-
-gboolean
-xrd_window_manager_is_hovered (XrdWindowManager *self,
-                               XrdWindow *window);
 
 void
 xrd_window_manager_poll_window_events (XrdWindowManager *self);
 
 GrabState *
 xrd_window_manager_get_grab_state (XrdWindowManager *self,
-                                   int controller_index);
+                                   XrdController *controller);
 
 HoverState *
 xrd_window_manager_get_hover_state (XrdWindowManager *self,
-                                    int controller_index);
+                                    XrdController *controller);
 
 void
 xrd_window_manager_set_pin (XrdWindowManager *self,
