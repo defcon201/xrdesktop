@@ -161,11 +161,11 @@ _init_texture (XrdPointerTip *self)
   if (data->texture)
     g_object_unref (data->texture);
 
-  data->texture = gulkan_texture_new_from_pixbuf (gulkan_client_get_device (
-                                                    client),
-                                                  pixbuf,
-                                                  VK_FORMAT_R8G8B8A8_UNORM);
-  gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
+  data->texture =
+    gulkan_client_texture_new_from_pixbuf (client, pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           data->upload_layout,
+                                           false);
   g_object_unref (pixbuf);
 
   xrd_pointer_tip_submit_texture (self, client, data->texture);
@@ -323,7 +323,8 @@ _animate_cb (gpointer _animation)
   GulkanClient *client = xrd_pointer_tip_get_gulkan_client (tip);
 
   GdkPixbuf* pixbuf = xrd_pointer_tip_render (tip, animation->progress);
-  gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
+  gulkan_client_upload_pixbuf (client, data->texture, pixbuf,
+                               data->upload_layout);
   g_object_unref (pixbuf);
 
   xrd_pointer_tip_submit_texture (tip, client, data->texture);
@@ -362,7 +363,8 @@ _update_texture (XrdPointerTip *self)
 
   GdkPixbuf* pixbuf = xrd_pointer_tip_render (self, 1.0f);
 
-  gulkan_client_upload_pixbuf (client, data->texture, pixbuf);
+  gulkan_client_upload_pixbuf (client, data->texture, pixbuf,
+                               data->upload_layout);
   g_object_unref (pixbuf);
 
   xrd_pointer_tip_submit_texture (self, client, data->texture);

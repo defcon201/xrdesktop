@@ -65,6 +65,8 @@ typedef struct _XrdClientPrivate
   XrdPointerTip *pointer_tip[OPENVR_CONTROLLER_COUNT];
   XrdDesktopCursor *cursor;
 
+  VkImageLayout upload_layout;
+
   XrdClientController controllers[OPENVR_CONTROLLER_COUNT];
 
 } XrdClientPrivate;
@@ -110,6 +112,20 @@ xrd_client_class_init (XrdClientClass *klass)
                    G_TYPE_FROM_CLASS (klass),
                    G_SIGNAL_RUN_LAST,
                    0, NULL, NULL, NULL, G_TYPE_NONE, 0, 0);
+}
+
+void
+xrd_client_set_upload_layout (XrdClient *self, VkImageLayout layout)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  priv->upload_layout = layout;
+}
+
+VkImageLayout
+xrd_client_get_upload_layout (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return priv->upload_layout;
 }
 
 /**
@@ -183,6 +199,7 @@ xrd_client_set_pin (XrdClient *self,
 void
 xrd_button_set_text (XrdWindow    *button,
                      GulkanClient *client,
+                     VkImageLayout upload_layout,
                      int           label_count,
                      gchar       **label)
 {
@@ -200,10 +217,10 @@ xrd_button_set_text (XrdWindow    *button,
   cairo_surface_t* surface =
     xrd_client_create_button_surface (image, width, height, label_count, label);
   GulkanTexture *texture =
-    gulkan_texture_new_from_cairo_surface (gulkan_client_get_device (client),
-                                           surface,
-                                           VK_FORMAT_R8G8B8A8_UNORM);
-  gulkan_client_upload_cairo_surface (client, texture, surface);
+    gulkan_client_texture_new_from_cairo_surface (client,
+                                                  surface,
+                                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                                  upload_layout);
 
   xrd_window_submit_texture (button, client, texture);
 
@@ -220,15 +237,16 @@ xrd_client_show_pinned_only (XrdClient *self,
   xrd_window_manager_show_pinned_only (priv->manager, pinned_only);
 
   GulkanClient *client = xrd_client_get_uploader (self);
+  VkImageLayout layout = xrd_client_get_upload_layout (self);
   if (pinned_only)
     {
       gchar *all_str[] =  { "Show", "all" };
-      xrd_button_set_text (priv->pinned_button, client, 2, all_str);
+      xrd_button_set_text (priv->pinned_button, client, layout, 2, all_str);
     }
   else
     {
       gchar *pinned_str[] =  { "Show", "pinned" };
-      xrd_button_set_text (priv->pinned_button, client, 2, pinned_str);
+      xrd_button_set_text (priv->pinned_button, client, layout, 2, pinned_str);
     }
 }
 
@@ -834,16 +852,20 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   priv->selection_mode = !priv->selection_mode;
   _mark_windows_for_selection_mode (self);
 
+  VkImageLayout layout = xrd_client_get_upload_layout (self);
+
   GulkanClient *client = xrd_client_get_uploader (self);
   if (priv->selection_mode)
     {
       gchar *end_str[] =  { "Confirm" };
-      xrd_button_set_text (priv->select_pinned_button, client, 1, end_str);
+      xrd_button_set_text (priv->select_pinned_button,
+                           client, layout, 1, end_str);
     }
   else
     {
       gchar *start_str[] =  { "Select", "pinned" };
-      xrd_button_set_text (priv->select_pinned_button, client, 2, start_str);
+      xrd_button_set_text (priv->select_pinned_button,
+                           client, layout, 2, start_str);
     }
 
   g_free (event);

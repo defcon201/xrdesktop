@@ -62,6 +62,8 @@ typedef struct _XrdPointerTipData
 
   GulkanTexture *texture;
 
+  VkImageLayout upload_layout;
+
   XrdPointerTipSettings settings;
 
   /* Pointer to the data of the currently running animation.

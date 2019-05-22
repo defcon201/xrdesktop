@@ -117,7 +117,9 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   if (window == NULL)
     return FALSE;
 
-  xrd_button_set_text (window, client, label_count, label);
+  VkImageLayout layout = xrd_client_get_upload_layout (XRD_CLIENT (self));
+
+  xrd_button_set_text (window, client, layout, label_count, label);
 
   *button = window;
 
@@ -141,6 +143,8 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
 static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
+  xrd_client_set_upload_layout (XRD_CLIENT (self),
+                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
   self->pinned_only = FALSE;
   OpenVRContext *openvr_context =

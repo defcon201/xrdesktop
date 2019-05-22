@@ -419,17 +419,17 @@ xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self)
       return false;
     }
 
-  FencedCommandBuffer cmd_buffer;
-  if (!gulkan_client_begin_res_cmd_buffer (GULKAN_CLIENT (self),
-                                           &cmd_buffer))
+  GulkanCommandBuffer cmd_buffer;
+  if (!gulkan_client_begin_cmd_buffer (GULKAN_CLIENT (self),
+                                      &cmd_buffer))
     {
       g_printerr ("Could not begin command buffer.\n");
       return false;
     }
 
- _init_framebuffers (self, cmd_buffer.cmd_buffer);
+  _init_framebuffers (self, cmd_buffer.handle);
 
-  if (!gulkan_client_submit_res_cmd_buffer (GULKAN_CLIENT (self), &cmd_buffer))
+  if (!gulkan_client_submit_cmd_buffer (GULKAN_CLIENT (self), &cmd_buffer))
     {
       g_printerr ("Could not submit command buffer.\n");
       return false;
@@ -486,17 +486,17 @@ _render_stereo (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 void
 xrd_scene_renderer_draw (XrdSceneRenderer *self)
 {
-  FencedCommandBuffer cmd_buffer;
-  gulkan_client_begin_res_cmd_buffer (GULKAN_CLIENT (self), &cmd_buffer);
+  GulkanCommandBuffer cmd_buffer;
+  gulkan_client_begin_cmd_buffer (GULKAN_CLIENT (self), &cmd_buffer);
 
-  _render_stereo (self, cmd_buffer.cmd_buffer);
+  _render_stereo (self, cmd_buffer.handle);
 
-  vkEndCommandBuffer (cmd_buffer.cmd_buffer);
+  vkEndCommandBuffer (cmd_buffer.handle);
 
   VkSubmitInfo submit_info = {
     .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
     .commandBufferCount = 1,
-    .pCommandBuffers = &cmd_buffer.cmd_buffer,
+    .pCommandBuffers = &cmd_buffer.handle,
     .waitSemaphoreCount = 0,
     .pWaitSemaphores = NULL,
     .signalSemaphoreCount = 0
@@ -511,7 +511,7 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
 
   vkFreeCommandBuffers (device_handle,
                         gulkan_client_get_command_pool (GULKAN_CLIENT (self)),
-                        1, &cmd_buffer.cmd_buffer);
+                        1, &cmd_buffer.handle);
   vkDestroyFence (device_handle, cmd_buffer.fence, NULL);
 
   VRVulkanTextureData_t openvr_texture_data = {

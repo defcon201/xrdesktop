@@ -190,8 +190,15 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
 void
 xrd_button_set_text (XrdWindow    *button,
                      GulkanClient *client,
+                     VkImageLayout upload_layout,
                      int           label_count,
                      gchar       **label);
+
+void
+xrd_client_set_upload_layout (XrdClient *self, VkImageLayout layout);
+
+VkImageLayout
+xrd_client_get_upload_layout (XrdClient *self);
 
 G_END_DECLS
 

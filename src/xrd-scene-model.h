@@ -37,9 +37,8 @@ XrdSceneModel *xrd_scene_model_new (void);
 
 gboolean
 xrd_scene_model_load (XrdSceneModel *self,
-                          GulkanDevice             *device,
-                          VkCommandBuffer           cmd_buffer,
-                          const char               *model_name);
+                      GulkanClient  *gc,
+                      const char    *model_name);
 
 G_END_DECLS
 

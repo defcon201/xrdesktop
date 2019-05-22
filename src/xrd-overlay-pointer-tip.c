@@ -56,6 +56,7 @@ xrd_overlay_pointer_tip_init (XrdOverlayPointerTip *self)
   self->data.active = FALSE;
   self->data.texture = NULL;
   self->data.animation = NULL;
+  self->data.upload_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 }
 
 XrdOverlayPointerTip *

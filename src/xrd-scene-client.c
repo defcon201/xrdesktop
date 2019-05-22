@@ -89,6 +89,9 @@ xrd_scene_client_class_init (XrdSceneClientClass *klass)
 static void
 xrd_scene_client_init (XrdSceneClient *self)
 {
+  xrd_client_set_upload_layout (XRD_CLIENT (self),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
   self->device_manager = xrd_scene_device_manager_new ();
 
   self->background = xrd_scene_background_new ();
@@ -523,7 +526,8 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
 
   xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
 
-  xrd_button_set_text (window, client, label_count, label);
+  VkImageLayout layout = xrd_client_get_upload_layout (XRD_CLIENT (self));
+  xrd_button_set_text (window, client, layout, label_count, label);
 
   *button = window;
 

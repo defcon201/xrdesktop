@@ -44,6 +44,7 @@ xrd_scene_pointer_tip_init (XrdScenePointerTip *self)
   self->data.texture = NULL;
   self->data.animation = NULL;
   self->data.settings.width_meters = 1.0f;
+  self->data.upload_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
 XrdScenePointerTip *

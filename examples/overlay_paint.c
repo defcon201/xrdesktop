@@ -143,7 +143,8 @@ _draw_at_2d_position (Example          *self,
 
   if (!gulkan_client_upload_pixbuf (GULKAN_CLIENT (self->uploader),
                                     self->texture,
-                                    self->draw_pixbuf))
+                                    self->draw_pixbuf,
+                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL))
     return FALSE;
 
 
@@ -223,11 +224,11 @@ _init_paint_overlay (Example *self)
   GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
   self->texture =
-    gulkan_texture_new_from_pixbuf (gulkan_client_get_device (client),
-                                    self->draw_pixbuf,
-                                    VK_FORMAT_R8G8B8A8_UNORM);
-
-  gulkan_client_upload_pixbuf (client, self->texture, self->draw_pixbuf);
+    gulkan_client_texture_new_from_pixbuf (client,
+                                           self->draw_pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                           false);
 
   xrd_window_submit_texture (XRD_WINDOW (self->paint_window),
                              client, self->texture);

@@ -63,7 +63,7 @@ load_gdk_pixbuf (const gchar* name)
 }
 
 static GulkanTexture *
-_make_texture (GulkanClient *gc, const gchar *resource)
+_make_texture (GulkanClient *gc, VkImageLayout layout, const gchar *resource)
 {
   GdkPixbuf *pixbuf = load_gdk_pixbuf (resource);
   if (pixbuf == NULL)
@@ -73,10 +73,9 @@ _make_texture (GulkanClient *gc, const gchar *resource)
     }
 
   GulkanTexture *texture =
-    gulkan_texture_new_from_pixbuf (gulkan_client_get_device (gc), pixbuf,
-                                    VK_FORMAT_R8G8B8A8_UNORM);
-
-  gulkan_client_upload_pixbuf (gc, texture, pixbuf);
+    gulkan_client_texture_new_from_pixbuf (gc, pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           layout, true);
 
   g_object_unref (pixbuf);
 
@@ -108,6 +107,7 @@ _head_follow_press_cb (XrdWindow               *button,
   (void) button;
   Example *self = _self;
   GulkanClient *gc = xrd_client_get_uploader (self->client);
+  VkImageLayout layout = xrd_client_get_upload_layout (self->client);
 
   if (self->head_follow_window == NULL)
     {
@@ -129,7 +129,7 @@ _head_follow_press_cb (XrdWindow               *button,
       xrd_window_set_transformation (self->head_follow_window,
                                             &transform);
       gchar *hide_str[] =  { "Hide", "modal" };
-      xrd_button_set_text (self->head_follow_button, gc, 2, hide_str);
+      xrd_button_set_text (self->head_follow_button, gc, layout, 2, hide_str);
     }
   else
     {
@@ -138,7 +138,7 @@ _head_follow_press_cb (XrdWindow               *button,
       g_object_unref (self->head_follow_window);
       self->head_follow_window = NULL;
       gchar *show_str[] =  { "Show", "modal" };
-      xrd_button_set_text (self->head_follow_button, gc, 2, show_str);
+      xrd_button_set_text (self->head_follow_button, gc, layout, 2, show_str);
     }
   g_free (event);
 }
@@ -180,7 +180,9 @@ _init_child_window (Example      *self,
                     GulkanClient *gc,
                     XrdWindow    *window)
 {
-  GulkanTexture *cat_small = _make_texture (gc, "/res/cat.jpg");
+  GulkanTexture *cat_small =
+    _make_texture (gc, xrd_client_get_upload_layout (self->client),
+                   "/res/cat.jpg");
   guint texture_width = gulkan_texture_get_width (cat_small);
   guint texture_height = gulkan_texture_get_height (cat_small);
 
@@ -210,9 +212,12 @@ _init_cursor (Example *self, GulkanClient *gc)
       return FALSE;
     }
 
-  self->cursor_texture = gulkan_texture_new_from_pixbuf (
-      gulkan_client_get_device (gc), cursor_pixbuf, VK_FORMAT_R8G8B8A8_UNORM);
-  gulkan_client_upload_pixbuf (gc, self->cursor_texture, cursor_pixbuf);
+  VkImageLayout layout = xrd_client_get_upload_layout (self->client);
+
+  self->cursor_texture =
+    gulkan_client_texture_new_from_pixbuf (gc, cursor_pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           layout, true);
 
   xrd_client_submit_cursor_texture (self->client, gc,
                                     self->cursor_texture, 3, 3);
@@ -405,7 +410,9 @@ _init_example (Example *self, XrdClient *client)
   self->client = client;
   self->head_follow_button = NULL;
   self->head_follow_window = NULL;
-  self->hawk_big = _make_texture (gc, "/res/hawk.jpg");
+  self->hawk_big = _make_texture (gc,
+                                  xrd_client_get_upload_layout (client),
+                                  "/res/hawk.jpg");
   self->shutdown = false;
 
   if (!_init_windows (self))

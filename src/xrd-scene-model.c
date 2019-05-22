@@ -115,9 +115,8 @@ _load_mesh (XrdSceneModel *self,
 }
 
 gboolean
-_load_texture (XrdSceneModel *self,
-               GulkanDevice             *device,
-               VkCommandBuffer           cmd_buffer,
+_load_texture (XrdSceneModel            *self,
+               GulkanClient             *gc,
                RenderModel_TextureMap_t *texture)
 {
   GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data (
@@ -125,16 +124,11 @@ _load_texture (XrdSceneModel *self,
       texture->unWidth, texture->unHeight,
       4 * texture->unWidth, NULL, NULL);
 
-  uint32_t num_mipmaps;
   self->texture =
-    gulkan_texture_new_from_pixbuf_mipmapped (device, cmd_buffer,
-                                              pixbuf, &num_mipmaps,
-                                              VK_FORMAT_R8G8B8A8_UNORM);
-
-  gulkan_texture_transfer_layout_mips (
-      self->texture, device, cmd_buffer, num_mipmaps,
-      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    gulkan_client_texture_new_from_pixbuf (gc, pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           true);
 
   VkSamplerCreateInfo sampler_info = {
     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -146,21 +140,20 @@ _load_texture (XrdSceneModel *self,
     .anisotropyEnable = VK_TRUE,
     .maxAnisotropy = 16.0f,
     .minLod = 0.0f,
-    .maxLod = (float) num_mipmaps,
+    .maxLod = (float) gulkan_texture_get_mip_levels (self->texture),
   };
 
+  GulkanDevice *device = gulkan_client_get_device (gc);
   vkCreateSampler (gulkan_device_get_handle (device), &sampler_info, NULL,
                    &self->sampler);
 
   return TRUE;
 }
 
-
 gboolean
 xrd_scene_model_load (XrdSceneModel *self,
-                          GulkanDevice      *device,
-                          VkCommandBuffer    cmd_buffer,
-                          const char        *model_name)
+                      GulkanClient  *gc,
+                      const char    *model_name)
 {
   RenderModel_t *vr_model;
   if (!_load_openvr_mesh (&vr_model, model_name))
@@ -175,10 +168,11 @@ xrd_scene_model_load (XrdSceneModel *self,
       return FALSE;
     }
 
+  GulkanDevice *device = gulkan_client_get_device (gc);
   if (!_load_mesh (self, device, vr_model))
     return FALSE;
 
-  if (!_load_texture (self, device, cmd_buffer, vr_diffuse_texture))
+  if (!_load_texture (self, gc, vr_diffuse_texture))
     return FALSE;
 
   context->model->FreeRenderModel (vr_model);

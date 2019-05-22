@@ -37,10 +37,10 @@ _make_texture (GulkanClient *gc, const gchar *resource)
     }
 
   GulkanTexture *texture =
-    gulkan_texture_new_from_pixbuf (gulkan_client_get_device (gc), pixbuf,
-                                    VK_FORMAT_R8G8B8A8_UNORM);
-
-  gulkan_client_upload_pixbuf (gc, texture, pixbuf);
+    gulkan_client_texture_new_from_pixbuf (gc, pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           true);
 
   g_object_unref (pixbuf);
 

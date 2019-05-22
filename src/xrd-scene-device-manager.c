@@ -50,17 +50,8 @@ _load_content (XrdSceneDeviceManager *self,
                GulkanClient          *client,
                const char            *model_name)
 {
-  XrdSceneModel *content;
-
-  FencedCommandBuffer cmd_buffer;
-  if (!gulkan_client_begin_res_cmd_buffer (client, &cmd_buffer))
-    return NULL;
-  content = xrd_scene_model_new ();
-  if (!xrd_scene_model_load (content, gulkan_client_get_device (client),
-                                 cmd_buffer.cmd_buffer, model_name))
-    return NULL;
-
-  if (!gulkan_client_submit_res_cmd_buffer (client, &cmd_buffer))
+  XrdSceneModel *content = xrd_scene_model_new ();
+  if (!xrd_scene_model_load (content, client, model_name))
     return NULL;
 
   g_hash_table_insert (self->models, g_strdup (model_name), content);
