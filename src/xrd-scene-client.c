@@ -257,7 +257,7 @@ _render_eye_cb (uint32_t         eye,
       XrdScenePointerTip *scene_tip =
         XRD_SCENE_POINTER_TIP (xrd_controller_get_pointer_tip (controller));
       xrd_scene_window_draw (XRD_SCENE_WINDOW (scene_tip), eye,
-                             pipelines[PIPELINE_WINDOWS],
+                             pipelines[PIPELINE_TIP],
                              pipeline_layout,
                              cmd_buffer, &vp);
     }
@@ -266,7 +266,7 @@ _render_eye_cb (uint32_t         eye,
   XrdDesktopCursor *cursor = xrd_client_get_desktop_cursor (XRD_CLIENT (self));
   XrdSceneDesktopCursor *scene_cursor = XRD_SCENE_DESKTOP_CURSOR (cursor);
   xrd_scene_window_draw (XRD_SCENE_WINDOW (scene_cursor), eye,
-                         pipelines[PIPELINE_WINDOWS],
+                         pipelines[PIPELINE_TIP],
                          pipeline_layout,
                          cmd_buffer, &vp);
 

@@ -177,7 +177,7 @@ static bool
 _init_shaders (XrdSceneRenderer *self)
 {
   const char *shader_names[PIPELINE_COUNT] = {
-    "window", "pointer", "device_model"
+    "window", "window", "pointer", "device_model"
   };
   const char *stage_names[2] = {"vert", "frag"};
 
@@ -261,10 +261,12 @@ _init_pipeline_cache (XrdSceneRenderer *self)
 }
 
 typedef struct __attribute__((__packed__)) PipelineConfig {
-  VkPrimitiveTopology                      topology;
-  uint32_t                                 stride;
-  const VkVertexInputAttributeDescription* attribs;
-  uint32_t                                 attrib_count;
+  VkPrimitiveTopology                          topology;
+  uint32_t                                     stride;
+  const VkVertexInputAttributeDescription     *attribs;
+  uint32_t                                     attrib_count;
+  const VkPipelineDepthStencilStateCreateInfo *depth_stencil_state;
+  const VkPipelineColorBlendAttachmentState   *blend_attachments;
 } PipelineConfig;
 
 bool
@@ -279,7 +281,48 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
         {1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (VertexDataScene, uv)},
       },
-      .attrib_count = 2
+      .attrib_count = 2,
+      .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+          .depthTestEnable = VK_TRUE,
+          .depthWriteEnable = VK_TRUE,
+          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
+          .depthBoundsTestEnable = VK_FALSE,
+          .stencilTestEnable = VK_FALSE,
+          .minDepthBounds = 0.0f,
+          .maxDepthBounds = 0.0f
+      },
+      .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = 0xf
+      }
+    },
+    // PIPELINE_TIP
+    {
+      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      .stride = sizeof (VertexDataScene),
+      .attribs = (VkVertexInputAttributeDescription []) {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (VertexDataScene, uv)},
+      },
+      .attrib_count = 2,
+      .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+          .depthTestEnable = VK_FALSE,
+          .depthWriteEnable = VK_FALSE
+      },
+      .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
+        .blendEnable = VK_TRUE,
+        .colorBlendOp = VK_BLEND_OP_ADD,
+        .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .alphaBlendOp = VK_BLEND_OP_ADD,
+        .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+        .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                          VK_COLOR_COMPONENT_G_BIT |
+                          VK_COLOR_COMPONENT_B_BIT,
+      }
     },
     // PIPELINE_POINTER
     {
@@ -289,7 +332,16 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
         {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof (float) * 3},
       },
-      .attrib_count = 2
+      .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+          .depthTestEnable = VK_FALSE,
+          .depthWriteEnable = VK_FALSE
+      },
+      .attrib_count = 2,
+      .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = 0xf
+      }
     },
     // PIPELINE_DEVICE_MODELS
     {
@@ -300,7 +352,16 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
         {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof (RenderModel_Vertex_t, vNormal)},
         {2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (RenderModel_Vertex_t, rfTextureCoord)},
       },
-      .attrib_count = 3
+      .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+          .depthTestEnable = VK_FALSE,
+          .depthWriteEnable = VK_FALSE
+      },
+      .attrib_count = 3,
+      .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = 0xf
+      }
     }
   };
 
@@ -344,26 +405,13 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
           .pSampleMask = &(uint32_t) { 0xFFFFFFFF },
           .alphaToCoverageEnable = VK_FALSE
         },
-        .pDepthStencilState = &(VkPipelineDepthStencilStateCreateInfo) {
-          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-          .depthTestEnable = VK_TRUE ,
-          .depthWriteEnable = VK_TRUE,
-          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
-          .depthBoundsTestEnable = VK_FALSE,
-          .stencilTestEnable = VK_FALSE,
-          .minDepthBounds = 0.0f,
-          .maxDepthBounds = 0.0f
-        },
+        .pDepthStencilState = config[i].depth_stencil_state,
         .pColorBlendState = &(VkPipelineColorBlendStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
           .logicOpEnable = VK_FALSE,
-          .logicOp = VK_LOGIC_OP_COPY,
           .attachmentCount = 1,
           .blendConstants = {0,0,0,0},
-          .pAttachments = &(VkPipelineColorBlendAttachmentState) {
-            .blendEnable = VK_FALSE,
-            .colorWriteMask = 0xf
-          },
+          .pAttachments = config[i].blend_attachments,
         },
         .stageCount = 2,
         .pStages = (VkPipelineShaderStageCreateInfo []) {
