@@ -1,5 +1,5 @@
 project('xrdesktop', 'c', version: '0.11.0',
-  meson_version: '>= 0.42.0',
+  meson_version: '>= 0.50.0',
 )
 
 gnome = import('gnome')
