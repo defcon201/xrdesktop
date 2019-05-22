@@ -34,6 +34,9 @@ XrdSceneRenderer *xrd_scene_renderer_new (void);
 
 XrdSceneRenderer *xrd_scene_renderer_get_instance (void);
 
+GulkanDevice*
+xrd_scene_renderer_get_device ();
+
 bool
 xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self);
 

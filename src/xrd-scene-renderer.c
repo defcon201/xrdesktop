@@ -565,3 +565,10 @@ xrd_scene_renderer_set_render_cb (XrdSceneRenderer *self,
   self->render_eye = render_eye;
   self->render_cb_data = data;
 }
+
+GulkanDevice*
+xrd_scene_renderer_get_device ()
+{
+  XrdSceneRenderer *self = xrd_scene_renderer_get_instance ();
+  return gulkan_client_get_device (GULKAN_CLIENT (self));
+}
