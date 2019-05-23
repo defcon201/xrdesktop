@@ -320,6 +320,11 @@ xrd_client_get_synth_hovered (XrdClient *self)
   guint64 controller_handle =
     xrd_input_synth_synthing_controller (priv->input_synth);
   XrdController *controller = _lookup_controller (self, controller_handle);
+
+  /* no controller, nothing hovered */
+  if (controller == NULL)
+    return NULL;
+
   XrdWindow *parent = xrd_controller_get_hover_state (controller)->window;
   return parent;
 }
