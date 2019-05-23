@@ -194,7 +194,7 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
   return FALSE;
 }
 
-void
+static void
 _move (XrdPointer        *pointer,
        graphene_matrix_t *transform)
 {
@@ -203,7 +203,7 @@ _move (XrdPointer        *pointer,
   graphene_matrix_init_from_matrix (&obj->model_matrix, transform);
 }
 
-void
+static void
 _set_length (XrdPointer *pointer,
              float       length)
 {
@@ -231,14 +231,14 @@ xrd_scene_pointer_reset_length (XrdScenePointer *self)
   _set_length (XRD_POINTER (self), self->default_length);
 }
 
-void
+static void
 _reset_length (XrdPointer *pointer)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
   self->length = self->default_length;
 }
 
-float
+static float
 _get_default_length (XrdPointer *pointer)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
