@@ -20,6 +20,7 @@ typedef struct Example
   XrdWindow *head_follow_window;
   XrdWindow *head_follow_button;
   GulkanTexture *hawk_big;
+  GulkanTexture *cat_texture;
   GulkanTexture *cursor_texture;
   XrdWindow *switch_button;
   guint64 click_source;
@@ -179,11 +180,11 @@ _init_child_window (Example      *self,
                     GulkanClient *gc,
                     XrdWindow    *window)
 {
-  GulkanTexture *cat_small =
+  self->cat_texture =
     _make_texture (gc, xrd_client_get_upload_layout (self->client),
                    "/res/cat.jpg");
-  guint texture_width = gulkan_texture_get_width (cat_small);
-  guint texture_height = gulkan_texture_get_height (cat_small);
+  guint texture_width = gulkan_texture_get_width (self->cat_texture);
+  guint texture_height = gulkan_texture_get_height (self->cat_texture);
 
   float ppm = texture_width / 0.25;
   XrdWindow *child;
@@ -193,12 +194,10 @@ _init_child_window (Example      *self,
 
   xrd_client_add_window (self->client, child, TRUE, FALSE);
 
-  xrd_window_submit_texture (child, gc, cat_small);
+  xrd_window_submit_texture (child, gc, self->cat_texture);
 
   graphene_point_t offset = { .x = 25, .y = 25 };
   xrd_window_add_child (window, child, &offset);
-
-  g_object_unref (cat_small);
 }
 
 static gboolean
@@ -299,8 +298,7 @@ _init_windows (Example *self)
           XrdWindowManager *manager = xrd_client_get_manager (self->client);
           xrd_window_manager_save_reset_transform (manager, window);
 
-          /* TODO: Fix in scene client */
-          if (col == 0 && row == 0 && !XRD_IS_SCENE_CLIENT (self->client))
+          if (col == 0 && row == 0)
             _init_child_window (self, gc, window);
         }
       window_x = 0;
@@ -329,6 +327,8 @@ _cleanup (Example *self)
 
   g_object_unref (self->hawk_big);
   self->hawk_big = NULL;
+  g_object_unref (self->cat_texture);
+  self->cat_texture = NULL;
   g_object_unref (self->cursor_texture);
   self->cursor_texture = NULL;
   g_object_unref (self->client);
