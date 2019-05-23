@@ -85,8 +85,8 @@ xrd_overlay_pointer_tip_new (int controller_index,
     }
 
   /*
-   * The crosshair should always be visible, except the pointer can
-   * occlude it. The pointer has max sort order, so the crosshair gets max -1
+   * The tip should always be visible, except the pointer can
+   * occlude it. The pointer has max sort order, so the tip gets max -1
    */
   openvr_overlay_set_sort_order (OPENVR_OVERLAY (self), UINT32_MAX - 1);
 
