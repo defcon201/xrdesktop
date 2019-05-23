@@ -49,6 +49,7 @@ void
 xrd_scene_pointer_render (XrdScenePointer   *self,
                           EVREye             eye,
                           VkPipeline         pipeline,
+                          VkPipeline         selection_pipeline,
                           VkPipelineLayout   pipeline_layout,
                           VkCommandBuffer    cmd_buffer,
                           graphene_matrix_t *vp);

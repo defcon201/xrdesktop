@@ -94,6 +94,7 @@ void
 xrd_scene_pointer_render (XrdScenePointer   *self,
                           EVREye             eye,
                           VkPipeline         pipeline,
+                          VkPipeline         selection_pipeline,
                           VkPipelineLayout   pipeline_layout,
                           VkCommandBuffer    cmd_buffer,
                           graphene_matrix_t *vp)
@@ -110,7 +111,7 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
 
   xrd_scene_selection_render (self->selection, eye,
-                              pipeline, pipeline_layout,
+                              selection_pipeline, pipeline_layout,
                               cmd_buffer, vp);
 }
 

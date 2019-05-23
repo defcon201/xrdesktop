@@ -180,11 +180,11 @@ _device_deactivate_cb (OpenVRContext          *context,
   // g_hash_table_remove (self->pointers, &event->index);
 }
 
-void
+static void
 _render_pointers (XrdSceneClient    *self,
                   EVREye             eye,
                   VkCommandBuffer    cmd_buffer,
-                  VkPipeline         pipeline,
+                  VkPipeline        *pipelines,
                   VkPipelineLayout   pipeline_layout,
                   graphene_matrix_t *vp)
 {
@@ -200,7 +200,9 @@ _render_pointers (XrdSceneClient    *self,
 
       XrdScenePointer *pointer =
         XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
-      xrd_scene_pointer_render (pointer, eye, pipeline,
+      xrd_scene_pointer_render (pointer, eye,
+                                pipelines[PIPELINE_POINTER],
+                                pipelines[PIPELINE_SELECTION],
                                 pipeline_layout, cmd_buffer, vp);
     }
   g_list_free (controllers);
@@ -220,7 +222,7 @@ _render_eye_cb (uint32_t         eye,
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
   xrd_scene_background_render (self->background, eye,
-                               pipelines[PIPELINE_POINTER],
+                               pipelines[PIPELINE_BACKGROUND],
                                pipeline_layout, cmd_buffer, &vp);
 
   for (GSList *l = xrd_window_manager_get_windows (manager);
@@ -241,9 +243,7 @@ _render_eye_cb (uint32_t         eye,
                              cmd_buffer, &vp);
     }
 
-  _render_pointers (self, eye, cmd_buffer,
-                    pipelines[PIPELINE_POINTER],
-                    pipeline_layout, &vp);
+  _render_pointers (self, eye, cmd_buffer, pipelines, pipeline_layout, &vp);
 
   xrd_scene_device_manager_render (self->device_manager, eye, cmd_buffer,
                                    pipelines[PIPELINE_DEVICE_MODELS],

@@ -177,7 +177,7 @@ static bool
 _init_shaders (XrdSceneRenderer *self)
 {
   const char *shader_names[PIPELINE_COUNT] = {
-    "window", "window", "pointer", "device_model"
+    "window", "window", "pointer", "pointer", "pointer", "device_model"
   };
   const char *stage_names[2] = {"vert", "frag"};
 
@@ -356,7 +356,55 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
           .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
           .polygonMode = VK_POLYGON_MODE_LINE,
           .cullMode = VK_CULL_MODE_BACK_BIT,
-          .lineWidth = 5.0f
+          .lineWidth = 4.0f
+      }
+    },
+    // PIPELINE_SELECTION
+    {
+      .topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+      .stride = sizeof (float) * 6,
+      .attribs = (VkVertexInputAttributeDescription []) {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof (float) * 3},
+      },
+      .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+          .depthTestEnable = VK_FALSE,
+          .depthWriteEnable = VK_FALSE
+      },
+      .attrib_count = 2,
+      .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = 0xf
+      },
+      .rasterization_state = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+          .polygonMode = VK_POLYGON_MODE_LINE,
+          .lineWidth = 2.0f
+      }
+    },
+    // PIPELINE_BACKGROUND
+    {
+      .topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+      .stride = sizeof (float) * 6,
+      .attribs = (VkVertexInputAttributeDescription []) {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof (float) * 3},
+      },
+      .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+          .depthTestEnable = VK_FALSE,
+          .depthWriteEnable = VK_FALSE
+      },
+      .attrib_count = 2,
+      .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = 0xf
+      },
+      .rasterization_state = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+          .polygonMode = VK_POLYGON_MODE_LINE,
+          .lineWidth = 1.0f
       }
     },
     // PIPELINE_DEVICE_MODELS
