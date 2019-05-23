@@ -283,10 +283,11 @@ xrd_scene_window_get_plane (XrdSceneWindow   *self,
 
 /* XrdWindow Interface functions */
 
-gboolean
-xrd_scene_window_set_transformation (XrdSceneWindow    *self,
-                                     graphene_matrix_t *mat)
+static gboolean
+_set_transformation (XrdWindow         *window,
+                     graphene_matrix_t *mat)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), mat);
 
   float height_meters =
@@ -297,19 +298,21 @@ xrd_scene_window_set_transformation (XrdSceneWindow    *self,
   return TRUE;
 }
 
-gboolean
-xrd_scene_window_get_transformation (XrdSceneWindow    *self,
-                                     graphene_matrix_t *mat)
+static gboolean
+_get_transformation (XrdWindow         *window,
+                     graphene_matrix_t *mat)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   *mat = xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
   return TRUE;
 }
 
-void
-xrd_scene_window_submit_texture (XrdSceneWindow *self,
-                                 GulkanClient   *client,
-                                 GulkanTexture  *texture)
+static void
+_submit_texture (XrdWindow     *window,
+                 GulkanClient  *client,
+                 GulkanTexture *texture)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   VkDevice device = gulkan_client_get_device_handle (client);
 
   float aspect_ratio = (float) gulkan_texture_get_width (texture) /
@@ -349,19 +352,21 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
                                                  self->texture));
 }
 
-void
-xrd_scene_window_poll_event (XrdSceneWindow *self)
+static void
+_poll_event (XrdWindow *self)
 {
   (void) self;
 }
 
 /* TODO: Use pointer class in interface */
-gboolean
-xrd_scene_window_intersects (XrdSceneWindow     *self,
-                             graphene_matrix_t  *mat,
-                             graphene_point3d_t *intersection_point)
+static gboolean
+_intersects (XrdWindow          *window,
+             graphene_matrix_t  *mat,
+             graphene_point3d_t *intersection_point)
 {
-  /* Hardcode pointer props */
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+
+  /* TODO: Don't Hardcode pointer props */
   float start_offset = -0.02f;
   float length = 40.0f;
 
@@ -430,12 +435,14 @@ xrd_scene_window_intersects (XrdSceneWindow     *self,
   return FALSE;
 }
 
-gboolean
-xrd_scene_window_intersection_to_pixels (XrdSceneWindow     *self,
-                                         graphene_point3d_t *intersection_point,
-                                         XrdPixelSize       *size_pixels,
-                                         graphene_point_t   *window_coords)
+static gboolean
+_intersection_to_pixels (XrdWindow          *window,
+                         graphene_point3d_t *intersection_point,
+                         XrdPixelSize       *size_pixels,
+                         graphene_point_t   *window_coords)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+
   /* transform intersection point to origin */
   graphene_matrix_t transform =
     xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
@@ -489,11 +496,13 @@ xrd_scene_window_intersection_to_pixels (XrdSceneWindow     *self,
   return TRUE;
 }
 
-gboolean
-xrd_scene_window_intersection_to_2d_offset_meter (XrdSceneWindow     *self,
-                                                  graphene_point3d_t *intersection_point,
-                                                  graphene_point_t   *offset_center)
+static gboolean
+_intersection_to_2d_offset_meter (XrdWindow          *window,
+                                  graphene_point3d_t *intersection_point,
+                                  graphene_point_t   *offset_center)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+
   graphene_matrix_t transform =
     xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
 
@@ -511,29 +520,31 @@ xrd_scene_window_intersection_to_2d_offset_meter (XrdSceneWindow     *self,
   return TRUE;
 }
 
-void
-xrd_scene_window_add_child (XrdSceneWindow   *self,
-                            XrdSceneWindow   *child,
-                            graphene_point_t *offset_center)
+static void
+_add_child (XrdWindow        *window,
+            XrdWindow        *child,
+            graphene_point_t *offset_center)
 {
-  (void) self;
+  (void) window;
   (void) child;
   (void) offset_center;
 
   g_warning ("stub: xrd_scene_window_add_child\n");
 }
 
-void
-xrd_scene_window_set_color (XrdSceneWindow  *self,
-                            graphene_vec3_t *color)
+static void
+_set_color (XrdWindow       *window,
+            graphene_vec3_t *color)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   graphene_vec3_init_from_vec3 (&self->color, color);
 }
 
-void
-xrd_scene_window_set_flip_y (XrdSceneWindow *self,
-                             gboolean        flip_y)
+static void
+_set_flip_y (XrdWindow *window,
+             gboolean   flip_y)
 {
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   self->flip_y = flip_y;
 }
 
@@ -572,20 +583,16 @@ xrd_scene_window_set_width_meters (XrdSceneWindow *self,
 static void
 xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
 {
-  iface->set_transformation =
-      (void*) xrd_scene_window_set_transformation;
-  iface->get_transformation =
-      (void*) xrd_scene_window_get_transformation;
-  iface->submit_texture = (void*)xrd_scene_window_submit_texture;
-  iface->poll_event = (void*)xrd_scene_window_poll_event;
-  iface->intersects = (void*)xrd_scene_window_intersects;
-  iface->intersection_to_pixels =
-      (void*)xrd_scene_window_intersection_to_pixels;
-  iface->intersection_to_2d_offset_meter =
-      (void*)xrd_scene_window_intersection_to_2d_offset_meter;
-  iface->add_child = (void*)xrd_scene_window_add_child;
-  iface->set_color = (void*)xrd_scene_window_set_color;
-  iface->set_flip_y = (void*)xrd_scene_window_set_flip_y;
+  iface->set_transformation = _set_transformation;
+  iface->get_transformation = _get_transformation;
+  iface->submit_texture = _submit_texture;
+  iface->poll_event = _poll_event;
+  iface->intersects = _intersects;
+  iface->intersection_to_pixels = _intersection_to_pixels;
+  iface->intersection_to_2d_offset_meter = _intersection_to_2d_offset_meter;
+  iface->add_child = _add_child;
+  iface->set_color = _set_color;
+  iface->set_flip_y = _set_flip_y;
   iface->set_hidden = _set_hidden;
   iface->get_hidden = _get_hidden;
 }
