@@ -324,7 +324,7 @@ xrd_window_poll_event (XrdWindow *self)
  * Returns: True if there is an intersection, else false.
  */
 gboolean
-xrd_window_intersects (XrdWindow   *self,
+xrd_window_intersects (XrdWindow          *self,
                        graphene_matrix_t  *pointer_transformation_matrix,
                        graphene_point3d_t *intersection_point)
 {
@@ -335,51 +335,28 @@ xrd_window_intersects (XrdWindow   *self,
 }
 
 /**
- * xrd_window_intersection_to_pixels:
+ * xrd_window_get_intersection_2d_pixels:
  * @self: The #XrdWindow
- * @intersection_point: intersection point in meters.
- * @size_pixels: size of the window in pixels.
- * @window_coords: coordinates on the window in pixels.
- *
- * The transformation matrix describes the *center* point of an overlay
- * to calculate 2D coordinates relative to overlay origin we have to shift.
- *
- * To calculate the position in the overlay in any orientation, we can invert
- * the transformation matrix of the overlay. This transformation matrix would
- * bring the center of our overlay into the origin of the coordinate system,
- * facing us (+z), the overlay being in the xy plane (since by convention that
- * is the neutral position for overlays).
- *
- * Since the transformation matrix transforms every possible point on the
- * overlay onto the same overlay as it is in the origin in the xy plane,
- * it transforms in particular the intersection point onto its position on the
- * overlay in the xy plane.
- * Then we only need to shift it by half of the overlay widht/height, because
- * the *center* of the overlay sits in the origin.
+ * @intersection_point: A #graphene_point3d_t intersection point in meters.
+ * @size: Size of the window in pixels.
+ * @intersection_pixels: Intersection in window coordinates with the origin at top/left in pixels.
  */
 
-gboolean
-xrd_window_intersection_to_pixels (XrdWindow          *self,
-                                   graphene_point3d_t *intersection_point,
-                                   XrdPixelSize       *size_pixels,
-                                   graphene_point_t   *window_coords)
+void
+xrd_window_get_intersection_2d_pixels (XrdWindow          *self,
+                                       graphene_point3d_t *intersection_3d,
+                                       XrdPixelSize       *size,
+                                       graphene_point_t   *intersection_pixels)
 {
   /* transform intersection point to origin */
-  graphene_matrix_t transform;
-  xrd_window_get_transformation (self, &transform);
+  graphene_point_t intersection_2d_point;
+  xrd_window_get_intersection_2d (self, intersection_3d,
+                                  &intersection_2d_point);
 
-  graphene_matrix_t inverse_transform;
-  graphene_matrix_inverse (&transform, &inverse_transform);
+  graphene_vec2_t intersection_2d_vec;
+  graphene_point_to_vec2 (&intersection_2d_point,
+                          &intersection_2d_vec);
 
-  graphene_point3d_t intersection_origin;
-  graphene_matrix_transform_point3d (&inverse_transform,
-                                      intersection_point,
-                                     &intersection_origin);
-
-  graphene_vec2_t position_2d_vec;
-  graphene_vec2_init (&position_2d_vec,
-                      intersection_origin.x,
-                      intersection_origin.y);
 
   /* normalize coordinates to [0 - 1, 0 - 1] */
   graphene_vec2_t size_meters;
@@ -387,31 +364,30 @@ xrd_window_intersection_to_pixels (XrdWindow          *self,
                       xrd_window_get_current_width_meters (self),
                       xrd_window_get_current_height_meters (self));
 
-  graphene_vec2_divide (&position_2d_vec, &size_meters, &position_2d_vec);
+  graphene_vec2_divide (&intersection_2d_vec, &size_meters,
+                        &intersection_2d_vec);
 
-  /* move origin from cetner to corner of overlay */
+  /* move origin from center to corner of overlay */
   graphene_vec2_t center_normalized;
   graphene_vec2_init (&center_normalized, 0.5f, 0.5f);
 
-  graphene_vec2_add (&position_2d_vec, &center_normalized, &position_2d_vec);
+  graphene_vec2_add (&intersection_2d_vec, &center_normalized,
+                     &intersection_2d_vec);
 
   /* invert y axis */
-  graphene_vec2_init (&position_2d_vec,
-                      graphene_vec2_get_x (&position_2d_vec),
-                      1.0f - graphene_vec2_get_y (&position_2d_vec));
+  graphene_vec2_init (&intersection_2d_vec,
+                      graphene_vec2_get_x (&intersection_2d_vec),
+                      1.0f - graphene_vec2_get_y (&intersection_2d_vec));
 
   /* scale to pixel coordinates */
   graphene_vec2_t size_pixels_vec;
-  graphene_vec2_init (&size_pixels_vec,
-                      size_pixels->width,
-                      size_pixels->height);
+  graphene_vec2_init (&size_pixels_vec, size->width, size->height);
 
-  graphene_vec2_multiply (&position_2d_vec, &size_pixels_vec, &position_2d_vec);
+  graphene_vec2_multiply (&intersection_2d_vec, &size_pixels_vec,
+                          &intersection_2d_vec);
 
   /* return point_t */
-  graphene_point_init_from_vec2 (window_coords, &position_2d_vec);
-
-  return TRUE;
+  graphene_point_init_from_vec2 (intersection_pixels, &intersection_2d_vec);
 }
 
 /**

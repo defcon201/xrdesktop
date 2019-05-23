@@ -309,22 +309,21 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
                 "texture-height", &pixel_size.height,
                 NULL);
 
-  graphene_point_t position;
-  if (!xrd_window_intersection_to_pixels (window, intersection,
-                                          &pixel_size, &position))
-    return;
+  graphene_point_t intersection_pixels;
+  xrd_window_get_intersection_2d_pixels (window, intersection,
+                                        &pixel_size, &intersection_pixels);
   
   XrdMoveCursorEvent *event = g_malloc (sizeof (XrdMoveCursorEvent));
   event->window = window;
-  event->position = &position;
+  event->position = &intersection_pixels;
   event->ignore = FALSE;
 
-  graphene_point_init_from_point (&self->hover_position, &position);
+  graphene_point_init_from_point (&self->hover_position, &intersection_pixels);
   self->hover_window = window;
 
   if (xrd_shake_compensator_is_recording (self->compensator))
     {
-      xrd_shake_compensator_record (self->compensator, &position);
+      xrd_shake_compensator_record (self->compensator, &intersection_pixels);
 
       gboolean is_drag = xrd_shake_compensator_is_drag (self->compensator,
                                                         self->hover_window,
