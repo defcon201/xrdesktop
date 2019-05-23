@@ -393,7 +393,6 @@ _init_device_models (XrdSceneClient *self)
 void
 _test_intersection (XrdSceneClient *self)
 {
-
   GList *controllers =
     g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
   for (GList *l = controllers; l; l = l->next)
@@ -417,10 +416,10 @@ _test_intersection (XrdSceneClient *self)
 
           graphene_vec3_t intersection;
           float distance;
-          bool intersects = xrd_scene_pointer_get_intersection (pointer,
-                                                                window,
-                                                                &distance,
-                                                                &intersection);
+          bool intersects = xrd_pointer_get_intersection (XRD_POINTER (pointer),
+                                                          XRD_WINDOW (window),
+                                                         &distance,
+                                                         &intersection);
           if (intersects && distance < lowest_distance)
             {
               selected_window = window;
@@ -435,10 +434,10 @@ _test_intersection (XrdSceneClient *self)
 
           graphene_vec3_t intersection;
           float distance;
-          bool intersects = xrd_scene_pointer_get_intersection (pointer,
-                                                                window,
-                                                                &distance,
-                                                                &intersection);
+          bool intersects = xrd_pointer_get_intersection (XRD_POINTER (pointer),
+                                                          XRD_WINDOW (window),
+                                                         &distance,
+                                                         &intersection);
           if (intersects && distance < lowest_distance)
             {
               selected_window = window;

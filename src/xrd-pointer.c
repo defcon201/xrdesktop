@@ -114,3 +114,13 @@ xrd_pointer_get_ray (XrdPointer     *self,
 
   graphene_ray_init (res, &origin, &direction);
 }
+
+gboolean
+xrd_pointer_get_intersection (XrdPointer      *self,
+                              XrdWindow       *window,
+                              float           *distance,
+                              graphene_vec3_t *res)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  return iface->get_intersection (self, window, distance, res);
+}

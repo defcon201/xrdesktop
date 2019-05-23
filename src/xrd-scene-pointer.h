@@ -43,12 +43,6 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
                           VkCommandBuffer    cmd_buffer,
                           graphene_matrix_t *vp);
 
-gboolean
-xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
-                                    XrdSceneWindow  *window,
-                                    float           *distance,
-                                    graphene_vec3_t *res);
-
 XrdSceneSelection*
 xrd_scene_pointer_get_selection (XrdScenePointer *self);
 

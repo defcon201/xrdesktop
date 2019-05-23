@@ -124,17 +124,18 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
 }
 
-gboolean
-xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
-                                    XrdSceneWindow  *window,
-                                    float           *distance,
-                                    graphene_vec3_t *res)
+static gboolean
+_get_intersection (XrdPointer      *pointer,
+                   XrdWindow       *window,
+                   float           *distance,
+                   graphene_vec3_t *res)
 {
   graphene_ray_t ray;
-  xrd_pointer_get_ray (XRD_POINTER (pointer), &ray);
+  xrd_pointer_get_ray (pointer, &ray);
 
+  XrdSceneWindow *scene_window = XRD_SCENE_WINDOW (window);
   graphene_plane_t plane;
-  xrd_scene_window_get_plane (window, &plane);
+  xrd_scene_window_get_plane (scene_window, &plane);
 
   *distance = graphene_ray_get_distance_to_plane (&ray, &plane);
   if (*distance == INFINITY)
@@ -148,7 +149,7 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
   graphene_vec3_add (&origin, res, res);
 
   graphene_matrix_t inverse;
-  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (window);
+  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (scene_window);
   graphene_matrix_inverse (&window_obj->model_matrix, &inverse);
 
   graphene_vec4_t intersection_vec4;
@@ -163,8 +164,8 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
   graphene_vec4_to_float (&intersection_origin, f);
 
   /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
-  if (f[0] >= -window->aspect_ratio / 2.0f
-      && f[0] <= window->aspect_ratio / 2.0f
+  if (f[0] >= -scene_window->aspect_ratio / 2.0f
+      && f[0] <= scene_window->aspect_ratio / 2.0f
       && f[1] >= -0.5f && f[1] <= 0.5f)
     return TRUE;
 
@@ -230,6 +231,7 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
   iface->get_data = _get_data;
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
+  iface->get_intersection = _get_intersection;
 }
 
 XrdSceneSelection*

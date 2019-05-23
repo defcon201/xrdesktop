@@ -15,6 +15,8 @@
 #include <glib-object.h>
 #include <graphene.h>
 
+#include "xrd-window.h"
+
 G_BEGIN_DECLS
 
 #define XRD_TYPE_POINTER xrd_pointer_get_type()
@@ -48,6 +50,12 @@ struct _XrdPointerInterface
   void
   (*get_transformation) (XrdPointer        *self,
                          graphene_matrix_t *matrix);
+
+  gboolean
+  (*get_intersection) (XrdPointer      *self,
+                       XrdWindow       *window,
+                       float           *distance,
+                       graphene_vec3_t *res);
 };
 
 void
@@ -81,6 +89,12 @@ xrd_pointer_get_transformation (XrdPointer        *self,
 void
 xrd_pointer_get_ray (XrdPointer     *self,
                      graphene_ray_t *res);
+
+gboolean
+xrd_pointer_get_intersection (XrdPointer      *self,
+                              XrdWindow       *window,
+                              float           *distance,
+                              graphene_vec3_t *res);
 
 G_END_DECLS
 
