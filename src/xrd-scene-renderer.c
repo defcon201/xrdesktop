@@ -261,12 +261,13 @@ _init_pipeline_cache (XrdSceneRenderer *self)
 }
 
 typedef struct __attribute__((__packed__)) PipelineConfig {
-  VkPrimitiveTopology                          topology;
-  uint32_t                                     stride;
-  const VkVertexInputAttributeDescription     *attribs;
-  uint32_t                                     attrib_count;
-  const VkPipelineDepthStencilStateCreateInfo *depth_stencil_state;
-  const VkPipelineColorBlendAttachmentState   *blend_attachments;
+  VkPrimitiveTopology                           topology;
+  uint32_t                                      stride;
+  const VkVertexInputAttributeDescription      *attribs;
+  uint32_t                                      attrib_count;
+  const VkPipelineDepthStencilStateCreateInfo  *depth_stencil_state;
+  const VkPipelineColorBlendAttachmentState    *blend_attachments;
+  const VkPipelineRasterizationStateCreateInfo *rasterization_state;
 } PipelineConfig;
 
 bool
@@ -286,15 +287,18 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
           .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
           .depthTestEnable = VK_TRUE,
           .depthWriteEnable = VK_TRUE,
-          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
-          .depthBoundsTestEnable = VK_FALSE,
-          .stencilTestEnable = VK_FALSE,
-          .minDepthBounds = 0.0f,
-          .maxDepthBounds = 0.0f
+          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
       },
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
         .blendEnable = VK_FALSE,
         .colorWriteMask = 0xf
+      },
+      .rasterization_state = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+          .polygonMode = VK_POLYGON_MODE_FILL,
+          .cullMode = VK_CULL_MODE_BACK_BIT,
+          .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+          .lineWidth = 1.0f
       }
     },
     // PIPELINE_TIP
@@ -322,6 +326,12 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
         .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
                           VK_COLOR_COMPONENT_G_BIT |
                           VK_COLOR_COMPONENT_B_BIT,
+      },
+      .rasterization_state = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+          .polygonMode = VK_POLYGON_MODE_FILL,
+          .cullMode = VK_CULL_MODE_BACK_BIT,
+          .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE
       }
     },
     // PIPELINE_POINTER
@@ -341,6 +351,12 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
         .blendEnable = VK_FALSE,
         .colorWriteMask = 0xf
+      },
+      .rasterization_state = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+          .polygonMode = VK_POLYGON_MODE_LINE,
+          .cullMode = VK_CULL_MODE_BACK_BIT,
+          .lineWidth = 5.0f
       }
     },
     // PIPELINE_DEVICE_MODELS
@@ -361,6 +377,12 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
         .blendEnable = VK_FALSE,
         .colorWriteMask = 0xf
+      },
+      .rasterization_state = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+          .polygonMode = VK_POLYGON_MODE_FILL,
+          .cullMode = VK_CULL_MODE_BACK_BIT,
+          .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE
       }
     }
   };
@@ -391,13 +413,7 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
           .viewportCount = 1,
           .scissorCount = 1
         },
-        .pRasterizationState = &(VkPipelineRasterizationStateCreateInfo) {
-          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-          .polygonMode = VK_POLYGON_MODE_FILL,
-          .cullMode = VK_CULL_MODE_BACK_BIT,
-          .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-          .lineWidth = 1.0f
-        },
+        .pRasterizationState = config[i].rasterization_state,
         .pMultisampleState = &(VkPipelineMultisampleStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
           .rasterizationSamples = self->msaa_sample_count,
