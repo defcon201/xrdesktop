@@ -8,6 +8,8 @@
 #include "xrd-window.h"
 #include <gdk/gdk.h>
 
+#include "graphene-ext.h"
+
 G_DEFINE_INTERFACE (XrdWindow, xrd_window, G_TYPE_OBJECT)
 
 enum {
@@ -473,4 +475,36 @@ xrd_window_get_data (XrdWindow *self)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   return iface->get_data (self);
+}
+
+void
+xrd_window_update_child (XrdWindow *self)
+{
+  XrdWindowData *data = xrd_window_get_data (self);
+  XrdWindow *child = data->child_window;
+
+  g_object_set (G_OBJECT(child), "scale", data->scale, NULL);
+
+  float initial_ppm = xrd_window_get_initial_ppm (XRD_WINDOW (self));
+
+  graphene_point_t scaled_offset;
+  graphene_point_scale (&data->child_offset_center,
+                        data->scale / initial_ppm,
+                        &scaled_offset);
+
+  graphene_point3d_t scaled_offset3d = {
+    .x = scaled_offset.x,
+    .y = scaled_offset.y,
+    .z = 0.01
+  };
+  graphene_matrix_t child_transform;
+  graphene_matrix_init_translate (&child_transform, &scaled_offset3d);
+
+  graphene_matrix_t parent_transform;
+  xrd_window_get_transformation (self, &parent_transform);
+
+  graphene_matrix_multiply (&child_transform, &parent_transform,
+                            &child_transform);
+
+  xrd_window_set_transformation (XRD_WINDOW (child), &child_transform);
 }

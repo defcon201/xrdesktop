@@ -240,6 +240,9 @@ xrd_window_get_current_height_meters (XrdWindow *self);
 XrdWindowData*
 xrd_window_get_data (XrdWindow *self);
 
+void
+xrd_window_update_child (XrdWindow *self);
+
 G_END_DECLS
 
 #endif /* XRD_WINDOW_H_ */

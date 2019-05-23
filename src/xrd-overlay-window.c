@@ -42,9 +42,6 @@ G_DEFINE_TYPE_WITH_CODE (XrdOverlayWindow, xrd_overlay_window, OPENVR_TYPE_OVERL
                                                 xrd_overlay_window_window_interface_init))
 
 static void
-_scale_move_child (XrdOverlayWindow *self);
-
-static void
 xrd_overlay_window_set_property (GObject      *object,
                                  guint         property_id,
                                  const GValue *value,
@@ -134,7 +131,7 @@ _update_dimensions (XrdOverlayWindow *self)
   openvr_overlay_set_mouse_scale (OPENVR_OVERLAY (self), w, h);
 
   if (self->window_data.child_window)
-    _scale_move_child (self);
+    xrd_window_update_child (XRD_WINDOW (self));
 }
 
 static void
@@ -174,38 +171,6 @@ xrd_overlay_window_class_init (XrdOverlayWindowClass *klass)
   g_object_class_override_property (object_class, PROP_HEIGHT_METERS, "initial-height-meters");
 }
 
-static void
-_scale_move_child (XrdOverlayWindow *self)
-{
-  XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (self->window_data.child_window);
-
-  g_object_set (G_OBJECT(child), "scale", self->window_data.scale, NULL);
-
-  float initial_ppm = xrd_window_get_initial_ppm (XRD_WINDOW (self));
-
-  graphene_point_t scaled_offset;
-  graphene_point_scale (&self->window_data.child_offset_center,
-                        self->window_data.scale / initial_ppm,
-                        &scaled_offset);
-
-  graphene_point3d_t scaled_offset3d = {
-    .x = scaled_offset.x,
-    .y = scaled_offset.y,
-    .z = 0.01
-  };
-  graphene_matrix_t child_transform;
-  graphene_matrix_init_translate (&child_transform, &scaled_offset3d);
-
-  graphene_matrix_t parent_transform;
-  xrd_window_get_transformation (XRD_WINDOW (self), &parent_transform);
-
-  graphene_matrix_multiply (&child_transform, &parent_transform,
-                            &child_transform);
-
-  xrd_window_set_transformation (XRD_WINDOW (child), &child_transform);
-
-}
-
 static gboolean
 _set_transformation (XrdWindow         *window,
                      graphene_matrix_t *mat)
@@ -214,7 +179,7 @@ _set_transformation (XrdWindow         *window,
   gboolean res =
     openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), mat);
   if (self->window_data.child_window)
-    _scale_move_child (self);
+    xrd_window_update_child (window);
   return res;
 }
 
@@ -276,7 +241,7 @@ _add_child (XrdWindow        *window,
 
   if (child)
     {
-      _scale_move_child (self);
+      xrd_window_update_child (window);
       XRD_OVERLAY_WINDOW (child)->window_data.parent_window = XRD_WINDOW (self);
       /* TODO: sort order hierarchy instead od ad hoc values*/
       openvr_overlay_set_sort_order (OPENVR_OVERLAY (child), 1);
