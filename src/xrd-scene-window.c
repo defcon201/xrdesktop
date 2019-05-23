@@ -205,65 +205,6 @@ xrd_scene_window_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
-/* TODO: Reenable mip map code */
-#if 0
-bool
-xrd_scene_window_init_texture (XrdSceneWindow *self,
-                               GdkPixbuf      *pixbuf)
-{
-  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
-
-  uint32_t mip_levels;
-
-  self->aspect_ratio = (float) gdk_pixbuf_get_width (pixbuf) /
-                       (float) gdk_pixbuf_get_height (pixbuf);
-
-  FencedCommandBuffer cmd_buffer;
-  if (!gulkan_client_begin_res_cmd_buffer (GULKAN_CLIENT (renderer),
-                                           &cmd_buffer))
-    {
-      g_printerr ("Could not begin command buffer.\n");
-      return false;
-    }
-
-  self->texture = gulkan_texture_new_from_pixbuf_mipmapped (
-      GULKAN_CLIENT (renderer)->device, cmd_buffer.cmd_buffer, pixbuf,
-      &mip_levels, VK_FORMAT_R8G8B8A8_UNORM);
-
-  gulkan_texture_transfer_layout_mips (self->texture,
-                                       GULKAN_CLIENT (renderer)->device,
-                                       cmd_buffer.cmd_buffer,
-                                       mip_levels,
-                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-  VkSamplerCreateInfo sampler_info = {
-    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-    .magFilter = VK_FILTER_LINEAR,
-    .minFilter = VK_FILTER_LINEAR,
-    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-    .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-    .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-    .anisotropyEnable = VK_TRUE,
-    .maxAnisotropy = 16.0f,
-    .minLod = 0.0f,
-    .maxLod = (float) mip_levels
-  };
-
-  vkCreateSampler (GULKAN_CLIENT (renderer)->device->device,
-                   &sampler_info, NULL, &self->sampler);
-
-  if (!gulkan_client_submit_res_cmd_buffer (GULKAN_CLIENT (renderer),
-                                            &cmd_buffer))
-    {
-      g_printerr ("Could not submit command buffer.\n");
-      return false;
-    }
-
-  return true;
-}
-#endif
-
 void _append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
 {
   graphene_matrix_t mat_scale;
@@ -371,8 +312,6 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
 {
   VkDevice device = gulkan_client_get_device_handle (client);
 
-  uint32_t mip_levels = 1;
-
   float aspect_ratio = (float) gulkan_texture_get_width (texture) /
     (float) gulkan_texture_get_height (texture);
 
@@ -396,7 +335,7 @@ xrd_scene_window_submit_texture (XrdSceneWindow *self,
     .anisotropyEnable = VK_TRUE,
     .maxAnisotropy = 16.0f,
     .minLod = 0.0f,
-    .maxLod = (float) mip_levels
+    .maxLod = (float) gulkan_texture_get_mip_levels (texture)
   };
 
   if (self->sampler != VK_NULL_HANDLE)
