@@ -560,10 +560,18 @@ _action_hand_pose_cb (OpenVRAction            *action,
 
   xrd_pointer_move (xrd_controller_get_pointer (controller), &event->pose);
 
+  XrdWindow *hovered_window =
+    xrd_controller_get_hover_state (controller)->window;
+  GSList *buttons = xrd_window_manager_get_buttons (priv->manager);
+
+  gboolean hovering_window_for_input =
+    hovered_window != NULL &&
+    g_slist_find (buttons, hovered_window) == NULL;
+
   /* show cursor while synth controller hovers window, but doesn't grab */
   if (xrd_controller_get_handle (controller) ==
           xrd_input_synth_synthing_controller (priv->input_synth) &&
-      xrd_controller_get_hover_state (controller)->window != NULL &&
+      hovering_window_for_input &&
       xrd_controller_get_grab_state (controller)->window == NULL)
     xrd_desktop_cursor_show (priv->cursor);
 
