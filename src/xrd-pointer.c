@@ -44,3 +44,19 @@ xrd_pointer_reset_length (XrdPointer *self)
   XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
   return iface->reset_length (self);
 }
+
+XrdPointerData*
+xrd_pointer_get_data (XrdPointer *self)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  return iface->get_data (self);
+}
+
+void
+xrd_pointer_init (XrdPointer *self)
+{
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  data->start_offset = -0.02f;
+  data->default_length = 5.0f;
+  data->length = data->default_length;
+}

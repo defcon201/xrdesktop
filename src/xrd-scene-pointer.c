@@ -19,9 +19,8 @@ struct _XrdScenePointer
 {
   XrdSceneObject parent;
   GulkanVertexBuffer *vertex_buffer;
-  float start_offset;
-  float length;
-  float default_length;
+
+  XrdPointerData data;
 
   XrdSceneSelection *selection;
 };
@@ -46,9 +45,7 @@ xrd_scene_pointer_init (XrdScenePointer *self)
 {
   self->vertex_buffer = gulkan_vertex_buffer_new ();
 
-  self->start_offset = -0.02f;
-  self->default_length = 40.0f;
-  self->length = self->default_length;
+  xrd_pointer_init (XRD_POINTER (self));
 
   self->selection = xrd_scene_selection_new ();
 }
@@ -77,13 +74,13 @@ xrd_scene_pointer_initialize (XrdScenePointer       *self,
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
+  graphene_vec4_init (&start, 0, 0, self->data.start_offset, 1);
 
   graphene_matrix_t identity;
   graphene_matrix_init_identity (&identity);
 
   gulkan_geometry_append_ray (self->vertex_buffer,
-                              &start, self->length, &identity);
+                              &start, self->data.length, &identity);
   if (!gulkan_vertex_buffer_alloc_empty (self->vertex_buffer, device,
                                          k_unMaxTrackedDeviceCount))
     return FALSE;
@@ -136,11 +133,11 @@ xrd_scene_pointer_get_ray (XrdScenePointer *self,
   graphene_matrix_t *mat = &obj->model_matrix;
 
   graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
+  graphene_vec4_init (&start, 0, 0, self->data.start_offset, 1);
   graphene_matrix_transform_vec4 (mat, &start, &start);
 
   graphene_vec4_t end;
-  graphene_vec4_init (&end, 0, 0, -self->length, 1);
+  graphene_vec4_init (&end, 0, 0, -self->data.length, 1);
   graphene_matrix_transform_vec4 (mat, &end, &end);
 
   graphene_vec4_t direction_vec4;
@@ -219,10 +216,10 @@ _set_length (XrdPointer *pointer,
              float       length)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
-  if (length == self->length)
+  if (length == self->data.length)
     return;
 
-  self->length = length;
+  self->data.length = length;
 
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
@@ -230,7 +227,7 @@ _set_length (XrdPointer *pointer,
   graphene_matrix_init_identity (&identity);
 
   graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, self->start_offset, 1);
+  graphene_vec4_init (&start, 0, 0, self->data.start_offset, 1);
 
   gulkan_geometry_append_ray (self->vertex_buffer, &start, length, &identity);
   gulkan_vertex_buffer_map_array (self->vertex_buffer);
@@ -239,21 +236,28 @@ _set_length (XrdPointer *pointer,
 void
 xrd_scene_pointer_reset_length (XrdScenePointer *self)
 {
-  _set_length (XRD_POINTER (self), self->default_length);
+  _set_length (XRD_POINTER (self), self->data.default_length);
 }
 
 static void
 _reset_length (XrdPointer *pointer)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
-  self->length = self->default_length;
+  self->data.length = self->data.default_length;
 }
 
 static float
 _get_default_length (XrdPointer *pointer)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
-  return self->default_length;
+  return self->data.default_length;
+}
+
+static XrdPointerData*
+_get_data (XrdPointer *pointer)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  return &self->data;
 }
 
 static void
@@ -263,6 +267,7 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_length = _set_length;
   iface->get_default_length = _get_default_length;
   iface->reset_length = _reset_length;
+  iface->get_data = _get_data;
 }
 
 XrdSceneSelection*

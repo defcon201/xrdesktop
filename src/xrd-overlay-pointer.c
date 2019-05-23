@@ -12,8 +12,7 @@ struct _XrdOverlayPointer
 {
   XrdOverlayModel parent;
 
-  float default_length;
-  float length;
+  XrdPointerData data;
 };
 
 static void
@@ -37,8 +36,7 @@ xrd_overlay_pointer_class_init (XrdOverlayPointerClass *klass)
 static void
 xrd_overlay_pointer_init (XrdOverlayPointer *self)
 {
-  self->default_length = 5.0;
-  self->length = 5.0;
+  xrd_pointer_init (XRD_POINTER (self));
 }
 
 XrdOverlayPointer *
@@ -90,7 +88,7 @@ _move (XrdPointer        *pointer,
 {
   XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
   graphene_matrix_t scale_matrix;
-  graphene_matrix_init_scale (&scale_matrix, 1.0f, 1.0f, self->length);
+  graphene_matrix_init_scale (&scale_matrix, 1.0f, 1.0f, self->data.length);
   graphene_matrix_t scaled;
   graphene_matrix_multiply (&scale_matrix, transform, &scaled);
   openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), &scaled);
@@ -101,21 +99,28 @@ _set_length (XrdPointer *pointer,
              float       length)
 {
   XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-  self->length = length;
+  self->data.length = length;
 }
 
 static void
 _reset_length (XrdPointer *pointer)
 {
   XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-  self->length = self->default_length;
+  self->data.length = self->data.default_length;
 }
 
 static float
 _get_default_length (XrdPointer *pointer)
 {
   XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-  return self->default_length;
+  return self->data.default_length;
+}
+
+static XrdPointerData*
+_get_data (XrdPointer *pointer)
+{
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
+  return &self->data;
 }
 
 static void
@@ -125,4 +130,5 @@ xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_length = _set_length;
   iface->get_default_length = _get_default_length;
   iface->reset_length = _reset_length;
+  iface->get_data = _get_data;
 }

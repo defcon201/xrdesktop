@@ -20,6 +20,12 @@ G_BEGIN_DECLS
 #define XRD_TYPE_POINTER xrd_pointer_get_type()
 G_DECLARE_INTERFACE (XrdPointer, xrd_pointer, XRD, POINTER, GObject)
 
+typedef struct _XrdPointerData {
+  float start_offset;
+  float length;
+  float default_length;
+} XrdPointerData;
+
 struct _XrdPointerInterface
 {
   GTypeInterface parent;
@@ -37,6 +43,9 @@ struct _XrdPointerInterface
 
   void
   (*reset_length) (XrdPointer *self);
+
+  XrdPointerData*
+  (*get_data) (XrdPointer *self);
 };
 
 void
@@ -52,6 +61,12 @@ xrd_pointer_get_default_length (XrdPointer *self);
 
 void
 xrd_pointer_reset_length (XrdPointer *self);
+
+XrdPointerData*
+xrd_pointer_get_data (XrdPointer *self);
+
+void
+xrd_pointer_init (XrdPointer *self);
 
 G_END_DECLS
 
