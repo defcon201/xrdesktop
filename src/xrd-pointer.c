@@ -66,4 +66,3 @@ xrd_pointer_init (XrdPointer *self)
   data->default_length = 5.0f;
   data->length = data->default_length;
 }
-

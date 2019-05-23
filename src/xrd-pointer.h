@@ -40,6 +40,14 @@ struct _XrdPointerInterface
 
   XrdPointerData*
   (*get_data) (XrdPointer *self);
+
+  void
+  (*set_transformation) (XrdPointer        *self,
+                         graphene_matrix_t *matrix);
+
+  void
+  (*get_transformation) (XrdPointer        *self,
+                         graphene_matrix_t *matrix);
 };
 
 void

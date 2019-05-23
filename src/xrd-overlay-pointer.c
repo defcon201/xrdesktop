@@ -110,9 +110,27 @@ _get_data (XrdPointer *pointer)
 }
 
 static void
+_set_transformation (XrdPointer        *pointer,
+                     graphene_matrix_t *matrix)
+{
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
+  openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), matrix);
+}
+
+static void
+_get_transformation (XrdPointer        *pointer,
+                     graphene_matrix_t *matrix)
+{
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
+  openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), matrix);
+}
+
+static void
 xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
   iface->set_length = _set_length;
   iface->get_data = _get_data;
+  iface->set_transformation = _set_transformation;
+  iface->get_transformation = _get_transformation;
 }

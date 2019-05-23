@@ -236,11 +236,31 @@ _get_data (XrdPointer *pointer)
 }
 
 static void
+_set_transformation (XrdPointer        *pointer,
+                     graphene_matrix_t *matrix)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
+}
+
+static void
+_get_transformation (XrdPointer        *pointer,
+                     graphene_matrix_t *matrix)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  graphene_matrix_t transformation =
+    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
+  graphene_matrix_init_from_matrix (matrix, &transformation);
+}
+
+static void
 xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
   iface->set_length = _set_length;
   iface->get_data = _get_data;
+  iface->set_transformation = _set_transformation;
+  iface->get_transformation = _get_transformation;
 }
 
 XrdSceneSelection*
