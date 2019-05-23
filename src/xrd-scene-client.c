@@ -192,18 +192,18 @@ _render_pointers (XrdSceneClient    *self,
   if (!context->system->IsInputAvailable ())
     return;
 
-  GHashTable *controllers = xrd_client_get_controllers (XRD_CLIENT (self));
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers =
+    g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
+
       XrdScenePointer *pointer =
         XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
       xrd_scene_pointer_render (pointer, eye, pipeline,
                                 pipeline_layout, cmd_buffer, vp);
     }
+  g_list_free (controllers);
 }
 
 static void
@@ -249,13 +249,11 @@ _render_eye_cb (uint32_t         eye,
                                pipelines[PIPELINE_POINTER],
                                pipeline_layout, cmd_buffer, &vp);
 
-  GHashTable *controllers = xrd_client_get_controllers (XRD_CLIENT (self));
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers =
+    g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
       XrdScenePointerTip *scene_tip =
         XRD_SCENE_POINTER_TIP (xrd_controller_get_pointer_tip (controller));
       xrd_scene_window_draw (XRD_SCENE_WINDOW (scene_tip), eye,
@@ -263,6 +261,7 @@ _render_eye_cb (uint32_t         eye,
                              pipeline_layout,
                              cmd_buffer, &vp);
     }
+  g_list_free (controllers);
 
   XrdDesktopCursor *cursor = xrd_client_get_desktop_cursor (XRD_CLIENT (self));
   XrdSceneDesktopCursor *scene_cursor = XRD_SCENE_DESKTOP_CURSOR (cursor);
@@ -394,13 +393,12 @@ _init_device_models (XrdSceneClient *self)
 void
 _test_intersection (XrdSceneClient *self)
 {
-  GHashTable *controllers = xrd_client_get_controllers (XRD_CLIENT (self));
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+
+  GList *controllers =
+    g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
 
       XrdScenePointer *pointer =
         XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
@@ -465,6 +463,7 @@ _test_intersection (XrdSceneClient *self)
           xrd_scene_pointer_reset_length (pointer);
         }
     }
+    g_list_free (controllers);
 }
 
 void

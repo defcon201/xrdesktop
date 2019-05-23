@@ -455,13 +455,10 @@ xrd_client_remove_window (XrdClient *self,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   xrd_window_manager_remove_window (priv->manager, window);
 
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, priv->controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers = g_hash_table_get_values (priv->controllers);
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
-
+      XrdController *controller = XRD_CONTROLLER (l->data);
       if (xrd_controller_get_hover_state (controller)->window ==
           XRD_WINDOW (window))
         {
@@ -478,6 +475,7 @@ xrd_client_remove_window (XrdClient *self,
           XRD_WINDOW (window))
         xrd_controller_get_grab_state (controller)->window = NULL;
     }
+  g_list_free(controllers);
 }
 
 OpenVRActionSet *
@@ -1451,14 +1449,11 @@ _device_deactivate_cb (OpenVRContext          *context,
   if (xrd_input_synth_synthing_controller (priv->input_synth) == handle &&
       g_hash_table_size (priv->controllers) > 0)
     {
-      GHashTableIter iter;
-      gpointer key, value;
-      g_hash_table_iter_init (&iter, priv->controllers);
-      /* just take the first one that is available */
-      g_hash_table_iter_next (&iter, &key, &value);
-      XrdController *controller = XRD_CONTROLLER (value);
+      GList *controllers = g_hash_table_get_values (priv->controllers);
+      XrdController *controller = XRD_CONTROLLER (controllers->data);
       xrd_input_synth_hand_off_to_controller (
         priv->input_synth, xrd_controller_get_handle (controller));
+      g_list_free (controllers);
     }
 
 }
@@ -1588,15 +1583,17 @@ gboolean
 xrd_client_is_hovering (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, priv->controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers = g_hash_table_get_values (priv->controllers);
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
       if (xrd_controller_get_hover_state (controller)->window != NULL)
-        return TRUE;
+        {
+          g_list_free (controllers);
+          return TRUE;
+        }
     }
+  g_list_free (controllers);
   return FALSE;
 }
 
@@ -1604,15 +1601,17 @@ gboolean
 xrd_client_is_grabbing (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, priv->controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers = g_hash_table_get_values (priv->controllers);
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
       if (xrd_controller_get_grab_state (controller)->window != NULL)
-        return TRUE;
+        {
+          g_list_free (controllers);
+          return TRUE;
+        }
     }
+  g_list_free (controllers);
   return FALSE;
 }
 
@@ -1621,15 +1620,17 @@ xrd_client_is_grabbed (XrdClient *self,
                        XrdWindow *window)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, priv->controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers = g_hash_table_get_values (priv->controllers);
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
       if (xrd_controller_get_grab_state (controller)->window == window)
-        return TRUE;
+        {
+          g_list_free (controllers);
+          return TRUE;
+        }
     }
+  g_list_free (controllers);
   return FALSE;
 }
 
@@ -1638,15 +1639,17 @@ xrd_client_is_hovered (XrdClient *self,
                        XrdWindow *window)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init (&iter, priv->controllers);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  GList *controllers = g_hash_table_get_values (priv->controllers);
+  for (GList *l = controllers; l; l = l->next)
     {
-      XrdController *controller = XRD_CONTROLLER (value);
+      XrdController *controller = XRD_CONTROLLER (l->data);
       if (xrd_controller_get_hover_state (controller)->window == window)
-        return TRUE;
+        {
+          g_list_free (controllers);
+          return TRUE;
+        }
     }
+  g_list_free (controllers);
   return FALSE;
 }
 
