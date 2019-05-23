@@ -47,6 +47,30 @@ graphene_matrix_get_translation_point3d (const graphene_matrix_t *m,
 }
 
 void
+graphene_matrix_set_translation_vec3 (graphene_matrix_t     *m,
+                                      const graphene_vec3_t *t)
+{
+  float f[16];
+  graphene_matrix_to_float (m, f);
+  f[12] = graphene_vec3_get_x (t);
+  f[13] = graphene_vec3_get_y (t);
+  f[14] = graphene_vec3_get_z (t);
+  graphene_matrix_init_from_float (m, f);
+}
+
+void
+graphene_matrix_set_translation_point3d (graphene_matrix_t        *m,
+                                         const graphene_point3d_t *t)
+{
+  float f[16];
+  graphene_matrix_to_float (m, f);
+  f[12] = t->x;
+  f[13] = t->y;
+  f[14] = t->z;
+  graphene_matrix_init_from_float (m, f);
+}
+
+void
 graphene_matrix_get_scale (const graphene_matrix_t *m,
                            graphene_vec3_t         *res)
 {
