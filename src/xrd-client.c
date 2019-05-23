@@ -659,6 +659,45 @@ _action_menu_cb (OpenVRAction        *action,
   g_free (event);
 }
 
+typedef struct OrientationTransition
+{
+  GrabState *grab_state;
+  graphene_quaternion_t from;
+  graphene_quaternion_t from_neg;
+  graphene_quaternion_t to;
+  float interpolate;
+} OrientationTransition;
+
+static gboolean
+_interpolate_orientation_cb (gpointer _transition)
+{
+  OrientationTransition *transition = (OrientationTransition *) _transition;
+
+  GrabState *grab_state = transition->grab_state;
+
+  graphene_quaternion_slerp (&transition->from,
+                             &transition->to,
+                             transition->interpolate,
+                             &grab_state->window_rotation);
+
+  graphene_quaternion_slerp (&transition->from_neg,
+                             &transition->to,
+                             transition->interpolate,
+                             &grab_state->window_transformed_rotation_neg);
+
+  transition->interpolate += 0.07f;
+
+  if (transition->interpolate > 1)
+    {
+      graphene_quaternion_init_identity (&grab_state->window_transformed_rotation_neg);
+      graphene_quaternion_init_identity (&grab_state->window_rotation);
+      g_free (transition);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
 static void
 _action_reset_orientation_cb (OpenVRAction       *action,
                               OpenVRDigitalEvent *event,
@@ -678,8 +717,19 @@ _action_reset_orientation_cb (OpenVRAction       *action,
   if (grab_state->window == NULL)
     return;
 
-  graphene_quaternion_init_identity (&grab_state->window_transformed_rotation_neg);
-  graphene_quaternion_init_identity (&grab_state->window_rotation);
+  OrientationTransition *transition = g_malloc (sizeof (OrientationTransition));
+
+  /* TODO: Check if animation is already in progress */
+
+  transition->grab_state = grab_state;
+
+  graphene_quaternion_init_identity (&transition->to);
+  graphene_quaternion_init_from_quaternion (&transition->from,
+                                            &grab_state->window_rotation);
+  graphene_quaternion_init_from_quaternion (&transition->from_neg,
+                                            &grab_state->window_transformed_rotation_neg);
+
+  g_timeout_add (10, _interpolate_orientation_cb, transition);
 
   g_free (event);
 }
