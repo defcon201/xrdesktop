@@ -48,21 +48,14 @@ _append_lines_quad (GulkanVertexBuffer *self,
                     float               aspect_ratio,
                     graphene_vec3_t    *color)
 {
-  float padding = 0.05f;
-
-  float scale_x = aspect_ratio + padding;
-  float scale_y = 1.0f + padding;
-
-  float offset[2] = {
-    -padding / 2.0f,
-    -padding / 2.0f
-  };
+  float scale_x = aspect_ratio;
+  float scale_y = 1.0f;
 
   graphene_vec4_t a, b, c, d;
-  graphene_vec4_init (&a,       0 + offset[0],       0 + offset[1], 0, 1);
-  graphene_vec4_init (&b, scale_x + offset[0],       0 + offset[1], 0, 1);
-  graphene_vec4_init (&c, scale_x + offset[0], scale_y + offset[1], 0, 1);
-  graphene_vec4_init (&d,       0 + offset[0], scale_y + offset[1], 0, 1);
+  graphene_vec4_init (&a, -scale_x/2.0f, -scale_y / 2, 0, 1);
+  graphene_vec4_init (&b,  scale_x/2.0f, -scale_y / 2, 0, 1);
+  graphene_vec4_init (&c,  scale_x/2.0f,  scale_y / 2, 0, 1);
+  graphene_vec4_init (&d, -scale_x/2.0f,  scale_y / 2, 0, 1);
 
   graphene_vec4_t points[8] = {
     a, b, b, c, c, d, d, a

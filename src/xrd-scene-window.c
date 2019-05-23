@@ -224,7 +224,10 @@ void _append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
   graphene_matrix_t mat_scale;
   graphene_matrix_init_scale (&mat_scale, aspect_ratio, 1.0f, 1.0f);
 
-  gulkan_geometry_append_plane (vbo, &mat_scale);
+  graphene_point_t from = { .x = -0.5, .y = -0.5 };
+  graphene_point_t to = { .x = 0.5, .y = 0.5 };
+
+  gulkan_geometry_append_plane (vbo, &from, &to, &mat_scale);
 }
 
 gboolean
@@ -446,7 +449,8 @@ _intersects (XrdWindow          *window,
   graphene_point3d_init_from_vec3 (intersection_point, &intersection_vec);
 
   /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
-  if (f[0] >= 0 && f[0] <= self->aspect_ratio && f[1] >= 0 && f[1] <= 1.0f)
+  if (f[0] >= -self->aspect_ratio / 2.0f && f[0] <= self->aspect_ratio / 2.0f
+      && f[1] >= -0.5f && f[1] <= 0.5f)
     return TRUE;
 
   return FALSE;
