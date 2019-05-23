@@ -161,7 +161,6 @@ xrd_window_intersects (XrdWindow   *self,
 void
 xrd_window_get_intersection_2d_pixels (XrdWindow          *self,
                                        graphene_point3d_t *intersection_3d,
-                                       XrdPixelSize       *size,
                                        graphene_point_t   *intersection_pixels);
 
 void

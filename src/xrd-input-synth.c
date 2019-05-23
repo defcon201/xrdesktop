@@ -303,15 +303,9 @@ xrd_input_synth_move_cursor (XrdInputSynth    *self,
                              graphene_matrix_t *controller_pose,
                              graphene_point3d_t *intersection)
 {
-  XrdPixelSize pixel_size;
-  g_object_get (window,
-                "texture-width", &pixel_size.width,
-                "texture-height", &pixel_size.height,
-                NULL);
-
   graphene_point_t intersection_pixels;
   xrd_window_get_intersection_2d_pixels (window, intersection,
-                                        &pixel_size, &intersection_pixels);
+                                        &intersection_pixels);
   
   XrdMoveCursorEvent *event = g_malloc (sizeof (XrdMoveCursorEvent));
   event->window = window;

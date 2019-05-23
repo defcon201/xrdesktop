@@ -338,14 +338,12 @@ xrd_window_intersects (XrdWindow          *self,
  * xrd_window_get_intersection_2d_pixels:
  * @self: The #XrdWindow
  * @intersection_point: A #graphene_point3d_t intersection point in meters.
- * @size: Size of the window in pixels.
  * @intersection_pixels: Intersection in window coordinates with the origin at top/left in pixels.
  */
 
 void
 xrd_window_get_intersection_2d_pixels (XrdWindow          *self,
                                        graphene_point3d_t *intersection_3d,
-                                       XrdPixelSize       *size,
                                        graphene_point_t   *intersection_pixels)
 {
   /* transform intersection point to origin */
@@ -380,8 +378,14 @@ xrd_window_get_intersection_2d_pixels (XrdWindow          *self,
                       1.0f - graphene_vec2_get_y (&intersection_2d_vec));
 
   /* scale to pixel coordinates */
+  XrdPixelSize size_pixels;
+  g_object_get (self,
+                "texture-width", &size_pixels.width,
+                "texture-height", &size_pixels.height,
+                NULL);
+
   graphene_vec2_t size_pixels_vec;
-  graphene_vec2_init (&size_pixels_vec, size->width, size->height);
+  graphene_vec2_init (&size_pixels_vec, size_pixels.width, size_pixels.height);
 
   graphene_vec2_multiply (&intersection_2d_vec, &size_pixels_vec,
                           &intersection_2d_vec);
