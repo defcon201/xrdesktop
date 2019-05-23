@@ -1257,6 +1257,9 @@ xrd_client_add_button_callbacks (XrdClient *self,
   g_signal_connect (button, "hover-event",
                     (GCallback) _button_hover_cb, self);
 
+  g_signal_connect (button, "hover-start-event",
+                    (GCallback) _window_hover_start_cb, self);
+
   g_signal_connect (button, "hover-end-event",
                     (GCallback) _button_hover_end_cb, self);
 }
