@@ -234,18 +234,10 @@ _add_child (XrdWindow        *window,
             XrdWindow        *child,
             graphene_point_t *offset_center)
 {
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  self->window_data.child_window = XRD_WINDOW (child);
-  graphene_point_init_from_point (&self->window_data.child_offset_center,
-                                  offset_center);
-
-  if (child)
-    {
-      xrd_window_update_child (window);
-      XRD_OVERLAY_WINDOW (child)->window_data.parent_window = XRD_WINDOW (self);
-      /* TODO: sort order hierarchy instead od ad hoc values*/
-      openvr_overlay_set_sort_order (OPENVR_OVERLAY (child), 1);
-    }
+  (void) window;
+  (void) offset_center;
+  /* TODO: sort order hierarchy instead od ad hoc values*/
+  openvr_overlay_set_sort_order (OPENVR_OVERLAY (child), 1);
 }
 
 static void

@@ -426,10 +426,22 @@ xrd_window_emit_hover_start (XrdWindow *self,
  * x axis points right, y axis points up.
  */
 void
-xrd_window_add_child (XrdWindow *self,
-                      XrdWindow *child,
+xrd_window_add_child (XrdWindow        *self,
+                      XrdWindow        *child,
                       graphene_point_t *offset_center)
 {
+  if (!child)
+    return;
+
+  XrdWindowData *data = xrd_window_get_data (self);
+  data->child_window = child;
+  graphene_point_init_from_point (&data->child_offset_center, offset_center);
+
+  xrd_window_update_child (self);
+
+  XrdWindowData *child_data = xrd_window_get_data (child);
+  child_data->parent_window = self;
+
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   return iface->add_child (self, child, offset_center);
 }

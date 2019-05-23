@@ -528,8 +528,6 @@ _add_child (XrdWindow        *window,
   (void) window;
   (void) child;
   (void) offset_center;
-
-  g_warning ("stub: xrd_scene_window_add_child\n");
 }
 
 static void
