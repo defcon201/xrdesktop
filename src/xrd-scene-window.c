@@ -202,6 +202,20 @@ xrd_scene_window_finalize (GObject *gobject)
 
   g_object_unref (self->vertex_buffer);
 
+  XrdSceneWindow *parent =
+    XRD_SCENE_WINDOW (self->window_data.parent_window);
+
+  if (parent != NULL)
+    parent->window_data.child_window = NULL;
+
+  /* TODO: a child window should not exist without a parent window anyway,
+   * but it will be cleaned up already because the child window on the desktop
+   * will most likely close already. */
+
+  XrdSceneWindow *child = XRD_SCENE_WINDOW (self->window_data.child_window);
+  if (child)
+    child->window_data.parent_window = NULL;
+
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
@@ -294,6 +308,9 @@ _set_transformation (XrdWindow         *window,
     xrd_window_get_current_height_meters (XRD_WINDOW (self));
 
   xrd_scene_object_set_scale (XRD_SCENE_OBJECT (self), height_meters);
+
+  if (self->window_data.child_window)
+    xrd_window_update_child (window);
 
   return TRUE;
 }
