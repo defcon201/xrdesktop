@@ -15,8 +15,8 @@
          "type":"boolean"
       },
       {
-         "name":"/actions/wm/in/rotate_window",
-         "type":"vector1"
+         "name":"/actions/wm/in/reset_orientation",
+         "type":"boolean"
       },
       {
          "name":"/actions/wm/in/show_keyboard",
@@ -73,7 +73,7 @@
       {
          "language_tag":"en_US",
          "/actions/wm/in/grab_window":"Grab Window",
-         "/actions/wm/in/rotate_window":"Rotate Window",
+         "/actions/wm/in/reset_orientation":"Reset Window Orientation",
          "/actions/wm/in/show_keyboard":"Show On Screen Keyboard",
          "/actions/wm/in/push_pull":"Move window along Z axis",
          "/actions/wm/in/push_pull_scale":"Scale Window",

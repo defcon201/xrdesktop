@@ -90,11 +90,11 @@
                }
             },
             {
-               "path": "/user/hand/right/input/grip",
-               "mode": "force_sensor",
+               "path": "/user/hand/right/input/trigger/click",
+               "mode": "button",
                "inputs": {
-                  "force": {
-                     "output": "/actions/wm/in/rotate_window"
+                  "click": {
+                     "output": "/actions/wm/in/reset_orientation"
                   }
                }
             },
@@ -135,11 +135,11 @@
                }
             },
             {
-               "path": "/user/hand/left/input/grip",
-               "mode": "force_sensor",
+               "path": "/user/hand/left/input/trigger/click",
+               "mode": "button",
                "inputs": {
-                  "force": {
-                     "output": "/actions/wm/in/rotate_window"
+                  "click": {
+                     "output": "/actions/wm/in/reset_orientation"
                   }
                }
             },

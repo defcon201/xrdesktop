@@ -660,35 +660,27 @@ _action_menu_cb (OpenVRAction        *action,
 }
 
 static void
-_action_rotate_cb (OpenVRAction        *action,
-                   OpenVRAnalogEvent   *event,
-                   XrdClient           *self)
+_action_reset_orientation_cb (OpenVRAction       *action,
+                              OpenVRDigitalEvent *event,
+                              XrdClient          *self)
 {
   (void) action;
+
+  if (!(event->changed && event->state == 1))
+    return;
+
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
   if (controller == NULL)
     return;
 
   GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  if (grab_state->window == NULL)
+    return;
 
-  float force = graphene_vec3_get_x (&event->state);
+  graphene_quaternion_init_identity (&grab_state->window_transformed_rotation_neg);
+  graphene_quaternion_init_identity (&grab_state->window_rotation);
 
-  /* Start rotating when pressed with some force, not just touched. */
-  float threshold = 0.5;
-  float slerp_factor = .05 * (((force - threshold) / (1 - threshold)));
-
-  if (force > threshold && grab_state->window != NULL)
-    {
-      graphene_quaternion_t id;
-      graphene_quaternion_init_identity (&id);
-      graphene_quaternion_slerp (&grab_state->window_transformed_rotation_neg,
-                                 &id, slerp_factor,
-                                 &grab_state->window_transformed_rotation_neg);
-      graphene_quaternion_slerp (&grab_state->window_rotation,
-                                 &id, slerp_factor,
-                                 &grab_state->window_rotation);
-    }
   g_free (event);
 }
 
@@ -1534,28 +1526,22 @@ xrd_client_post_openvr_init (XrdClient *self)
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose",
-                             (GCallback) _action_hand_pose_cb,
-                             self);
-    openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
+                             (GCallback) _action_hand_pose_cb, self);
+  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window",
-                             (GCallback) _action_grab_cb,
-                             self);
+                             (GCallback) _action_grab_cb, self);
+  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
+                             "/actions/wm/in/reset_orientation",
+                             (GCallback) _action_reset_orientation_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/menu",
-                             (GCallback) _action_menu_cb,
-                             self);
-  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
-                             "/actions/wm/in/rotate_window",
-                             (GCallback) _action_rotate_cb,
-                             self);
+                             (GCallback) _action_menu_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull_scale",
-                             (GCallback) _action_push_pull_scale_cb,
-                             self);
+                             (GCallback) _action_push_pull_scale_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull",
-                             (GCallback) _action_push_pull_scale_cb,
-                             self);
+                             (GCallback) _action_push_pull_scale_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/show_keyboard",
                              (GCallback) _action_show_keyboard_cb, self);
