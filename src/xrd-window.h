@@ -42,11 +42,32 @@ typedef struct XrdControllerIndexEvent
   guint64 controller_handle;
 } XrdControllerIndexEvent;
 
-
 G_BEGIN_DECLS
 
 #define XRD_TYPE_WINDOW xrd_window_get_type()
 G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
+
+typedef struct XrdWindowData
+{
+  GObject parent;
+  gpointer native;
+
+  uint32_t texture_width;
+  uint32_t texture_height;
+  GString *title;
+
+  graphene_point_t initial_size_meters;
+
+  float scale;
+  graphene_matrix_t vr_transform;
+
+  /* A window that is pinned on top of this window and follows this window's
+   * position and scaling */
+  XrdWindow *child_window;
+  XrdWindow *parent_window;
+
+  graphene_point_t child_offset_center;
+} XrdWindowData;
 
 struct _XrdWindowInterface
 {
@@ -123,32 +144,11 @@ struct _XrdWindowInterface
   void
   (*constructed) (GObject *object);
 
+  XrdWindowData*
+  (*get_data) (XrdWindow *self);
+
   guint windows_created;
 };
-
-//GType xrd_window_get_type (void) G_GNUC_CONST;
-
-typedef struct XrdWindowData
-{
-  GObject parent;
-  gpointer native;
-
-  uint32_t texture_width;
-  uint32_t texture_height;
-  GString *title;
-
-  graphene_point_t initial_size_meters;
-
-  float scale;
-  graphene_matrix_t vr_transform;
-
-  /* A window that is pinned on top of this window and follows this window's
-   * position and scaling */
-  XrdWindow *child_window;
-  XrdWindow *parent_window;
-
-  graphene_point_t child_offset_center;
-} XrdWindowData;
 
 gboolean
 xrd_window_set_transformation (XrdWindow *self, graphene_matrix_t *mat);
@@ -236,6 +236,9 @@ xrd_window_get_current_width_meters (XrdWindow *self);
 
 float
 xrd_window_get_current_height_meters (XrdWindow *self);
+
+XrdWindowData*
+xrd_window_get_data (XrdWindow *self);
 
 G_END_DECLS
 

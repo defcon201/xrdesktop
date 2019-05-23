@@ -467,3 +467,10 @@ xrd_window_get_hidden (XrdWindow *self)
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   return iface->get_hidden (self);
 }
+
+XrdWindowData*
+xrd_window_get_data (XrdWindow *self)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  return iface->get_data (self);
+}
