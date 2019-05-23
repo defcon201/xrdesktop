@@ -164,10 +164,10 @@ xrd_window_intersection_to_pixels (XrdWindow          *self,
                                    XrdPixelSize       *size_pixels,
                                    graphene_point_t   *window_coords);
 
-gboolean
-xrd_window_intersection_to_2d_offset_meter (XrdWindow *self,
-                                            graphene_point3d_t *intersection_point,
-                                            graphene_point_t   *offset_center);
+void
+xrd_window_get_intersection_2d (XrdWindow          *self,
+                                graphene_point3d_t *intersection_3d,
+                                graphene_point_t   *intersection_2d);
 
 
 void

@@ -472,8 +472,8 @@ _test_hover (XrdWindowManager  *self,
           xrd_window_emit_hover_end (last_hovered_window, hover_end_event);
         }
 
-      xrd_window_intersection_to_2d_offset_meter (
-        closest, &hover_event->point, &hover_state->intersection_offset);
+      xrd_window_get_intersection_2d (
+        closest, &hover_event->point, &hover_state->intersection_2d);
 
       hover_event->controller_handle = xrd_controller_get_handle (controller);
       xrd_window_emit_hover (closest, hover_event);
@@ -599,8 +599,8 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
 
   graphene_point3d_init (
       &grab_state->offset_translation_point,
-      -hover_state->intersection_offset.x,
-      -hover_state->intersection_offset.y,
+      -hover_state->intersection_2d.x,
+      -hover_state->intersection_2d.y,
       0.f);
 
   /* Calculate the inverse of the overlay rotatation that is induced by the

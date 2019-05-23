@@ -150,11 +150,11 @@ xrd_desktop_cursor_update (XrdDesktopCursor   *self,
    * 3) the offset of the hotspot up/left.
    *    This places exactly the hotspot at the target point. */
 
-  graphene_point_t offset_2d;
-  xrd_window_intersection_to_2d_offset_meter (window, intersection, &offset_2d);
+  graphene_point_t intersection_2d;
+  xrd_window_get_intersection_2d (window, intersection, &intersection_2d);
 
   graphene_point3d_t offset_3d;
-  graphene_point3d_init (&offset_3d, offset_2d.x, offset_2d.y, 0);
+  graphene_point3d_init (&offset_3d, intersection_2d.x, intersection_2d.y, 0);
 
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, &offset_3d);

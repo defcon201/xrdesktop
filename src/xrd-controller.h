@@ -24,7 +24,7 @@ typedef struct HoverState
   XrdWindow *window;
   graphene_matrix_t pose;
   float             distance;
-  graphene_point_t  intersection_offset;
+  graphene_point_t  intersection_2d;
 } HoverState;
 
 typedef struct GrabState

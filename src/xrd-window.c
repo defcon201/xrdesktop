@@ -415,19 +415,18 @@ xrd_window_intersection_to_pixels (XrdWindow          *self,
 }
 
 /**
- * xrd_window_intersection_to_2d_offset_meter:
+ * xrd_window_get_intersection_2d:
  * @self: The #XrdWindow
- * @intersection_point: A #graphene_point3d_t intersection point in meters.
- * @offset_center: offset of the intersection point to the center of the window,
- * on the window plane (xy) and in meters.
+ * @intersection_3d: A #graphene_point3d_t intersection point in meters.
+ * @intersection_2d: Intersection in window coordinates with origin at center in meters.
  *
  * Calculates the offset of the intersection relative to the overlay's center,
  * in overlay-relative coordinates, in meters
  */
-gboolean
-xrd_window_intersection_to_2d_offset_meter (XrdWindow          *self,
-                                            graphene_point3d_t *intersection_point,
-                                            graphene_point_t   *offset_center)
+void
+xrd_window_get_intersection_2d (XrdWindow          *self,
+                                graphene_point3d_t *intersection_3d,
+                                graphene_point_t   *intersection_2d)
 {
   graphene_matrix_t transform;
   xrd_window_get_transformation (self, &transform);
@@ -437,13 +436,12 @@ xrd_window_intersection_to_2d_offset_meter (XrdWindow          *self,
 
   graphene_point3d_t intersection_origin;
   graphene_matrix_transform_point3d (&inverse_transform,
-                                      intersection_point,
+                                      intersection_3d,
                                      &intersection_origin);
 
-  graphene_point_init (offset_center,
-                      intersection_origin.x,
-                      intersection_origin.y);
-  return TRUE;
+  graphene_point_init (intersection_2d,
+                       intersection_origin.x,
+                       intersection_origin.y);
 }
 
 void
