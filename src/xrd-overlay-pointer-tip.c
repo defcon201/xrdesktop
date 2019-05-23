@@ -74,8 +74,6 @@ xrd_overlay_pointer_tip_new (int controller_index,
   snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%d",
             controller_index);
 
-  /* the texture has 2x the size of the pointer, so the overlay should be 2x
-   * the desired size of the default pointer too. */
   openvr_overlay_create (OPENVR_OVERLAY (self), key, key);
 
   if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
