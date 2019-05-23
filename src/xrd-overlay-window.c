@@ -206,10 +206,11 @@ _scale_move_child (XrdOverlayWindow *self)
 
 }
 
-gboolean
-xrd_overlay_window_set_transformation (XrdOverlayWindow *self,
-                                       graphene_matrix_t *mat)
+static gboolean
+_set_transformation (XrdWindow         *window,
+                     graphene_matrix_t *mat)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   gboolean res =
     openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), mat);
   if (self->window_data.child_window)
@@ -217,18 +218,20 @@ xrd_overlay_window_set_transformation (XrdOverlayWindow *self,
   return res;
 }
 
-gboolean
-xrd_overlay_window_get_transformation (XrdOverlayWindow *self,
-                                       graphene_matrix_t *mat)
+static gboolean
+_get_transformation (XrdWindow         *window,
+                     graphene_matrix_t *mat)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   return openvr_overlay_get_transform_absolute (OPENVR_OVERLAY (self), mat);
 }
 
-void
-xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
-                                   GulkanClient     *client,
-                                   GulkanTexture    *texture)
+static void
+_submit_texture (XrdWindow     *window,
+                 GulkanClient  *client,
+                 GulkanTexture *texture)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   OpenVROverlayUploader *uploader = OPENVR_OVERLAY_UPLOADER (client);
 
   uint32_t current_width, current_height;
@@ -261,11 +264,12 @@ xrd_overlay_window_submit_texture (XrdOverlayWindow *self,
                                         OPENVR_OVERLAY (self), texture);
 }
 
-void
-xrd_overlay_window_add_child (XrdOverlayWindow *self,
-                              XrdOverlayWindow *child,
-                              graphene_point_t *offset_center)
+static void
+_add_child (XrdWindow        *window,
+            XrdWindow        *child,
+            graphene_point_t *offset_center)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   self->window_data.child_window = XRD_WINDOW (child);
   graphene_point_init_from_point (&self->window_data.child_offset_center,
                                   offset_center);
@@ -279,29 +283,32 @@ xrd_overlay_window_add_child (XrdOverlayWindow *self,
     }
 }
 
-void
-xrd_overlay_window_poll_event (XrdOverlayWindow *self)
+static void
+_poll_event (XrdWindow *window)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   openvr_overlay_poll_event (OPENVR_OVERLAY (self));
 }
 
-gboolean
-xrd_overlay_window_intersects (XrdOverlayWindow   *self,
-                               graphene_matrix_t  *pointer_transformation_matrix,
-                               graphene_point3d_t *intersection_point)
+static gboolean
+_intersects (XrdWindow          *window,
+             graphene_matrix_t  *pointer_transformation_matrix,
+             graphene_point3d_t *intersection_point)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   gboolean res = openvr_overlay_intersects (OPENVR_OVERLAY (self),
                                             intersection_point,
                                             pointer_transformation_matrix);
   return res;
 }
 
-gboolean
-xrd_overlay_window_intersection_to_pixels (XrdOverlayWindow   *self,
-                                           graphene_point3d_t *intersection_point,
-                                           XrdPixelSize       *size_pixels,
-                                           graphene_point_t   *window_coords)
+static gboolean
+_intersection_to_pixels (XrdWindow          *window,
+                         graphene_point3d_t *intersection_point,
+                         XrdPixelSize       *size_pixels,
+                         graphene_point_t   *window_coords)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   PixelSize pix_size = {
     .width = size_pixels->width,
     .height = size_pixels->height
@@ -313,11 +320,12 @@ xrd_overlay_window_intersection_to_pixels (XrdOverlayWindow   *self,
   return res;
 }
 
-gboolean
-xrd_overlay_window_intersection_to_2d_offset_meter (XrdOverlayWindow *self,
-                                                    graphene_point3d_t *intersection_point,
-                                                    graphene_point_t   *offset_center)
+static gboolean
+_intersection_to_2d_offset_meter (XrdWindow          *window,
+                                  graphene_point3d_t *intersection_point,
+                                  graphene_point_t   *offset_center)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   gboolean res =
       openvr_overlay_get_2d_offset (OPENVR_OVERLAY (self),
                                     intersection_point, offset_center);
@@ -392,17 +400,19 @@ xrd_overlay_window_new_from_native (const gchar *title,
   return window;
 }
 
-void
-xrd_overlay_window_set_color (XrdOverlayWindow *self,
-                              graphene_vec3_t *color)
+static void
+_set_color (XrdWindow       *window,
+            graphene_vec3_t *color)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   openvr_overlay_set_color (OPENVR_OVERLAY (self), color);
 }
 
-void
-xrd_overlay_window_set_hidden (XrdOverlayWindow *self,
-                               gboolean hidden)
+static void
+_set_hidden (XrdWindow *window,
+             gboolean   hidden)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   if (self->hidden == hidden)
     return;
 
@@ -413,9 +423,10 @@ xrd_overlay_window_set_hidden (XrdOverlayWindow *self,
     openvr_overlay_show (OPENVR_OVERLAY (self));
 }
 
-gboolean
-xrd_overlay_window_get_hidden (XrdOverlayWindow *self)
+static gboolean
+_get_hidden (XrdWindow *window)
 {
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   return self->hidden;
 }
 
@@ -478,21 +489,17 @@ xrd_overlay_window_finalize (GObject *gobject)
 static void
 xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
 {
-  iface->set_transformation =
-      (void*) xrd_overlay_window_set_transformation;
-  iface->get_transformation =
-      (void*) xrd_overlay_window_get_transformation;
-  iface->submit_texture = (void*)xrd_overlay_window_submit_texture;
-  iface->poll_event = (void*)xrd_overlay_window_poll_event;
-  iface->intersects = (void*)xrd_overlay_window_intersects;
-  iface->intersection_to_pixels =
-      (void*)xrd_overlay_window_intersection_to_pixels;
-  iface->intersection_to_2d_offset_meter =
-      (void*)xrd_overlay_window_intersection_to_2d_offset_meter;
-  iface->add_child = (void*)xrd_overlay_window_add_child;
-  iface->set_color = (void*)xrd_overlay_window_set_color;
+  iface->set_transformation = _set_transformation;
+  iface->get_transformation = _get_transformation;
+  iface->submit_texture = _submit_texture;
+  iface->poll_event = _poll_event;
+  iface->intersects = _intersects;
+  iface->intersection_to_pixels = _intersection_to_pixels;
+  iface->intersection_to_2d_offset_meter = _intersection_to_2d_offset_meter;
+  iface->add_child = _add_child;
+  iface->set_color = _set_color;
   iface->set_flip_y = (void*)openvr_overlay_set_flip_y;
-  iface->set_hidden = (void*)xrd_overlay_window_set_hidden;
-  iface->get_hidden = (void*)xrd_overlay_window_get_hidden;
+  iface->set_hidden = _set_hidden;
+  iface->get_hidden = _get_hidden;
 }
 
