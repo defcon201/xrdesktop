@@ -580,6 +580,13 @@ xrd_scene_window_set_width_meters (XrdSceneWindow *self,
   xrd_scene_object_set_scale (XRD_SCENE_OBJECT (self), height_meters);
 }
 
+static XrdWindowData*
+_get_data (XrdWindow *window)
+{
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  return &self->window_data;
+}
+
 static void
 xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
 {
@@ -595,4 +602,5 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->set_flip_y = _set_flip_y;
   iface->set_hidden = _set_hidden;
   iface->get_hidden = _get_hidden;
+  iface->get_data = _get_data;
 }

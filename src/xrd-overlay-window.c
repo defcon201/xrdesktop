@@ -486,6 +486,13 @@ xrd_overlay_window_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }
 
+static XrdWindowData*
+_get_data (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+  return &self->window_data;
+}
+
 static void
 xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
 {
@@ -501,5 +508,6 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->set_flip_y = (void*)openvr_overlay_set_flip_y;
   iface->set_hidden = _set_hidden;
   iface->get_hidden = _get_hidden;
+  iface->get_data = _get_data;
 }
 
