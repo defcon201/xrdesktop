@@ -38,12 +38,6 @@ struct _XrdPointerInterface
   (*set_length) (XrdPointer *self,
                  float       length);
 
-  float
-  (*get_default_length) (XrdPointer *self);
-
-  void
-  (*reset_length) (XrdPointer *self);
-
   XrdPointerData*
   (*get_data) (XrdPointer *self);
 };

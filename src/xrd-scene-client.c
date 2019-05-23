@@ -461,7 +461,7 @@ _test_intersection (XrdSceneClient *self)
       else
         {
           selection_obj->visible = FALSE;
-          xrd_scene_pointer_reset_length (pointer);
+          xrd_pointer_reset_length (XRD_POINTER (pointer));
         }
     }
     g_list_free (controllers);

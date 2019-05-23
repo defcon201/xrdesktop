@@ -216,11 +216,6 @@ _set_length (XrdPointer *pointer,
              float       length)
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
-  if (length == self->data.length)
-    return;
-
-  self->data.length = length;
-
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_matrix_t identity;
@@ -231,26 +226,6 @@ _set_length (XrdPointer *pointer,
 
   gulkan_geometry_append_ray (self->vertex_buffer, &start, length, &identity);
   gulkan_vertex_buffer_map_array (self->vertex_buffer);
-}
-
-void
-xrd_scene_pointer_reset_length (XrdScenePointer *self)
-{
-  _set_length (XRD_POINTER (self), self->data.default_length);
-}
-
-static void
-_reset_length (XrdPointer *pointer)
-{
-  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
-  self->data.length = self->data.default_length;
-}
-
-static float
-_get_default_length (XrdPointer *pointer)
-{
-  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
-  return self->data.default_length;
 }
 
 static XrdPointerData*
@@ -265,8 +240,6 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
   iface->set_length = _set_length;
-  iface->get_default_length = _get_default_length;
-  iface->reset_length = _reset_length;
   iface->get_data = _get_data;
 }
 

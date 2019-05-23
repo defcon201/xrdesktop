@@ -44,9 +44,6 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
                           graphene_matrix_t *vp);
 
 void
-xrd_scene_pointer_reset_length (XrdScenePointer *self);
-
-void
 xrd_scene_pointer_get_ray (XrdScenePointer *self,
                            graphene_ray_t  *res);
 

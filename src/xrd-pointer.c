@@ -27,6 +27,12 @@ void
 xrd_pointer_set_length (XrdPointer *self,
                         float       length)
 {
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  if (length == data->length)
+    return;
+
+  data->length = length;
+
   XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
   return iface->set_length (self, length);
 }
@@ -34,15 +40,15 @@ xrd_pointer_set_length (XrdPointer *self,
 float
 xrd_pointer_get_default_length (XrdPointer *self)
 {
-  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
-  return iface->get_default_length (self);
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  return data->default_length;
 }
 
 void
 xrd_pointer_reset_length (XrdPointer *self)
 {
-  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
-  return iface->reset_length (self);
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  xrd_pointer_set_length (self, data->default_length);
 }
 
 XrdPointerData*
@@ -60,3 +66,4 @@ xrd_pointer_init (XrdPointer *self)
   data->default_length = 5.0f;
   data->length = data->default_length;
 }
+

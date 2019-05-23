@@ -98,22 +98,8 @@ static void
 _set_length (XrdPointer *pointer,
              float       length)
 {
-  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-  self->data.length = length;
-}
-
-static void
-_reset_length (XrdPointer *pointer)
-{
-  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-  self->data.length = self->data.default_length;
-}
-
-static float
-_get_default_length (XrdPointer *pointer)
-{
-  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-  return self->data.default_length;
+  (void) pointer;
+  (void) length;
 }
 
 static XrdPointerData*
@@ -128,7 +114,5 @@ xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
   iface->set_length = _set_length;
-  iface->get_default_length = _get_default_length;
-  iface->reset_length = _reset_length;
   iface->get_data = _get_data;
 }
