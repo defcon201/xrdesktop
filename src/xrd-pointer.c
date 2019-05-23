@@ -66,3 +66,51 @@ xrd_pointer_init (XrdPointer *self)
   data->default_length = 5.0f;
   data->length = data->default_length;
 }
+
+void
+xrd_pointer_set_transformation (XrdPointer        *self,
+                                graphene_matrix_t *matrix)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  iface->set_transformation (self, matrix);
+}
+
+void
+xrd_pointer_get_transformation (XrdPointer        *self,
+                                graphene_matrix_t *matrix)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  iface->get_transformation (self, matrix);
+}
+
+void
+xrd_pointer_get_ray (XrdPointer     *self,
+                     graphene_ray_t *res)
+{
+  XrdPointerData *data = xrd_pointer_get_data (self);
+
+  graphene_matrix_t mat;
+  xrd_pointer_get_transformation (self, &mat);
+
+  graphene_vec4_t start;
+  graphene_vec4_init (&start, 0, 0, data->start_offset, 1);
+  graphene_matrix_transform_vec4 (&mat, &start, &start);
+
+  graphene_vec4_t end;
+  graphene_vec4_init (&end, 0, 0, -data->length, 1);
+  graphene_matrix_transform_vec4 (&mat, &end, &end);
+
+  graphene_vec4_t direction_vec4;
+  graphene_vec4_subtract (&end, &start, &direction_vec4);
+
+  graphene_point3d_t origin;
+  graphene_vec3_t direction;
+
+  graphene_vec3_t vec3_start;
+  graphene_vec4_get_xyz (&start, &vec3_start);
+  graphene_point3d_init_from_vec3 (&origin, &vec3_start);
+
+  graphene_vec4_get_xyz (&direction_vec4, &direction);
+
+  graphene_ray_init (res, &origin, &direction);
+}

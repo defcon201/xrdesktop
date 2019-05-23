@@ -70,6 +70,18 @@ xrd_pointer_get_data (XrdPointer *self);
 void
 xrd_pointer_init (XrdPointer *self);
 
+void
+xrd_pointer_set_transformation (XrdPointer        *self,
+                                graphene_matrix_t *matrix);
+
+void
+xrd_pointer_get_transformation (XrdPointer        *self,
+                                graphene_matrix_t *matrix);
+
+void
+xrd_pointer_get_ray (XrdPointer     *self,
+                     graphene_ray_t *res);
+
 G_END_DECLS
 
 #endif /* XRD_POINTER_H_ */

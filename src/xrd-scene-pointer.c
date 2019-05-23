@@ -124,37 +124,6 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
 }
 
-void
-xrd_scene_pointer_get_ray (XrdScenePointer *self,
-                           graphene_ray_t  *res)
-{
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-
-  graphene_matrix_t *mat = &obj->model_matrix;
-
-  graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, self->data.start_offset, 1);
-  graphene_matrix_transform_vec4 (mat, &start, &start);
-
-  graphene_vec4_t end;
-  graphene_vec4_init (&end, 0, 0, -self->data.length, 1);
-  graphene_matrix_transform_vec4 (mat, &end, &end);
-
-  graphene_vec4_t direction_vec4;
-  graphene_vec4_subtract (&end, &start, &direction_vec4);
-
-  graphene_point3d_t origin;
-  graphene_vec3_t direction;
-
-  graphene_vec3_t vec3_start;
-  graphene_vec4_get_xyz (&start, &vec3_start);
-  graphene_point3d_init_from_vec3 (&origin, &vec3_start);
-
-  graphene_vec4_get_xyz (&direction_vec4, &direction);
-
-  graphene_ray_init (res, &origin, &direction);
-}
-
 gboolean
 xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
                                     XrdSceneWindow  *window,
@@ -162,7 +131,7 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
                                     graphene_vec3_t *res)
 {
   graphene_ray_t ray;
-  xrd_scene_pointer_get_ray (pointer, &ray);
+  xrd_pointer_get_ray (XRD_POINTER (pointer), &ray);
 
   graphene_plane_t plane;
   xrd_scene_window_get_plane (window, &plane);
