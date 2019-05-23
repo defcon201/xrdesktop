@@ -127,6 +127,23 @@ _update_keep_apparent_size (GSettings *settings, gchar *key, gpointer _data)
 }
 
 static void
+_update_texture (XrdPointerTip *self);
+
+static gboolean
+_cancel_animation (XrdPointerTipData *data)
+{
+  if (data->animation != NULL)
+    {
+      g_source_remove (data->animation->callback_id);
+      g_free (data->animation);
+      data->animation = NULL;
+      return TRUE;
+    }
+  else
+    return FALSE;
+}
+
+static void
 _update_active_color (GSettings *settings, gchar *key, gpointer _data)
 {
   XrdPointerTipData *data = (XrdPointerTipData*)_data;
@@ -136,6 +153,12 @@ _update_active_color (GSettings *settings, gchar *key, gpointer _data)
   double r, g, b;
   g_variant_get (var, "(ddd)", &r, &g, &b);
   graphene_point3d_init (&s->active_color, r, g, b);
+
+  if (data->active)
+    {
+      _cancel_animation (data);
+      _update_texture (data->tip);
+    }
 }
 
 static void
@@ -148,6 +171,12 @@ _update_passive_color (GSettings *settings, gchar *key, gpointer _data)
   double r, g, b;
   g_variant_get (var, "(ddd)", &r, &g, &b);
   graphene_point3d_init (&s->passive_color, r, g, b);
+
+  if (!data->active)
+    {
+      _cancel_animation (data);
+      _update_texture (data->tip);
+    }
 }
 
 static void
@@ -382,18 +411,15 @@ xrd_pointer_tip_set_active (XrdPointerTip *self,
   if (data->texture == NULL)
     return;
 
-  if (data->animation != NULL)
-    {
-      g_source_remove (data->animation->callback_id);
-      g_free (data->animation);
-      data->animation = NULL;
-    }
-  else if (data->active == active)
+  /* New texture needs to be rendered when
+   *  - animation is being cancelled
+   *  - active status changes
+   * Otherwise the texture should already show the current active status. */
+
+  gboolean animation_cancelled = _cancel_animation (data);
+  if (!animation_cancelled && data->active == active)
     return;
 
-  /* Do not skip renderint to the texture even when self->active == active.
-   * An animation changes the texture, so when an animation is cancelled, we
-   * want to re-render the current state. */
   data->active = active;
 
   _update_texture (self);
