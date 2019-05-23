@@ -219,6 +219,10 @@ _render_eye_cb (uint32_t         eye,
 
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
+  xrd_scene_background_render (self->background, eye,
+                               pipelines[PIPELINE_POINTER],
+                               pipeline_layout, cmd_buffer, &vp);
+
   for (GSList *l = xrd_window_manager_get_windows (manager);
        l != NULL; l = l->next)
     {
@@ -244,10 +248,6 @@ _render_eye_cb (uint32_t         eye,
   xrd_scene_device_manager_render (self->device_manager, eye, cmd_buffer,
                                    pipelines[PIPELINE_DEVICE_MODELS],
                                    pipeline_layout, &vp);
-
-  xrd_scene_background_render (self->background, eye,
-                               pipelines[PIPELINE_POINTER],
-                               pipeline_layout, cmd_buffer, &vp);
 
   GList *controllers =
     g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
