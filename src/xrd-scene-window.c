@@ -452,30 +452,6 @@ _intersects (XrdWindow          *window,
   return FALSE;
 }
 
-static gboolean
-_intersection_to_2d_offset_meter (XrdWindow          *window,
-                                  graphene_point3d_t *intersection_point,
-                                  graphene_point_t   *offset_center)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-
-  graphene_matrix_t transform =
-    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
-
-  graphene_matrix_t inverse_transform;
-  graphene_matrix_inverse (&transform, &inverse_transform);
-
-  graphene_point3d_t intersection_origin;
-  graphene_matrix_transform_point3d (&inverse_transform,
-                                      intersection_point,
-                                     &intersection_origin);
-
-  graphene_point_init (offset_center,
-                      intersection_origin.x,
-                      intersection_origin.y);
-  return TRUE;
-}
-
 static void
 _add_child (XrdWindow        *window,
             XrdWindow        *child,
@@ -549,7 +525,6 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->intersects = _intersects;
-  iface->intersection_to_2d_offset_meter = _intersection_to_2d_offset_meter;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
   iface->set_flip_y = _set_flip_y;

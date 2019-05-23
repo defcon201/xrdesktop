@@ -340,9 +340,7 @@ xrd_window_intersects (XrdWindow   *self,
  * @intersection_point: intersection point in meters.
  * @size_pixels: size of the window in pixels.
  * @window_coords: coordinates on the window in pixels.
- */
-
-/*
+ *
  * The transformation matrix describes the *center* point of an overlay
  * to calculate 2D coordinates relative to overlay origin we have to shift.
  *
@@ -419,19 +417,33 @@ xrd_window_intersection_to_pixels (XrdWindow          *self,
 /**
  * xrd_window_intersection_to_2d_offset_meter:
  * @self: The #XrdWindow
- * @intersection_point: intersection point in meters.
+ * @intersection_point: A #graphene_point3d_t intersection point in meters.
  * @offset_center: offset of the intersection point to the center of the window,
- * on the window plane (xy) and in meter.
+ * on the window plane (xy) and in meters.
+ *
+ * Calculates the offset of the intersection relative to the overlay's center,
+ * in overlay-relative coordinates, in meters
  */
 gboolean
-xrd_window_intersection_to_2d_offset_meter (XrdWindow *self,
+xrd_window_intersection_to_2d_offset_meter (XrdWindow          *self,
                                             graphene_point3d_t *intersection_point,
                                             graphene_point_t   *offset_center)
 {
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->intersection_to_2d_offset_meter (self,
-                                                 intersection_point,
-                                                 offset_center);
+  graphene_matrix_t transform;
+  xrd_window_get_transformation (self, &transform);
+
+  graphene_matrix_t inverse_transform;
+  graphene_matrix_inverse (&transform, &inverse_transform);
+
+  graphene_point3d_t intersection_origin;
+  graphene_matrix_transform_point3d (&inverse_transform,
+                                      intersection_point,
+                                     &intersection_origin);
+
+  graphene_point_init (offset_center,
+                      intersection_origin.x,
+                      intersection_origin.y);
+  return TRUE;
 }
 
 void

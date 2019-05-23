@@ -94,11 +94,6 @@ struct _XrdWindowInterface
                  graphene_matrix_t  *pointer_transformation_matrix,
                  graphene_point3d_t *intersection_point);
 
-  gboolean
-  (*intersection_to_2d_offset_meter) (XrdWindow *self,
-                                      graphene_point3d_t *intersection_point,
-                                      graphene_point_t   *offset_center);
-
   void
   (*emit_grab_start) (XrdWindow *self, XrdControllerIndexEvent *event);
 

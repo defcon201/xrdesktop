@@ -259,38 +259,6 @@ _intersects (XrdWindow          *window,
   return res;
 }
 
-/**
- * _intersection_to_2d_offset_meter:
- * @self: The #XrdWindow
- * @intersection_point: A #graphene_point3d_t return value
- * @offset_center: The intersection position return value as #graphene_point_t
- *
- * Calculates the offset of the intersection relative to the overlay's center,
- * in overlay-relative coordinates, in meters
- */
-static gboolean
-_intersection_to_2d_offset_meter (XrdWindow          *window,
-                                  graphene_point3d_t *intersection_point,
-                                  graphene_point_t   *offset_center)
-{
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  graphene_matrix_t transform;
-  openvr_overlay_get_transform_absolute (OPENVR_OVERLAY (self), &transform);
-
-  graphene_matrix_t inverse_transform;
-  graphene_matrix_inverse (&transform, &inverse_transform);
-
-  graphene_point3d_t intersection_origin;
-  graphene_matrix_transform_point3d (&inverse_transform,
-                                      intersection_point,
-                                     &intersection_origin);
-
-  graphene_point_init (offset_center,
-                      intersection_origin.x,
-                      intersection_origin.y);
-  return TRUE;
-}
-
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
@@ -460,7 +428,6 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->intersects = _intersects;
-  iface->intersection_to_2d_offset_meter = _intersection_to_2d_offset_meter;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
   iface->set_flip_y = (void*)openvr_overlay_set_flip_y;
