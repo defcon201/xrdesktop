@@ -453,67 +453,6 @@ _intersects (XrdWindow          *window,
 }
 
 static gboolean
-_intersection_to_pixels (XrdWindow          *window,
-                         graphene_point3d_t *intersection_point,
-                         XrdPixelSize       *size_pixels,
-                         graphene_point_t   *window_coords)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-
-  /* transform intersection point to origin */
-  graphene_matrix_t transform =
-    xrd_scene_object_get_transformation (XRD_SCENE_OBJECT (self));
-
-  graphene_matrix_t inverse_transform;
-  graphene_matrix_inverse (&transform, &inverse_transform);
-
-  graphene_point3d_t intersection_origin;
-  graphene_matrix_transform_point3d (&inverse_transform,
-                                      intersection_point,
-                                     &intersection_origin);
-
-  graphene_vec2_t position_2d_vec;
-  graphene_vec2_init (&position_2d_vec,
-                      intersection_origin.x,
-                      intersection_origin.y);
-
-  /* normalize coordinates to [0 - 1, 0 - 1] */
-  graphene_vec2_t size_meters;
-
-  XrdWindow *xrd_window = XRD_WINDOW (self);
-
-  graphene_vec2_init (&size_meters,
-                      xrd_window_get_current_width_meters (xrd_window),
-                      xrd_window_get_current_height_meters (xrd_window));
-
-  graphene_vec2_divide (&position_2d_vec, &size_meters, &position_2d_vec);
-
-  /* move origin from cetner to corner of overlay */
-  graphene_vec2_t center_normalized;
-  graphene_vec2_init (&center_normalized, 0.5f, 0.5f);
-
-  graphene_vec2_add (&position_2d_vec, &center_normalized, &position_2d_vec);
-
-  /* invert y axis */
-  graphene_vec2_init (&position_2d_vec,
-                      graphene_vec2_get_x (&position_2d_vec),
-                      1.0f - graphene_vec2_get_y (&position_2d_vec));
-
-  /* scale to pixel coordinates */
-  graphene_vec2_t size_pixels_vec;
-  graphene_vec2_init (&size_pixels_vec,
-                      size_pixels->width,
-                      size_pixels->height);
-
-  graphene_vec2_multiply (&position_2d_vec, &size_pixels_vec, &position_2d_vec);
-
-  /* return point_t */
-  graphene_point_init_from_vec2 (window_coords, &position_2d_vec);
-
-  return TRUE;
-}
-
-static gboolean
 _intersection_to_2d_offset_meter (XrdWindow          *window,
                                   graphene_point3d_t *intersection_point,
                                   graphene_point_t   *offset_center)
@@ -610,7 +549,6 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->intersects = _intersects;
-  iface->intersection_to_pixels = _intersection_to_pixels;
   iface->intersection_to_2d_offset_meter = _intersection_to_2d_offset_meter;
   iface->add_child = _add_child;
   iface->set_color = _set_color;

@@ -259,82 +259,6 @@ _intersects (XrdWindow          *window,
   return res;
 }
 
-/*
- * The transformation matrix describes the *center* point of an overlay
- * to calculate 2D coordinates relative to overlay origin we have to shift.
- *
- * To calculate the position in the overlay in any orientation, we can invert
- * the transformation matrix of the overlay. This transformation matrix would
- * bring the center of our overlay into the origin of the coordinate system,
- * facing us (+z), the overlay being in the xy plane (since by convention that
- * is the neutral position for overlays).
- *
- * Since the transformation matrix transforms every possible point on the
- * overlay onto the same overlay as it is in the origin in the xy plane,
- * it transforms in particular the intersection point onto its position on the
- * overlay in the xy plane.
- * Then we only need to shift it by half of the overlay widht/height, because
- * the *center* of the overlay sits in the origin.
- */
-
-static gboolean
-_intersection_to_pixels (XrdWindow          *window,
-                         graphene_point3d_t *intersection_point,
-                         XrdPixelSize       *size_pixels,
-                         graphene_point_t   *window_coords)
-{
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  OpenVROverlay *overlay = OPENVR_OVERLAY (self);
-
-  /* transform intersection point to origin */
-  graphene_matrix_t transform;
-  openvr_overlay_get_transform_absolute (overlay, &transform);
-
-  graphene_matrix_t inverse_transform;
-  graphene_matrix_inverse (&transform, &inverse_transform);
-
-  graphene_point3d_t intersection_origin;
-  graphene_matrix_transform_point3d (&inverse_transform,
-                                      intersection_point,
-                                     &intersection_origin);
-
-  graphene_vec2_t position_2d_vec;
-  graphene_vec2_init (&position_2d_vec,
-                      intersection_origin.x,
-                      intersection_origin.y);
-
-  /* normalize coordinates to [0 - 1, 0 - 1] */
-  graphene_vec2_t size_meters;
-  if (!openvr_overlay_get_size_meters (overlay, &size_meters))
-    return FALSE;
-
-  graphene_vec2_divide (&position_2d_vec, &size_meters, &position_2d_vec);
-
-  /* move origin from cetner to corner of overlay */
-  graphene_vec2_t center_normalized;
-  graphene_vec2_init (&center_normalized, 0.5f, 0.5f);
-
-  graphene_vec2_add (&position_2d_vec, &center_normalized, &position_2d_vec);
-
-  /* invert y axis */
-  graphene_vec2_init (&position_2d_vec,
-                      graphene_vec2_get_x (&position_2d_vec),
-                      1.0f - graphene_vec2_get_y (&position_2d_vec));
-
-  /* scale to pixel coordinates */
-  graphene_vec2_t size_pixels_vec;
-  graphene_vec2_init (&size_pixels_vec,
-                      size_pixels->width,
-                      size_pixels->height);
-
-  graphene_vec2_multiply (&position_2d_vec, &size_pixels_vec, &position_2d_vec);
-
-  /* return point_t */
-  graphene_point_init_from_vec2 (window_coords, &position_2d_vec);
-
-  return TRUE;
-}
-
 /**
  * _intersection_to_2d_offset_meter:
  * @self: The #XrdWindow
@@ -536,7 +460,6 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->intersects = _intersects;
-  iface->intersection_to_pixels = _intersection_to_pixels;
   iface->intersection_to_2d_offset_meter = _intersection_to_2d_offset_meter;
   iface->add_child = _add_child;
   iface->set_color = _set_color;

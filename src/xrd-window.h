@@ -95,12 +95,6 @@ struct _XrdWindowInterface
                  graphene_point3d_t *intersection_point);
 
   gboolean
-  (*intersection_to_pixels) (XrdWindow          *self,
-                             graphene_point3d_t *intersection_point,
-                             XrdPixelSize       *size_pixels,
-                             graphene_point_t   *window_coords);
-
-  gboolean
   (*intersection_to_2d_offset_meter) (XrdWindow *self,
                                       graphene_point3d_t *intersection_point,
                                       graphene_point_t   *offset_center);
