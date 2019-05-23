@@ -446,13 +446,14 @@ _test_intersection (XrdSceneClient *self)
             }
         }
 
-      XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (pointer->selection);
+      XrdSceneSelection *selection = xrd_scene_pointer_get_selection (pointer);
+      XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (selection);
       if (selected_window != NULL)
         {
           XrdSceneObject *window_obj = XRD_SCENE_OBJECT (selected_window);
           graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
                                             &window_obj->model_matrix);
-          xrd_scene_selection_set_aspect_ratio (pointer->selection,
+          xrd_scene_selection_set_aspect_ratio (selection,
                                                 selected_window->aspect_ratio);
           selection_obj->visible = TRUE;
           xrd_pointer_set_length (XRD_POINTER (pointer), lowest_distance);

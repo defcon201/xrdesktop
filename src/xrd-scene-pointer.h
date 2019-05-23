@@ -27,17 +27,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdScenePointer, xrd_scene_pointer,
                       XRD, SCENE_POINTER, XrdSceneObject)
 
-struct _XrdScenePointer
-{
-  XrdSceneObject parent;
-  GulkanVertexBuffer *vertex_buffer;
-  float start_offset;
-  float length;
-  float default_length;
-
-  XrdSceneSelection *selection;
-};
-
 XrdScenePointer *xrd_scene_pointer_new (void);
 
 gboolean
@@ -66,6 +55,9 @@ xrd_scene_pointer_get_intersection (XrdScenePointer *pointer,
                                     XrdSceneWindow  *window,
                                     float           *distance,
                                     graphene_vec3_t *res);
+
+XrdSceneSelection*
+xrd_scene_pointer_get_selection (XrdScenePointer *self);
 
 G_END_DECLS
 

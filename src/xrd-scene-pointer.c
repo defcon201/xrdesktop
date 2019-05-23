@@ -15,6 +15,17 @@
 static void
 xrd_scene_pointer_interface_init (XrdPointerInterface *iface);
 
+struct _XrdScenePointer
+{
+  XrdSceneObject parent;
+  GulkanVertexBuffer *vertex_buffer;
+  float start_offset;
+  float length;
+  float default_length;
+
+  XrdSceneSelection *selection;
+};
+
 G_DEFINE_TYPE_WITH_CODE (XrdScenePointer, xrd_scene_pointer, XRD_TYPE_SCENE_OBJECT,
                          G_IMPLEMENT_INTERFACE (XRD_TYPE_POINTER,
                                                 xrd_scene_pointer_interface_init))
@@ -252,4 +263,10 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_length = _set_length;
   iface->get_default_length = _get_default_length;
   iface->reset_length = _reset_length;
+}
+
+XrdSceneSelection*
+xrd_scene_pointer_get_selection (XrdScenePointer *self)
+{
+  return self->selection;
 }
