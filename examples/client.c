@@ -402,7 +402,8 @@ _init_example (Example *self, XrdClient *client)
 
   /* TODO: remove special case */
   if (XRD_IS_SCENE_CLIENT (client))
-    xrd_scene_client_initialize (XRD_SCENE_CLIENT (client));
+    if (!xrd_scene_client_initialize (XRD_SCENE_CLIENT (client)))
+      return FALSE;
 
   GulkanClient *gc = xrd_client_get_uploader (client);
 
