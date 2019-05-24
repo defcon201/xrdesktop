@@ -169,9 +169,12 @@ xrd_scene_vector_render (XrdSceneVector    *self,
   if (!gulkan_vertex_buffer_is_initialized (self->vertex_buffer))
     return;
 
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  if (!xrd_scene_object_is_visible (obj))
+    return;
+
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);

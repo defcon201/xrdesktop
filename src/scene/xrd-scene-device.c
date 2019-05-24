@@ -75,11 +75,14 @@ xrd_scene_device_draw (XrdSceneDevice    *self,
   if (!self->pose_valid)
     return;
 
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  if (!xrd_scene_object_is_visible (obj))
+    return;
+
   OpenVRContext *context = openvr_context_get_instance ();
   if (!context->system->IsInputAvailable () && self->is_controller)
     return;
 
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw_indexed (self->model->vbo, cmd_buffer);

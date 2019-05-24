@@ -111,6 +111,9 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
     return;
 
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  if (!xrd_scene_object_is_visible (obj))
+    return;
+
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
 
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -118,7 +121,6 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
   xrd_scene_selection_render (self->selection, eye,
                               selection_pipeline, pipeline_layout,
                               cmd_buffer, vp);
-
 
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
