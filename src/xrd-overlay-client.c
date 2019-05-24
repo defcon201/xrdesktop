@@ -33,18 +33,6 @@ G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, XRD_TYPE_CLIENT)
 static void
 xrd_overlay_client_finalize (GObject *gobject);
 
-gboolean
-xrd_overlay_client_add_button (XrdOverlayClient   *self,
-                               XrdWindow         **button,
-                               int                 label_count,
-                               gchar             **label,
-                               graphene_point3d_t *position,
-                               GCallback           press_callback,
-                               gpointer            press_callback_data);
-
-GulkanClient *
-xrd_overlay_client_get_uploader (XrdOverlayClient *self);
-
 static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
@@ -113,20 +101,21 @@ xrd_overlay_client_finalize (GObject *gobject)
   g_object_unref (self->gc);
 }
 
-GulkanClient *
-xrd_overlay_client_get_uploader (XrdOverlayClient *self)
+static GulkanClient *
+_get_uploader (XrdClient *client)
 {
-  return GULKAN_CLIENT (self->gc);
+  XrdOverlayClient *self = XRD_OVERLAY_CLIENT (client);
+  return self->gc;
 }
 
-gboolean
-xrd_overlay_client_add_button (XrdOverlayClient   *self,
-                               XrdWindow         **button,
-                               int                 label_count,
-                               gchar             **label,
-                               graphene_point3d_t *position,
-                               GCallback           press_callback,
-                               gpointer            press_callback_data)
+static gboolean
+_add_button (XrdClient          *client,
+             XrdWindow         **button,
+             int                 label_count,
+             gchar             **label,
+             graphene_point3d_t *position,
+             GCallback           press_callback,
+             gpointer            press_callback_data)
 {
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, position);
@@ -152,15 +141,17 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   if (window == NULL)
     return FALSE;
 
-  VkImageLayout layout = xrd_client_get_upload_layout (XRD_CLIENT (self));
+  GulkanClient *gc = xrd_client_get_uploader (client);
 
-  xrd_button_set_text (window, self->gc, layout, label_count, label);
+  VkImageLayout layout = xrd_client_get_upload_layout (client);
+
+  xrd_button_set_text (window, gc, layout, label_count, label);
 
   *button = window;
 
   xrd_window_set_transformation (window, &transform);
 
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+  XrdWindowManager *manager = xrd_client_get_manager (client);
   xrd_window_manager_add_window (manager,
                                  *button,
                                  XRD_WINDOW_HOVERABLE |
@@ -170,7 +161,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   g_signal_connect (window, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);
 
-  xrd_client_add_button_callbacks (XRD_CLIENT (self), window);
+  xrd_client_add_button_callbacks (client, window);
 
   return TRUE;
 }
@@ -212,10 +203,7 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
   object_class->finalize = xrd_overlay_client_finalize;
 
   XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
-  xrd_client_class->add_button =
-      (void*) xrd_overlay_client_add_button;
-  xrd_client_class->get_uploader =
-      (void*) xrd_overlay_client_get_uploader;
-  xrd_client_class->init_controller =
-      (void*) _init_controller;
+  xrd_client_class->add_button = _add_button;
+  xrd_client_class->get_uploader = _get_uploader;
+  xrd_client_class->init_controller = _init_controller;
 }
