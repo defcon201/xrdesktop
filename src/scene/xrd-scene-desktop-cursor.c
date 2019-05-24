@@ -87,30 +87,6 @@ _submit_texture (XrdDesktopCursor *cursor,
   self->data.texture_height = gulkan_texture_get_height (texture);
 }
 
-static void
-_show (XrdDesktopCursor *cursor)
-{
-  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = TRUE;
-}
-
-static void
-_hide (XrdDesktopCursor *cursor)
-{
-  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = FALSE;
-}
-
-static void
-_set_width_meters (XrdDesktopCursor *cursor, float meters)
-{
-  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  XrdSceneWindow *window = XRD_SCENE_WINDOW (self);
-  xrd_scene_window_set_width_meters (window, meters);
-}
-
 static XrdDesktopCursorData*
 _get_data (XrdDesktopCursor *cursor)
 {
@@ -129,21 +105,13 @@ _get_transformation (XrdDesktopCursor  *cursor,
 }
 
 static void
-_set_transformation (XrdDesktopCursor  *cursor,
-                     graphene_matrix_t *matrix)
-{
-  XrdSceneDesktopCursor *self = XRD_SCENE_DESKTOP_CURSOR (cursor);
-  xrd_scene_object_set_transformation (XRD_SCENE_OBJECT (self), matrix);
-}
-
-static void
 xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
   iface->submit_texture = _submit_texture;
-  iface->show = _show;
-  iface->hide = _hide;
-  iface->set_width_meters = _set_width_meters;
   iface->get_data = _get_data;
+  iface->show = (void*) xrd_scene_object_show;
+  iface->hide = (void*) xrd_scene_object_hide;
+  iface->set_width_meters = (void*) xrd_scene_window_set_width_meters;
   iface->get_transformation = _get_transformation;
-  iface->set_transformation = _set_transformation;
+  iface->set_transformation = (void*) xrd_scene_object_set_transformation;
 }
