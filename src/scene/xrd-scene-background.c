@@ -26,8 +26,6 @@ static void
 xrd_scene_background_init (XrdSceneBackground *self)
 {
   self->vertex_buffer = gulkan_vertex_buffer_new ();
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = FALSE;
 }
 
 XrdSceneBackground *
