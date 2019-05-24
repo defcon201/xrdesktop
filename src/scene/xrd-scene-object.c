@@ -245,3 +245,21 @@ xrd_scene_object_get_transformation (XrdSceneObject *self)
 {
   return self->model_matrix;
 }
+
+bool
+xrd_scene_object_is_visible (XrdSceneObject *self)
+{
+  return self->visible;
+}
+
+void
+xrd_scene_object_show (XrdSceneObject *self)
+{
+  self->visible = true;
+}
+
+void
+xrd_scene_object_hide (XrdSceneObject *self)
+{
+  self->visible = false;
+}
