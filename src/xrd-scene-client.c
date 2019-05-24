@@ -61,31 +61,6 @@ void _update_matrices (XrdSceneClient *self);
 void _update_device_poses (XrdSceneClient *self);
 void _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer);
 
-gboolean
-xrd_scene_client_add_button (XrdSceneClient     *self,
-                             XrdWindow         **button,
-                             int                 label_count,
-                             gchar             **label,
-                             graphene_point3d_t *position,
-                             GCallback           press_callback,
-                             gpointer            press_callback_data);
-
-static void
-xrd_scene_client_class_init (XrdSceneClientClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->finalize = xrd_scene_client_finalize;
-
-  XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
-  xrd_client_class->add_button =
-      (void*) xrd_scene_client_add_button;
-  xrd_client_class->get_uploader =
-      (void*) xrd_scene_client_get_uploader;
-  xrd_client_class->init_controller =
-      (void*) xrd_scene_client_init_controller;
-}
-
 static void
 xrd_scene_client_init (XrdSceneClient *self)
 {
@@ -318,11 +293,11 @@ _init_vulkan (XrdSceneClient *self)
   return true;
 }
 
-void
-xrd_scene_client_init_controller (XrdSceneClient *self,
-                                  XrdController *controller)
+static void
+_init_controller (XrdClient     *client,
+                  XrdController *controller)
 {
-  (void) self;
+  (void) client;
 
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   GulkanDevice *device = gulkan_client_get_device (GULKAN_CLIENT (renderer));
@@ -509,14 +484,14 @@ _get_view_projection_matrix (XrdSceneClient *self, EVREye eye)
 
 
 /* Inheritance overwrites from XrdClient */
-gboolean
-xrd_scene_client_add_button (XrdSceneClient     *self,
-                             XrdWindow         **button,
-                             int                 label_count,
-                             gchar             **label,
-                             graphene_point3d_t *position,
-                             GCallback           press_callback,
-                             gpointer            press_callback_data)
+static gboolean
+_add_button (XrdClient          *client,
+             XrdWindow         **button,
+             int                 label_count,
+             gchar             **label,
+             graphene_point3d_t *position,
+             GCallback           press_callback,
+             gpointer            press_callback_data)
 {
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, position);
@@ -525,7 +500,7 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
   int height = 220;
   int ppm = 450;
 
-  GulkanClient *client = GULKAN_CLIENT (xrd_scene_renderer_get_instance ());
+  GulkanClient *gc = xrd_client_get_uploader (client);
 
   GString *full_label = g_string_new ("");
   for (int i = 0; i < label_count; i++)
@@ -546,14 +521,14 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
 
   xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
 
-  VkImageLayout layout = xrd_client_get_upload_layout (XRD_CLIENT (self));
-  xrd_button_set_text (window, client, layout, label_count, label);
+  VkImageLayout layout = xrd_client_get_upload_layout (client);
+  xrd_button_set_text (window, gc, layout, label_count, label);
 
   *button = window;
 
   xrd_window_set_transformation (window, &transform);
 
-  XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
+  XrdWindowManager *manager = xrd_client_get_manager (client);
   xrd_window_manager_add_window (manager,
                                  *button,
                                  XRD_WINDOW_HOVERABLE |
@@ -563,15 +538,15 @@ xrd_scene_client_add_button (XrdSceneClient     *self,
   g_signal_connect (window, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);
 
-  xrd_client_add_button_callbacks (XRD_CLIENT (self), window);
+  xrd_client_add_button_callbacks (client, window);
 
   return TRUE;
 }
 
-GulkanClient *
-xrd_scene_client_get_uploader (XrdSceneClient *self)
+static GulkanClient *
+_get_uploader (XrdClient *client)
 {
-  (void) self;
+  (void) client;
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   return GULKAN_CLIENT (renderer);
 }
@@ -583,4 +558,17 @@ xrd_scene_client_get_descriptor_set_layout ()
   VkDescriptorSetLayout *descriptor_set_layout =
     xrd_scene_renderer_get_descriptor_set_layout (renderer);
   return descriptor_set_layout;
+}
+
+static void
+xrd_scene_client_class_init (XrdSceneClientClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->finalize = xrd_scene_client_finalize;
+
+  XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
+  xrd_client_class->add_button = _add_button;
+  xrd_client_class->get_uploader = _get_uploader;
+  xrd_client_class->init_controller = _init_controller;
 }
