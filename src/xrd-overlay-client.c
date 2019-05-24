@@ -61,10 +61,61 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
       (void*) xrd_overlay_client_init_controller;
 }
 
+static void
+xrd_overlay_client_init (XrdOverlayClient *self)
+{
+  xrd_client_set_upload_layout (XRD_CLIENT (self),
+                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+  self->pinned_only = FALSE;
+  self->uploader = openvr_overlay_uploader_new ();
+}
+
+static bool
+_init_openvr (XrdOverlayClient *self)
+{
+ OpenVRContext *openvr_context =
+    xrd_client_get_openvr_context (XRD_CLIENT (self));
+
+  if (!openvr_context_init_overlay (openvr_context))
+    {
+      g_printerr ("Error: Could not init OpenVR application.\n");
+      return false;
+    }
+  if (!openvr_context_is_valid (openvr_context))
+    {
+      g_printerr ("Error: OpenVR context is invalid.\n");
+      return false;
+    }
+  return true;
+}
+
 XrdOverlayClient *
 xrd_overlay_client_new (void)
 {
-  return (XrdOverlayClient*) g_object_new (XRD_TYPE_OVERLAY_CLIENT, 0);
+  XrdOverlayClient *self =
+    (XrdOverlayClient*) g_object_new (XRD_TYPE_OVERLAY_CLIENT, 0);
+
+  if (!_init_openvr (self))
+    {
+      g_object_unref (self);
+      return NULL;
+    }
+
+  if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))
+    {
+      g_printerr ("Unable to initialize Vulkan!\n");
+      g_object_unref (self);
+      return NULL;
+    }
+
+  xrd_client_post_openvr_init (XRD_CLIENT (self));
+
+  XrdDesktopCursor *cursor =
+    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->uploader));
+  xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
+
+  return self;
 }
 
 static void
@@ -140,39 +191,6 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   xrd_client_add_button_callbacks (XRD_CLIENT (self), window);
 
   return TRUE;
-}
-
-static void
-xrd_overlay_client_init (XrdOverlayClient *self)
-{
-  xrd_client_set_upload_layout (XRD_CLIENT (self),
-                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-  self->pinned_only = FALSE;
-  OpenVRContext *openvr_context =
-    xrd_client_get_openvr_context (XRD_CLIENT (self));
-
-  if (!openvr_context_init_overlay (openvr_context))
-    {
-      g_printerr ("Error: Could not init OpenVR application.\n");
-      return;
-    }
-  if (!openvr_context_is_valid (openvr_context))
-    {
-      g_printerr ("Error: OpenVR context is invalid.\n");
-      return;
-    }
-
-  self->uploader = openvr_overlay_uploader_new ();
-  if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))
-    g_printerr ("Unable to initialize Vulkan!\n");
-
-  xrd_client_post_openvr_init (XRD_CLIENT (self));
-
-  XrdDesktopCursor *cursor =
-    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->uploader));
-
-  xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 }
 
 void

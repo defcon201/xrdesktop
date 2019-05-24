@@ -399,6 +399,11 @@ _iterate_cb (gpointer _self)
 static gboolean
 _init_example (Example *self, XrdClient *client)
 {
+  if (!client)
+    {
+      g_printerr ("XrdClient did not initialize correctly.\n");
+      return FALSE;
+    }
 
   /* TODO: remove special case */
   if (XRD_IS_SCENE_CLIENT (client))

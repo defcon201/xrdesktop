@@ -394,16 +394,18 @@ xrd_client_finalize (GObject *gobject)
   XrdClient *self = XRD_CLIENT (gobject);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  g_source_remove (priv->poll_runtime_event_source_id);
-  g_source_remove (priv->poll_input_source_id);
+  if (priv->poll_runtime_event_source_id > 0)
+    g_source_remove (priv->poll_runtime_event_source_id);
+  if (priv->poll_input_source_id > 0)
+    g_source_remove (priv->poll_input_source_id);
 
   g_object_unref (priv->manager);
-  g_object_unref (priv->wm_actions);
+  g_clear_object (&priv->wm_actions);
 
   /* TODO check for controller unref */
   g_hash_table_unref (priv->controllers);
 
-  g_object_unref (priv->cursor);
+  g_clear_object (&priv->cursor);
 
   /* TODO: should this be freed? */
   // g_object_unref (priv->input_synth);
@@ -1530,6 +1532,8 @@ xrd_client_init (XrdClient *self)
   priv->keyboard_close_signal = 0;
   priv->pinned_only = FALSE;
   priv->selection_mode = FALSE;
+  priv->wm_actions = NULL;
+  priv->cursor = NULL;
 
   priv->context = openvr_context_get_instance ();
   priv->manager = xrd_window_manager_new ();
