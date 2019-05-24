@@ -19,7 +19,7 @@ struct _XrdOverlayPointerTip
 {
   OpenVROverlay parent;
 
-  OpenVROverlayUploader *uploader;
+  GulkanClient *gc;
 
   XrdPointerTipData data;
 };
@@ -60,15 +60,14 @@ xrd_overlay_pointer_tip_init (XrdOverlayPointerTip *self)
 }
 
 XrdOverlayPointerTip *
-xrd_overlay_pointer_tip_new (int controller_index,
-                             OpenVROverlayUploader  *uploader)
+xrd_overlay_pointer_tip_new (int controller_index, GulkanClient *gc)
 {
   XrdOverlayPointerTip *self =
     (XrdOverlayPointerTip*) g_object_new (XRD_TYPE_OVERLAY_POINTER_TIP, 0);
 
   /* our uploader ref needs to stay valid as long as pointer tip exists */
-  g_object_ref (uploader);
-  self->uploader = uploader;
+  g_object_ref (gc);
+  self->gc = gc;
 
   char key[k_unVROverlayMaxKeyLength];
   snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%d",
@@ -100,7 +99,7 @@ xrd_overlay_pointer_tip_finalize (GObject *gobject)
   (void) self;
 
   /* release the ref we set in pointer tip init */
-  g_object_unref (self->uploader);
+  g_object_unref (self->gc);
   if (self->data.texture)
     g_object_unref (self->data.texture);
 
@@ -137,17 +136,6 @@ _hide (XrdPointerTip *tip)
   openvr_overlay_hide (OPENVR_OVERLAY (self));
 }
 
-static void
-_submit_texture (XrdPointerTip *tip,
-                 GulkanClient  *client,
-                 GulkanTexture *texture)
-{
-  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
-  openvr_overlay_uploader_submit_frame (OPENVR_OVERLAY_UPLOADER (client),
-                                        OPENVR_OVERLAY (self),
-                                        texture);
-}
-
 static XrdPointerTipData*
 _get_data (XrdPointerTip *tip)
 {
@@ -159,7 +147,7 @@ static GulkanClient*
 _get_gulkan_client (XrdPointerTip *tip)
 {
   XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
-  return GULKAN_CLIENT (self->uploader);
+  return GULKAN_CLIENT (self->gc);
 }
 
 static void
@@ -170,7 +158,7 @@ xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
-  iface->submit_texture = _submit_texture;
+  iface->submit_texture = (void*) openvr_overlay_submit_texture;
   iface->get_data = _get_data;
   iface->get_gulkan_client = _get_gulkan_client;
 }

@@ -25,7 +25,7 @@ struct _XrdOverlayClient
   gboolean pinned_only;
   XrdOverlayWindow *pinned_button;
 
-  OpenVROverlayUploader *uploader;
+  GulkanClient *gc;
 };
 
 G_DEFINE_TYPE (XrdOverlayClient, xrd_overlay_client, XRD_TYPE_CLIENT)
@@ -46,29 +46,12 @@ GulkanClient *
 xrd_overlay_client_get_uploader (XrdOverlayClient *self);
 
 static void
-xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->finalize = xrd_overlay_client_finalize;
-
-  XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
-  xrd_client_class->add_button =
-      (void*) xrd_overlay_client_add_button;
-  xrd_client_class->get_uploader =
-      (void*) xrd_overlay_client_get_uploader;
-  xrd_client_class->init_controller =
-      (void*) xrd_overlay_client_init_controller;
-}
-
-static void
 xrd_overlay_client_init (XrdOverlayClient *self)
 {
   xrd_client_set_upload_layout (XRD_CLIENT (self),
                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
   self->pinned_only = FALSE;
-  self->uploader = openvr_overlay_uploader_new ();
 }
 
 static bool
@@ -102,7 +85,8 @@ xrd_overlay_client_new (void)
       return NULL;
     }
 
-  if (!openvr_overlay_uploader_init_vulkan (self->uploader, false))
+  self->gc = openvr_compositor_gulkan_client_new (true);
+  if (!self->gc)
     {
       g_printerr ("Unable to initialize Vulkan!\n");
       g_object_unref (self);
@@ -112,7 +96,7 @@ xrd_overlay_client_new (void)
   xrd_client_post_openvr_init (XRD_CLIENT (self));
 
   XrdDesktopCursor *cursor =
-    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->uploader));
+    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->gc));
   xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 
   return self;
@@ -126,13 +110,13 @@ xrd_overlay_client_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_overlay_client_parent_class)->finalize (gobject);
 
   /* Uploader needs to be freed after context! */
-  g_object_unref (self->uploader);
+  g_object_unref (self->gc);
 }
 
 GulkanClient *
 xrd_overlay_client_get_uploader (XrdOverlayClient *self)
 {
-  return GULKAN_CLIENT (self->uploader);
+  return GULKAN_CLIENT (self->gc);
 }
 
 gboolean
@@ -150,8 +134,6 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   int width = 220;
   int height = 220;
   int ppm = 450;
-
-  GulkanClient *client = GULKAN_CLIENT (self->uploader);
 
   GString *full_label = g_string_new ("");
   for (int i = 0; i < label_count; i++)
@@ -172,7 +154,7 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
 
   VkImageLayout layout = xrd_client_get_upload_layout (XRD_CLIENT (self));
 
-  xrd_button_set_text (window, client, layout, label_count, label);
+  xrd_button_set_text (window, self->gc, layout, label_count, label);
 
   *button = window;
 
@@ -193,10 +175,11 @@ xrd_overlay_client_add_button (XrdOverlayClient   *self,
   return TRUE;
 }
 
-void
-xrd_overlay_client_init_controller (XrdOverlayClient *self,
-                                    XrdController *controller)
+static void
+_init_controller (XrdClient     *client,
+                  XrdController *controller)
 {
+  GulkanClient *gc = xrd_client_get_uploader (client);
   guint64 controller_handle = xrd_controller_get_handle (controller);
   XrdPointer *pointer_ray =
     XRD_POINTER (xrd_overlay_pointer_new (controller_handle));
@@ -208,8 +191,7 @@ xrd_overlay_client_init_controller (XrdOverlayClient *self,
   xrd_controller_set_pointer (controller, pointer_ray);
 
   XrdPointerTip *pointer_tip =
-    XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (controller_handle,
-                                                  self->uploader));
+    XRD_POINTER_TIP (xrd_overlay_pointer_tip_new (controller_handle, gc));
   if (pointer_tip == NULL)
     {
       g_printerr ("Error: Could not init pointer tip %lu\n", controller_handle);
@@ -220,4 +202,20 @@ xrd_overlay_client_init_controller (XrdOverlayClient *self,
   xrd_pointer_tip_show (pointer_tip);
 
   xrd_controller_set_pointer_tip (controller, pointer_tip);
+}
+
+static void
+xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->finalize = xrd_overlay_client_finalize;
+
+  XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
+  xrd_client_class->add_button =
+      (void*) xrd_overlay_client_add_button;
+  xrd_client_class->get_uploader =
+      (void*) xrd_overlay_client_get_uploader;
+  xrd_client_class->init_controller =
+      (void*) _init_controller;
 }

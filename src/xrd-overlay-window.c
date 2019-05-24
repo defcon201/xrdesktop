@@ -197,7 +197,6 @@ _submit_texture (XrdWindow     *window,
                  GulkanTexture *texture)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  OpenVROverlayUploader *uploader = OPENVR_OVERLAY_UPLOADER (client);
 
   uint32_t current_width, current_height;
   g_object_get (self,
@@ -225,8 +224,7 @@ _submit_texture (XrdWindow     *window,
                                       new_width, new_height);
     }
 
-  openvr_overlay_uploader_submit_frame (uploader,
-                                        OPENVR_OVERLAY (self), texture);
+  openvr_overlay_submit_texture (OPENVR_OVERLAY (self), client, texture);
 }
 
 static void

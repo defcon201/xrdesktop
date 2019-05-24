@@ -76,8 +76,7 @@ _submit_texture (XrdDesktopCursor *cursor,
 {
   XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
 
-  openvr_overlay_uploader_submit_frame (OPENVR_OVERLAY_UPLOADER (uploader),
-                                        OPENVR_OVERLAY (self), texture);
+  openvr_overlay_submit_texture (OPENVR_OVERLAY (self), uploader, texture);
 
   self->data.hotspot_x = hotspot_x;
   self->data.hotspot_y = hotspot_y;

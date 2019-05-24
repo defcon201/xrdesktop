@@ -35,10 +35,6 @@ struct _XrdOverlayClient;
 
 XrdOverlayClient *xrd_overlay_client_new (void);
 
-void
-xrd_overlay_client_init_controller (XrdOverlayClient *self,
-                                    XrdController *controller);
-
 G_END_DECLS
 
 #endif /* XRD_GLIB_OVERLAY_CLIENT_H_ */
