@@ -381,9 +381,12 @@ _poll_event (XrdWindow *self)
 /* TODO: Use pointer class in interface */
 static gboolean
 _intersects (XrdWindow          *window,
+             XrdPointer         *pointer,
              graphene_matrix_t  *mat,
              graphene_point3d_t *intersection_point)
 {
+  (void) pointer;
+
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
 
   /* TODO: Don't Hardcode pointer props */

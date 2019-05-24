@@ -318,20 +318,23 @@ xrd_window_poll_event (XrdWindow *self)
 /**
  * xrd_window_intersects:
  * @self: The #XrdWindow
- * @pointer_transformation_matrix: pose of a pointer ray (like a controller).
- * @intersection_point: The intersection point if there is an intersection.
+ * @pointer: The #XrdPointer.
+ * @pointer_transformation: pose of a pointer ray (like a controller).
+ * @intersection: The intersection point if there is an intersection.
  *
  * Returns: True if there is an intersection, else false.
  */
 gboolean
 xrd_window_intersects (XrdWindow          *self,
-                       graphene_matrix_t  *pointer_transformation_matrix,
-                       graphene_point3d_t *intersection_point)
+                       XrdPointer         *pointer,
+                       graphene_matrix_t  *pointer_transformation,
+                       graphene_point3d_t *intersection)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   return iface->intersects (self,
-                            pointer_transformation_matrix,
-                            intersection_point);
+                            pointer,
+                            pointer_transformation,
+                            intersection);
 }
 
 /**

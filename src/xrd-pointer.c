@@ -6,6 +6,7 @@
  */
 
 #include "xrd-pointer.h"
+#include "xrd-window.h"
 
 G_DEFINE_INTERFACE (XrdPointer, xrd_pointer, G_TYPE_OBJECT)
 

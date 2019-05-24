@@ -17,6 +17,8 @@
 #include <graphene.h>
 #include <gulkan.h>
 
+#include "xrd-pointer.h"
+
 typedef struct XrdPixelSize
 {
   uint32_t width;
@@ -90,9 +92,10 @@ struct _XrdWindowInterface
   (*poll_event) (XrdWindow *self);
 
   gboolean
-  (*intersects) (XrdWindow   *self,
-                 graphene_matrix_t  *pointer_transformation_matrix,
-                 graphene_point3d_t *intersection_point);
+  (*intersects) (XrdWindow          *self,
+                 XrdPointer         *pointer,
+                 graphene_matrix_t  *pointer_transformation,
+                 graphene_point3d_t *intersection);
 
   void
   (*emit_grab_start) (XrdWindow *self, XrdControllerIndexEvent *event);
@@ -154,9 +157,10 @@ void
 xrd_window_poll_event (XrdWindow *self);
 
 gboolean
-xrd_window_intersects (XrdWindow   *self,
-                       graphene_matrix_t  *pointer_transformation_matrix,
-                       graphene_point3d_t *intersection_point);
+xrd_window_intersects (XrdWindow          *self,
+                       XrdPointer         *pointer,
+                       graphene_matrix_t  *pointer_transformation,
+                       graphene_point3d_t *intersection);
 
 void
 xrd_window_get_intersection_2d_pixels (XrdWindow          *self,

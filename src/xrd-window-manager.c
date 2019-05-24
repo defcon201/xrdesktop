@@ -417,6 +417,8 @@ _test_hover (XrdWindowManager  *self,
 
   XrdWindow *closest = NULL;
 
+  XrdPointer *pointer = xrd_controller_get_pointer (controller);
+
   for (GSList *l = self->hoverable_windows; l != NULL; l = l->next)
     {
       XrdWindow *window = (XrdWindow *) l->data;
@@ -425,7 +427,7 @@ _test_hover (XrdWindowManager  *self,
         continue;
 
       graphene_point3d_t intersection_point;
-      if (xrd_window_intersects (window, pose, &intersection_point))
+      if (xrd_window_intersects (window, pointer, pose, &intersection_point))
         {
           float distance =
             xrd_math_point_matrix_distance (&intersection_point, pose);
@@ -697,7 +699,7 @@ xrd_window_manager_check_release (XrdWindowManager *self,
 void
 xrd_window_manager_update_pose (XrdWindowManager  *self,
                                 graphene_matrix_t *pose,
-                                XrdController      *controller)
+                                XrdController     *controller)
 {
   /* Drag test */
   if (xrd_controller_get_grab_state (controller)->window != NULL)

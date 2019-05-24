@@ -15,7 +15,7 @@
 #include <glib-object.h>
 #include <graphene.h>
 
-#include "xrd-window.h"
+typedef struct _XrdWindow XrdWindow;
 
 G_BEGIN_DECLS
 

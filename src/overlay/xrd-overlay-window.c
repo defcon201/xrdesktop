@@ -247,13 +247,15 @@ _poll_event (XrdWindow *window)
 
 static gboolean
 _intersects (XrdWindow          *window,
-             graphene_matrix_t  *pointer_transformation_matrix,
-             graphene_point3d_t *intersection_point)
+             XrdPointer         *pointer,
+             graphene_matrix_t  *pointer_transformation,
+             graphene_point3d_t *intersection)
 {
+  (void) pointer;
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   gboolean res = openvr_overlay_intersects (OPENVR_OVERLAY (self),
-                                            intersection_point,
-                                            pointer_transformation_matrix);
+                                            intersection,
+                                            pointer_transformation);
   return res;
 }
 
