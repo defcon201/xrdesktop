@@ -173,7 +173,8 @@ xrd_desktop_cursor_update (XrdDesktopCursor   *self,
       ((float)data->texture_height) * data->cached_width_meters;
 
   graphene_point3d_t cursor_hotspot;
-  graphene_point3d_init (&cursor_hotspot, cursor_hotspot_meter_x,
+  graphene_point3d_init (&cursor_hotspot,
+                         cursor_hotspot_meter_x,
                          cursor_hotspot_meter_y, 0);
   graphene_matrix_translate (&transform, &cursor_hotspot);
 
@@ -212,6 +213,8 @@ xrd_desktop_cursor_update_apparent_size (XrdDesktopCursor   *self,
    * both cases at typical usage distances. */
   float new_width = data->width_meters
                     / XRD_TIP_APPARENT_SIZE_DISTANCE * distance;
+
+  data->cached_width_meters = new_width;
 
   xrd_desktop_cursor_set_width_meters (XRD_DESKTOP_CURSOR (self), new_width);
 }
