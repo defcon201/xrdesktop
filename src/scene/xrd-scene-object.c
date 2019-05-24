@@ -237,7 +237,7 @@ xrd_scene_object_set_transformation (XrdSceneObject    *self,
   // graphene_vec3_t scale;
   // graphene_matrix_get_scale (mat, &scale);
 
-  graphene_matrix_init_from_matrix (&self->model_matrix, mat);
+  _update_model_matrix (self);
 }
 
 graphene_matrix_t
