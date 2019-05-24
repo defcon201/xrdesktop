@@ -378,85 +378,22 @@ _poll_event (XrdWindow *self)
   (void) self;
 }
 
-/* TODO: Use pointer class in interface */
 static gboolean
 _intersects (XrdWindow          *window,
              XrdPointer         *pointer,
              graphene_matrix_t  *mat,
              graphene_point3d_t *intersection_point)
 {
-  (void) pointer;
+  (void) mat;
 
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-
-  /* TODO: Don't Hardcode pointer props */
-  float start_offset = -0.02f;
-  float length = 40.0f;
-
-  /* Get ray */
-  graphene_vec4_t start;
-  graphene_vec4_init (&start, 0, 0, start_offset, 1);
-  graphene_matrix_transform_vec4 (mat, &start, &start);
-
-  graphene_vec4_t end;
-  graphene_vec4_init (&end, 0, 0, -length, 1);
-  graphene_matrix_transform_vec4 (mat, &end, &end);
-
-  graphene_vec4_t direction_vec4;
-  graphene_vec4_subtract (&end, &start, &direction_vec4);
-
-  graphene_point3d_t origin;
-  graphene_vec3_t direction;
-
-  graphene_vec3_t vec3_start;
-  graphene_vec4_get_xyz (&start, &vec3_start);
-  graphene_point3d_init_from_vec3 (&origin, &vec3_start);
-
-  graphene_vec4_get_xyz (&direction_vec4, &direction);
-
-  graphene_ray_t ray;
-  graphene_ray_init (&ray, &origin, &direction);
-
-  /* Get intersection */
-
-  graphene_plane_t plane;
-  xrd_scene_window_get_plane (self, &plane);
-
-  float distance = graphene_ray_get_distance_to_plane (&ray, &plane);
-  if (distance == INFINITY)
-    return FALSE;
-
+  float distance;
   graphene_vec3_t intersection_vec;
-  graphene_ray_get_direction (&ray, &intersection_vec);
-  graphene_vec3_scale (&intersection_vec, distance, &intersection_vec);
-
-  graphene_vec3_t intersetion_origin;
-  graphene_ray_get_origin_vec3 (&ray, &intersetion_origin);
-  graphene_vec3_add (&intersetion_origin, &intersection_vec, &intersection_vec);
-
-  graphene_matrix_t inverse;
-  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (self);
-  graphene_matrix_inverse (&window_obj->model_matrix, &inverse);
-
-  graphene_vec4_t intersection_vec4;
-  graphene_vec4_init_from_vec3 (&intersection_vec4, &intersection_vec, 1.0f);
-
-  graphene_vec4_t intersection_origin;
-  graphene_matrix_transform_vec4 (&inverse,
-                                  &intersection_vec4,
-                                  &intersection_origin);
-
-  float f[4];
-  graphene_vec4_to_float (&intersection_origin, f);
+  bool intersects = xrd_pointer_get_intersection (pointer, window,
+                                                  &distance, &intersection_vec);
 
   graphene_point3d_init_from_vec3 (intersection_point, &intersection_vec);
 
-  /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
-  if (f[0] >= -self->aspect_ratio / 2.0f && f[0] <= self->aspect_ratio / 2.0f
-      && f[1] >= -0.5f && f[1] <= 0.5f)
-    return TRUE;
-
-  return FALSE;
+ return intersects;
 }
 
 static void
