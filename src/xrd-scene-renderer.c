@@ -121,36 +121,6 @@ XrdSceneRenderer *xrd_scene_renderer_get_instance (void)
 }
 
 static bool
-_init_vulkan_instance (XrdSceneRenderer *self)
-{
-  GSList *extensions = NULL;
-  openvr_compositor_get_instance_extensions (&extensions);
-  return gulkan_instance_create (gulkan_client_get_instance (
-                                   GULKAN_CLIENT (self)),
-                                 use_validation, extensions);
-}
-
-static bool
-_init_vulkan_device (XrdSceneRenderer *self)
-{
-  /* Query OpenVR for a physical device */
-  uint64_t physical_device = 0;
-  OpenVRContext *context = openvr_context_get_instance ();
-  context->system->GetOutputDevice (
-      &physical_device, ETextureType_TextureType_Vulkan,
-      (struct VkInstance_T *)
-        gulkan_client_get_instance_handle (GULKAN_CLIENT (self)));
-
-  GSList *extensions = NULL;
-  openvr_compositor_get_device_extensions ((VkPhysicalDevice)physical_device,
-                                           &extensions);
-
-  return gulkan_device_create (gulkan_client_get_device (GULKAN_CLIENT (self)),
-                               gulkan_client_get_instance (GULKAN_CLIENT (self)),
-                               (VkPhysicalDevice)physical_device, extensions);
-}
-
-static bool
 _init_framebuffers (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 {
   OpenVRContext *context = openvr_context_get_instance ();
@@ -519,17 +489,9 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
 bool
 xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self)
 {
-  if (!_init_vulkan_instance (self))
+  if (!openvr_compositor_gulkan_client_init (GULKAN_CLIENT (self),
+                                             use_validation))
     return false;
-
-  if (!_init_vulkan_device (self))
-    return false;
-
-  if (!gulkan_client_init_command_pool (GULKAN_CLIENT (self)))
-    {
-      g_printerr ("Could not create command pool.\n");
-      return false;
-    }
 
   GulkanCommandBuffer cmd_buffer;
   if (!gulkan_client_begin_cmd_buffer (GULKAN_CLIENT (self),

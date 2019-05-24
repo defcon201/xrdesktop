@@ -33,8 +33,6 @@ enum PipelineType
 G_DECLARE_FINAL_TYPE (XrdSceneRenderer, xrd_scene_renderer,
                       XRD, SCENE_RENDERER, GulkanClient)
 
-XrdSceneRenderer *xrd_scene_renderer_new (void);
-
 XrdSceneRenderer *xrd_scene_renderer_get_instance (void);
 
 GulkanDevice*
