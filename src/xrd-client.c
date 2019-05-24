@@ -726,6 +726,7 @@ _action_reset_orientation_cb (OpenVRAction       *action,
 
   /* TODO: Check if animation is already in progress */
 
+  transition->interpolate = 0.;
   transition->grab_state = grab_state;
 
   graphene_quaternion_init_identity (&transition->to);
