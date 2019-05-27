@@ -1555,7 +1555,7 @@ static void _system_quit_cb (OpenVRContext *context,
   openvr_context_acknowledge_quit (context);
   xrd_client_emit_system_quit (self, event);
 
-  g_free (event);
+  gdk_event_free (event);
 }
 
 void
