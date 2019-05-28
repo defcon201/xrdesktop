@@ -83,7 +83,7 @@ _update_width_meters (GSettings *settings, gchar *key, gpointer _data)
   XrdDesktopCursorData *data = (XrdDesktopCursorData*) _data;
   XrdDesktopCursor *self = data->cursor;
 
-  data->width_meters = g_settings_get_double (settings, key);
+  data->width_meters = (float) g_settings_get_double (settings, key);
   xrd_desktop_cursor_set_width_meters (self, data->width_meters);
 }
 
@@ -165,8 +165,8 @@ xrd_desktop_cursor_update (XrdDesktopCursor   *self,
 
   graphene_point3d_t cursor_radius;
   graphene_point3d_init (&cursor_radius,
-                         data->cached_width_meters / 2.,
-                         - data->cached_width_meters / 2., 0);
+                         data->cached_width_meters / 2.f,
+                         - data->cached_width_meters / 2.f, 0);
   graphene_matrix_translate (&transform, &cursor_radius);
 
   float cursor_hotspot_meter_x = - data->hotspot_x /

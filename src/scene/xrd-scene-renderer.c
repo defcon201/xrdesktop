@@ -76,12 +76,6 @@ xrd_scene_renderer_init (XrdSceneRenderer *self)
     self->framebuffer[eye] = gulkan_frame_buffer_new();
 }
 
-XrdSceneRenderer *
-xrd_scene_renderer_new (void)
-{
-  return (XrdSceneRenderer*) g_object_new (XRD_TYPE_SCENE_RENDERER, 0);
-}
-
 static void
 xrd_scene_renderer_finalize (GObject *gobject)
 {
@@ -115,7 +109,7 @@ static XrdSceneRenderer *singleton = NULL;
 XrdSceneRenderer *xrd_scene_renderer_get_instance (void)
 {
   if (singleton == NULL)
-    singleton = xrd_scene_renderer_new ();
+    singleton = (XrdSceneRenderer*) g_object_new (XRD_TYPE_SCENE_RENDERER, 0);
 
   return singleton;
 }
@@ -166,7 +160,7 @@ _init_shaders (XrdSceneRenderer *self)
 }
 
 /* Create a descriptor set layout compatible with all shaders. */
-bool
+static bool
 _init_descriptor_layout (XrdSceneRenderer *self)
 {
   VkDescriptorSetLayoutCreateInfo info = {
@@ -192,12 +186,12 @@ _init_descriptor_layout (XrdSceneRenderer *self)
                                                 GULKAN_CLIENT (self)),
                                              &info, NULL,
                                              &self->descriptor_set_layout);
-  vk_check_error ("vkCreateDescriptorSetLayout", res);
+  vk_check_error ("vkCreateDescriptorSetLayout", res)
 
   return true;
 }
 
-bool
+static bool
 _init_pipeline_layout (XrdSceneRenderer *self)
 {
   VkPipelineLayoutCreateInfo info = {
@@ -211,12 +205,12 @@ _init_pipeline_layout (XrdSceneRenderer *self)
   VkResult res = vkCreatePipelineLayout (gulkan_client_get_device_handle (
                                            GULKAN_CLIENT (self)),
                                         &info, NULL, &self->pipeline_layout);
-  vk_check_error ("vkCreatePipelineLayout", res);
+  vk_check_error ("vkCreatePipelineLayout", res)
 
   return true;
 }
 
-bool
+static bool
 _init_pipeline_cache (XrdSceneRenderer *self)
 {
   VkPipelineCacheCreateInfo info = {
@@ -225,7 +219,7 @@ _init_pipeline_cache (XrdSceneRenderer *self)
   VkResult res = vkCreatePipelineCache (gulkan_client_get_device_handle (
                                           GULKAN_CLIENT (self)),
                                        &info, NULL, &self->pipeline_cache);
-  vk_check_error ("vkCreatePipelineCache", res);
+  vk_check_error ("vkCreatePipelineCache", res)
 
   return true;
 }
@@ -240,7 +234,7 @@ typedef struct __attribute__((__packed__)) PipelineConfig {
   const VkPipelineRasterizationStateCreateInfo *rasterization_state;
 } PipelineConfig;
 
-bool
+static bool
 _init_graphics_pipelines (XrdSceneRenderer *self)
 {
   PipelineConfig config[PIPELINE_COUNT] = {
@@ -480,7 +474,7 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
                                                 self->pipeline_cache, 1,
                                                &pipeline_info,
                                                 NULL, &self->pipelines[i]);
-      vk_check_error ("vkCreateGraphicsPipelines", res);
+      vk_check_error ("vkCreateGraphicsPipelines", res)
     }
 
   return true;
@@ -530,7 +524,7 @@ xrd_scene_renderer_get_descriptor_set_layout (XrdSceneRenderer *self)
   return &self->descriptor_set_layout;
 }
 
-void
+static void
 _render_stereo (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 {
   VkViewport viewport = {
@@ -588,9 +582,11 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
                         1, &cmd_buffer.handle);
   vkDestroyFence (device_handle, cmd_buffer.fence, NULL);
 
+  VkImage vk_image =
+    gulkan_frame_buffer_get_color_image (self->framebuffer[EVREye_Eye_Left]);
+
   VRVulkanTextureData_t openvr_texture_data = {
-    .m_nImage = (uint64_t)gulkan_frame_buffer_get_color_image (
-      self->framebuffer[EVREye_Eye_Left]),
+    .m_nImage = (uint64_t) vk_image,
     .m_pDevice = device_handle,
     .m_pPhysicalDevice = gulkan_client_get_physical_device_handle (
       GULKAN_CLIENT (self)),
@@ -620,9 +616,10 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
   context->compositor->Submit (EVREye_Eye_Left, &texture, &bounds,
                                EVRSubmitFlags_Submit_Default);
 
-  openvr_texture_data.m_nImage =
-    (uint64_t) gulkan_frame_buffer_get_color_image (
-      self->framebuffer[EVREye_Eye_Right]);
+  vk_image =
+    gulkan_frame_buffer_get_color_image (self->framebuffer[EVREye_Eye_Right]);
+
+  openvr_texture_data.m_nImage = (uint64_t) vk_image;
   context->compositor->Submit (EVREye_Eye_Right, &texture, &bounds,
                                EVRSubmitFlags_Submit_Default);
 }

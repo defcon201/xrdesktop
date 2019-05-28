@@ -43,7 +43,7 @@ xrd_scene_selection_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_selection_parent_class)->finalize (gobject);
 }
 
-void
+static void
 _append_lines_quad (GulkanVertexBuffer *self,
                     float               aspect_ratio,
                     graphene_vec3_t    *color)

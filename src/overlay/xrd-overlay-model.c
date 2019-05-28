@@ -27,21 +27,22 @@ xrd_overlay_model_init (XrdOverlayModel *self)
   (void) self;
 }
 
-void
+static void
 _destroy_pixels_cb (guchar *pixels, gpointer unused)
 {
   (void) unused;
   g_free (pixels);
 }
 
-GdkPixbuf *
+static GdkPixbuf *
 _create_empty_pixbuf (uint32_t width, uint32_t height)
 {
   guchar *pixels = (guchar*) g_malloc (sizeof (guchar) * height * width * 4);
   memset (pixels, 0, height * width * 4 * sizeof (guchar));
   GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data (pixels, GDK_COLORSPACE_RGB,
-                                                TRUE, 8, width, height,
-                                                4 * width,
+                                                TRUE, 8, (int) width,
+                                                (int) height,
+                                                4 * (int) width,
                                                 _destroy_pixels_cb, NULL);
   return pixbuf;
 }

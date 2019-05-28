@@ -25,7 +25,8 @@ graphene_quaternion_print (const graphene_quaternion_t *q)
 {
   float f[4];
   graphene_quaternion_to_float (q, f);
-  g_print ("| %f %f %f %f |\n", f[0], f[1], f[2], f[3]);
+  g_print ("| %f %f %f %f |\n",
+           (double) f[0], (double) f[1], (double) f[2], (double) f[3]);
 }
 
 void
@@ -180,7 +181,8 @@ graphene_vec4_print (const graphene_vec4_t *v)
 {
   float f[4];
   graphene_vec4_to_float (v, f);
-  g_print ("| %f %f %f %f |\n", f[0], f[1], f[2], f[3]);
+  g_print ("| %f %f %f %f |\n",
+           (double) f[0], (double) f[1], (double) f[2], (double) f[3]);
 }
 
 void
@@ -188,7 +190,7 @@ graphene_vec3_print (const graphene_vec3_t *v)
 {
   float f[3];
   graphene_vec3_to_float (v, f);
-  g_print ("| %f %f %f |\n", f[0], f[1], f[2]);
+  g_print ("| %f %f %f |\n", (double) f[0], (double) f[1], (double) f[2]);
 }
 
 bool

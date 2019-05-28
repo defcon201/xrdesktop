@@ -42,7 +42,7 @@ xrd_scene_background_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_background_parent_class)->finalize (gobject);
 }
 
-void
+static void
 _append_star (GulkanVertexBuffer *self,
               float               radius,
               float               y,
@@ -71,7 +71,7 @@ _append_star (GulkanVertexBuffer *self,
   g_free(points);
 }
 
-void
+static void
 _append_circle (GulkanVertexBuffer *self,
                 float               radius,
                 float               y,
@@ -100,7 +100,7 @@ _append_circle (GulkanVertexBuffer *self,
   g_free(points);
 }
 
-void
+static void
 _append_floor (GulkanVertexBuffer *self,
                uint32_t            radius,
                float               y,

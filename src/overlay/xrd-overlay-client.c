@@ -84,7 +84,7 @@ xrd_overlay_client_new (void)
   xrd_client_post_openvr_init (XRD_CLIENT (self));
 
   XrdDesktopCursor *cursor =
-    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new (self->gc));
+    XRD_DESKTOP_CURSOR (xrd_overlay_desktop_cursor_new ());
   xrd_client_set_desktop_cursor (XRD_CLIENT (self), cursor);
 
   return self;
@@ -120,9 +120,9 @@ _add_button (XrdClient          *client,
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, position);
 
-  int width = 220;
-  int height = 220;
-  int ppm = 450;
+  uint32_t width = 220;
+  uint32_t height = 220;
+  float ppm = 450;
 
   GString *full_label = g_string_new ("");
   for (int i = 0; i < label_count; i++)

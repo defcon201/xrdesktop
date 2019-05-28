@@ -62,7 +62,7 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
 }
 
 XrdOverlayDesktopCursor *
-xrd_overlay_desktop_cursor_new ()
+xrd_overlay_desktop_cursor_new (void)
 {
   return (XrdOverlayDesktopCursor*) g_object_new (XRD_TYPE_OVERLAY_DESKTOP_CURSOR, 0);
 }
@@ -135,7 +135,7 @@ xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->show = _show;
   iface->hide = _hide;
-  iface->set_width_meters = (void*) openvr_overlay_set_width_meters;
+  iface->set_width_meters = (void (*)(XrdDesktopCursor *, float)) openvr_overlay_set_width_meters;
   iface->get_data = _get_data;
   iface->get_transformation = _get_transformation;
   iface->set_transformation = _set_transformation;

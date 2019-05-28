@@ -86,7 +86,7 @@ xrd_shake_compensator_replay_move_queue (XrdShakeCompensator *self,
 
       /* we must not replay mouse move events too fast
        * or they will be dropped */
-      g_usleep ((1. / 10.) * G_USEC_PER_SEC / 1000.);
+      g_usleep ((gulong)((1. / 10.) * G_USEC_PER_SEC / 1000.));
     }
   self->queue = NULL;
 }
@@ -97,11 +97,11 @@ xrd_shake_compensator_is_drag (XrdShakeCompensator *self,
                                graphene_matrix_t *controller_pose,
                                graphene_point3d_t *intersection)
 {
-  guint64 now = g_get_monotonic_time ();
-  guint64 ms_since_press = (now - self->last_press_time) / 1000.;
+  gint64 now = g_get_monotonic_time ();
+  double ms_since_press = (now - self->last_press_time) / 1000.;
 
   /* we'll only be able to predict after a few movements*/
-  int len = g_queue_get_length (self->queue);
+  guint len = g_queue_get_length (self->queue);
   if (len  < 2)
     return FALSE;
 
@@ -130,12 +130,12 @@ xrd_shake_compensator_is_drag (XrdShakeCompensator *self,
 
   float dist_meter = dist_pixel / xrd_window_get_current_ppm (window);
 
-  variance_meter = fmax (dist_meter, variance_meter);
+  variance_meter = fmaxf (dist_meter, variance_meter);
 
   /* Shaking should scale linearly with controller-window distance. */
-  float variance_percent = (variance_meter / window_controller_dist) * 100.;
+  float variance_percent = (variance_meter / window_controller_dist) * 100.f;
 
-  if (variance_percent > self->threshold_percent)
+  if (variance_percent > (float) self->threshold_percent)
     return TRUE;
 
   return FALSE;

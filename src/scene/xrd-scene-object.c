@@ -57,7 +57,7 @@ xrd_scene_object_finalize (GObject *gobject)
     g_object_unref (self->uniform_buffers[eye]);
 }
 
-void
+static void
 _update_model_matrix (XrdSceneObject *self)
 {
   graphene_matrix_init_scale (&self->model_matrix,

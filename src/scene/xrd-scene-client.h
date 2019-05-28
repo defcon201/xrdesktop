@@ -43,7 +43,7 @@ GulkanClient *
 xrd_scene_client_get_uploader (XrdSceneClient *self);
 
 VkDescriptorSetLayout*
-xrd_scene_client_get_descriptor_set_layout ();
+xrd_scene_client_get_descriptor_set_layout (void);
 G_END_DECLS
 
 void

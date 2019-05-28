@@ -21,10 +21,10 @@ struct _XrdInputSynth
   graphene_point_t hover_position;
   XrdWindow *hover_window;
 
-  uint32_t button_press_state;
+  int button_press_state;
   graphene_vec3_t scroll_accumulator;
 
-  double scroll_threshold;
+  float scroll_threshold;
 
   guint64 synthing_controller_handle;
 
@@ -92,7 +92,7 @@ xrd_input_synth_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_input_synth_parent_class)->finalize (gobject);
 }
 
-void
+static void
 _emit_click (XrdInputSynth    *self,
              graphene_point_t *position,
              int               button,
@@ -250,14 +250,14 @@ _action_scroll_cb (OpenVRAction            *action,
     }
   
   static graphene_vec3_t last_touch_pos;
-  gboolean initial_touch = graphene_vec3_get_x (&last_touch_pos) == 0.0 &&
-                           graphene_vec3_get_y (&last_touch_pos) == 0.0;
+  gboolean initial_touch = graphene_vec3_get_x (&last_touch_pos) == 0.0f &&
+                           graphene_vec3_get_y (&last_touch_pos) == 0.0f;
   graphene_vec3_init_from_vec3 (&last_touch_pos, &event->state);
 
   /* When stopping to touch the touchpad we get a deltea from where the
    * touchpad is touched to (0,0). Ignore this bogus delta. */
-  if (graphene_vec3_get_x (&event->state) == 0.0 &&
-      graphene_vec3_get_y (&event->state) == 0.0)
+  if (graphene_vec3_get_x (&event->state) == 0.0f &&
+      graphene_vec3_get_y (&event->state) == 0.0f)
     {
       g_free(event);
       return;
@@ -281,8 +281,8 @@ _action_scroll_cb (OpenVRAction            *action,
    * Scroll as many times as the threshold has been exceeded.
    * e.g. user scrolled 0.32 with threshold of 0.1 -> scroll 3 times.
    */
-  int steps_x = x_acc / self->scroll_threshold;
-  int steps_y = y_acc / self->scroll_threshold;
+  int steps_x = (int) (x_acc / self->scroll_threshold);
+  int steps_y = (int) (y_acc / self->scroll_threshold);
 
   /*
    * We need to keep the rest in the accumulator to not lose part of the
@@ -347,10 +347,10 @@ static void
 _update_scroll_threshold (GSettings *settings, gchar *key, gpointer _self)
 {
   XrdInputSynth *self = _self;
-  self->scroll_threshold = g_settings_get_double (settings, key);
+  self->scroll_threshold = (float) g_settings_get_double (settings, key);
 }
 
-void
+static void
 _update_shake_compensation_enabled (GSettings *settings,
                                     gchar *key,
                                     XrdInputSynth *self)

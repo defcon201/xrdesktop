@@ -27,7 +27,7 @@ G_DECLARE_FINAL_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, XRD,
 struct _XrdOverlayPointerTip;
 
 XrdOverlayPointerTip *
-xrd_overlay_pointer_tip_new (int controller_index, GulkanClient *gc);
+xrd_overlay_pointer_tip_new (guint64 controller_index, GulkanClient *gc);
 
 G_END_DECLS
 

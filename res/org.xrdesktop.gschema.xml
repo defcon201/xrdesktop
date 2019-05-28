@@ -4,7 +4,7 @@
 
   <schema path="/org/xrdesktop/" id="org.xrdesktop">
 
-    <key name='input-poll-rate-ms' type='i'>
+    <key name='input-poll-rate-ms' type='u'>
       <default>3</default>
       <summary>How often XR input events should be polled and processed</summary>
       <description>

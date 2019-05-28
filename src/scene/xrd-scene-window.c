@@ -150,8 +150,8 @@ xrd_scene_window_new_from_meters (const gchar *title,
 {
   XrdSceneWindow *window = xrd_scene_window_new (title);
   g_object_set (window,
-                "initial-width-meters", width_meters,
-                "initial-height-meters", height_meters,
+                "initial-width-meters", (double) width_meters,
+                "initial-height-meters", (double) height_meters,
                 NULL);
   return window;
 }
@@ -166,8 +166,8 @@ xrd_scene_window_new_from_ppm (const gchar *title,
   g_object_set (window,
                 "texture-width", width_pixels,
                 "texture-height", height_pixels,
-                "initial-width-meters", width_pixels / ppm,
-                "initial-height-meters", height_pixels / ppm,
+                "initial-width-meters", (double) width_pixels / (double) ppm,
+                "initial-height-meters", (double) height_pixels / (double) ppm,
                 NULL);
   return window;
 }
@@ -219,7 +219,8 @@ xrd_scene_window_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
-void _append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
+static void
+_append_plane (GulkanVertexBuffer *vbo, float aspect_ratio)
 {
   graphene_matrix_t mat_scale;
   graphene_matrix_init_scale (&mat_scale, aspect_ratio, 1.0f, 1.0f);
@@ -338,8 +339,10 @@ _submit_texture (XrdWindow     *window,
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   VkDevice device = gulkan_client_get_device_handle (client);
 
-  float aspect_ratio = (float) gulkan_texture_get_width (texture) /
-    (float) gulkan_texture_get_height (texture);
+  uint32_t w = gulkan_texture_get_width (texture);
+  uint32_t h = gulkan_texture_get_height (texture);
+
+  float aspect_ratio = (float) w / (float) h;
 
   if (self->aspect_ratio != aspect_ratio)
     {
@@ -351,6 +354,8 @@ _submit_texture (XrdWindow     *window,
 
   self->texture = texture;
 
+  guint mip_levels = gulkan_texture_get_mip_levels (texture);
+
   VkSamplerCreateInfo sampler_info = {
     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
     .magFilter = VK_FILTER_LINEAR,
@@ -361,7 +366,7 @@ _submit_texture (XrdWindow     *window,
     .anisotropyEnable = VK_TRUE,
     .maxAnisotropy = 16.0f,
     .minLod = 0.0f,
-    .maxLod = (float) gulkan_texture_get_mip_levels (texture)
+    .maxLod = (float) mip_levels
   };
 
   if (self->sampler != VK_NULL_HANDLE)
@@ -449,9 +454,9 @@ xrd_scene_window_set_width_meters (XrdSceneWindow *self,
   float height_meters = width_meters / self->aspect_ratio;
 
   g_object_set (self,
-                "initial-width-meters", width_meters,
-                "initial-height-meters", height_meters,
-                "scale", 1.0f, /* Reset window scale */
+                "initial-width-meters", (double) width_meters,
+                "initial-height-meters", (double) height_meters,
+                "scale", 1.0, /* Reset window scale */
                 NULL);
 
   xrd_scene_object_set_scale (XRD_SCENE_OBJECT (self), height_meters);

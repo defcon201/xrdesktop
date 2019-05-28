@@ -36,7 +36,7 @@ typedef struct Example
   float max_shake;
 } Example;
 
-gboolean
+static gboolean
 _sigint_cb (gpointer _self)
 {
   Example *self = (Example*) _self;
@@ -47,15 +47,16 @@ _sigint_cb (gpointer _self)
 static void
 _cleanup (Example *self);
 
-GdkPixbuf *
+static GdkPixbuf *
 _create_draw_pixbuf (uint32_t width, uint32_t height)
 {
   guchar * pixels = (guchar*) malloc (sizeof (guchar) * height * width * 4);
   memset (pixels, 255, height * width * 4 * sizeof (guchar));
 
   GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data (pixels, GDK_COLORSPACE_RGB,
-                                                TRUE, 8, width, height,
-                                                4 * width, NULL, NULL);
+                                                TRUE, 8, (int) width,
+                                                (int) height,
+                                                4 * (int) width, NULL, NULL);
   return pixbuf;
 }
 
@@ -67,7 +68,7 @@ typedef struct ColorRGBA
   guchar a;
 } ColorRGBA;
 
-void
+static void
 _place_pixel (guchar    *pixels,
               int        n_channels,
               int        rowstride,
@@ -84,7 +85,7 @@ _place_pixel (guchar    *pixels,
   p[3] = color->a;
 }
 
-gboolean
+static gboolean
 _draw_at_2d_position (Example          *self,
                       graphene_point_t *position_2d,
                       ColorRGBA        *color,
@@ -135,7 +136,7 @@ _draw_at_2d_position (Example          *self,
   return TRUE;
 }
 
-GdkPixbuf *
+static GdkPixbuf *
 load_gdk_pixbuf (const gchar* name)
 {
   GError * error = NULL;
@@ -157,7 +158,7 @@ static gboolean
 _get_compensation ()
 {
   GSettings *s = g_settings_new ("org.xrdesktop");
-  float on = g_settings_get_boolean (s, "shake-compensation-enabled");
+  gboolean on = g_settings_get_boolean (s, "shake-compensation-enabled");
   return on;
 }
 
@@ -195,13 +196,13 @@ _toggle_press_cb (XrdWindow               *button,
                        upload_layout, 2, toggle_string);
 }
 
-gboolean
+static gboolean
 _init_windows (Example *self)
 {
   GulkanClient *gc = xrd_client_get_uploader (self->client);
 
-  float canvas_width = 512;
-  float canvas_height = 512;
+  uint32_t canvas_width = 512;
+  uint32_t canvas_height = 512;
 
   float canvas_width_meter = 1;
   float canvas_height_meter = 1;
@@ -225,7 +226,7 @@ _init_windows (Example *self)
 
   graphene_point3d_t point = {
     .x = 0,
-    .y = canvas_height_meter / 2.,
+    .y = canvas_height_meter / 2.f,
     .z = -3
   };
   graphene_matrix_t transform;
@@ -244,7 +245,7 @@ _init_windows (Example *self)
   };
   xrd_button_set_text (self->tutorial_label, gc,
                        upload_layout, 2, tutorial_string);
-  point.y += canvas_height_meter / 2. + 0.5 / 2.;
+  point.y += canvas_height_meter / 2.f + 0.5f / 2.f;
   graphene_matrix_init_translate (&transform, &point);
   xrd_window_set_transformation (self->tutorial_label, &transform);
 
@@ -253,15 +254,15 @@ _init_windows (Example *self)
     "Comp.",
     compensation ? "ON" : "OFF"
   };
-  point.x += canvas_width_meter / 2. + 0.5 / 2.;
+  point.x += canvas_width_meter / 2.f + 0.5f / 2.f;
   xrd_client_add_button (self->client, &self->toggle_button,
                          2, toggle_string, &point,
                          (GCallback) _toggle_press_cb,
                          self);
 
 
-  int button_pixel_width;
-  int button_pixel_height;
+  guint button_pixel_width;
+  guint button_pixel_height;
   float button_ppm = xrd_window_get_current_ppm (self->toggle_button);
 
   g_object_get (self->toggle_button, "texture-width",
@@ -339,14 +340,16 @@ _click_cb (XrdClient     *client,
   (void) client;
   (void) self;
   g_print ("%s: %d at %f, %f\n", event->state ? "click" : "release",
-           event->button, event->position->x, event->position->y);
+           event->button,
+           (double) event->position->x,
+           (double) event->position->y);
 
   self->pressed_button = event->state ? event->button : 0;
 
   if (self->pressed_button == 0)
     {
       char res[50];
-      snprintf (res, 50, "%.1f Pix", self->max_shake);
+      snprintf (res, 50, "%.1f Pix", (double) self->max_shake);
       gchar *result_string[] = {
         "Shake:",
         res
@@ -396,7 +399,7 @@ _move_cursor_cb (XrdClient          *client,
   _draw_at_2d_position (self, event->position, &color, 5);
 
   float dist = graphene_point_distance (&self->start, event->position, 0, 0);
-  self->max_shake = fmax (self->max_shake, dist);
+  self->max_shake = fmaxf (self->max_shake, dist);
 }
 
 

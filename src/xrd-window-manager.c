@@ -43,7 +43,7 @@ struct _XrdWindowManager
 
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
 
-#define MINIMAL_SCALE_FACTOR 0.01
+#define MINIMAL_SCALE_FACTOR 0.01f
 
 enum {
   NO_HOVER_EVENT,
@@ -69,7 +69,7 @@ xrd_window_manager_class_init (XrdWindowManagerClass *klass)
   object_class->finalize = xrd_window_manager_finalize;
 }
 
-void
+static void
 _free_matrix_cb (gpointer m)
 {
   graphene_matrix_free ((graphene_matrix_t*) m);
@@ -123,7 +123,7 @@ xrd_window_manager_finalize (GObject *gobject)
   g_slist_free_full (self->destroy_windows, g_object_unref);
 }
 
-gboolean
+static gboolean
 _interpolate_cb (gpointer _transition)
 {
   TransformTransition *transition = (TransformTransition *) _transition;
@@ -142,7 +142,7 @@ _interpolate_cb (gpointer _transition)
     transition->to_scaling * transition->interpolate;
 
   /* TODO interpolate scaling instead of width */
-  g_object_set (G_OBJECT(window), "scale", interpolated_scaling, NULL);
+  g_object_set (G_OBJECT(window), "scale", (double) interpolated_scaling, NULL);
 
   transition->interpolate += 0.03f;
 
@@ -151,7 +151,7 @@ _interpolate_cb (gpointer _transition)
       xrd_window_set_transformation (window, &transition->to);
 
       g_object_set (G_OBJECT(window), "scale",
-                    transition->to_scaling, NULL);
+                    (double) transition->to_scaling, NULL);
 
       g_object_unref (transition->window);
       g_free (transition);
@@ -215,19 +215,22 @@ gboolean
 xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 {
   guint num_overlays = g_slist_length (self->managed_windows);
-  uint32_t grid_height = (uint32_t) sqrt((float) num_overlays);
+
+  double root_num_overlays = sqrt((double) num_overlays);
+
+  uint32_t grid_height = (uint32_t) root_num_overlays;
   uint32_t grid_width = (uint32_t) ((float) num_overlays / (float) grid_height);
 
   while (grid_width * grid_height < num_overlays)
     grid_width++;
 
-  float theta_start = M_PI / 2.0f;
-  float theta_end = M_PI - M_PI / 8.0f;
+  float theta_start = (float) M_PI / 2.0f;
+  float theta_end = (float) M_PI - (float) M_PI / 8.0f;
   float theta_range = theta_end - theta_start;
   float theta_step = theta_range / grid_width;
 
   float phi_start = 0;
-  float phi_end = M_PI;
+  float phi_end = (float) M_PI;
   float phi_range = phi_end - phi_start;
   float phi_step = phi_range / grid_height;
 
@@ -236,15 +239,15 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
   for (float theta = theta_start; theta < theta_end; theta += theta_step)
     {
       /* TODO: don't need hack 0.01 to check phi range */
-      for (float phi = phi_start; phi < phi_end - 0.01; phi += phi_step)
+      for (float phi = phi_start; phi < phi_end - 0.01f; phi += phi_step)
         {
           TransformTransition *transition = g_malloc (sizeof *transition);
 
           float radius = 3.0f;
 
-          float const x = sin (theta) * cos (phi);
-          float const y = cos (theta);
-          float const z = sin (phi) * sin (theta);
+          float const x = sinf (theta) * cosf (phi);
+          float const y = cosf (theta);
+          float const z = sinf (phi) * sinf (theta);
 
           graphene_matrix_t transform;
 
@@ -407,7 +410,7 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
   g_object_unref (window);
 }
 
-void
+static void
 _test_hover (XrdWindowManager  *self,
              graphene_matrix_t *pose,
              XrdController     *controller)
@@ -506,7 +509,7 @@ _test_hover (XrdWindowManager  *self,
     }
 }
 
-void
+static void
 _drag_window (XrdWindowManager  *self,
               graphene_matrix_t *pose,
               XrdController     *controller)
@@ -650,16 +653,17 @@ xrd_window_manager_scale (XrdWindowManager *self,
   float current_factor;
   g_object_get (G_OBJECT(grab_state->window), "scale", &current_factor, NULL);
 
-  float new_factor = current_factor + current_factor * factor * (update_rate_ms / 1000.);
+  float new_factor = current_factor + current_factor * factor * (update_rate_ms / 1000.f);
   /* Don't make the overlay so small it can not be grabbed anymore */
   if (new_factor > MINIMAL_SCALE_FACTOR)
     {
       /* Grab point is relative to overlay center so we can just scale it */
       graphene_point3d_scale (&grab_state->offset_translation_point,
-                              1 + factor * (update_rate_ms / 1000.),
+                              1 + factor * (update_rate_ms / 1000.f),
                               &grab_state->offset_translation_point);
 
-      g_object_set (G_OBJECT(grab_state->window), "scale", new_factor, NULL);
+      g_object_set (G_OBJECT(grab_state->window),
+                    "scale", (double) new_factor, NULL);
     }
 }
 

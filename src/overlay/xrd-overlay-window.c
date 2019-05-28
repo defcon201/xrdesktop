@@ -289,8 +289,8 @@ xrd_overlay_window_new_from_meters (const gchar *title,
 {
   XrdOverlayWindow *window = xrd_overlay_window_new (title);
   g_object_set (window,
-                "initial-width-meters", width_meters,
-                "initial-height-meters", height_meters,
+                "initial-width-meters", (double) width_meters,
+                "initial-height-meters", (double) height_meters,
                 NULL);
   return window;
 }
@@ -306,8 +306,8 @@ xrd_overlay_window_new_from_ppm (const gchar *title,
   g_object_set (window,
                 "texture-width", width_pixels,
                 "texture-height", height_pixels,
-                "initial-width-meters", width_pixels / ppm,
-                "initial-height-meters", height_pixels / ppm,
+                "initial-width-meters", (double) width_pixels / (double) ppm,
+                "initial-height-meters", (double) height_pixels / (double) ppm,
                 NULL);
   return window;
 }
@@ -430,7 +430,7 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->intersects = _intersects;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
-  iface->set_flip_y = (void*)openvr_overlay_set_flip_y;
+  iface->set_flip_y = (void (*)(XrdWindow *, gboolean)) openvr_overlay_set_flip_y;
   iface->set_hidden = _set_hidden;
   iface->get_hidden = _get_hidden;
   iface->get_data = _get_data;

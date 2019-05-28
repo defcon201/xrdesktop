@@ -51,7 +51,7 @@ xrd_scene_model_finalize (GObject *gobject)
                       self->sampler, NULL);
 }
 
-bool
+static bool
 _load_openvr_mesh (RenderModel_t **model,
                    const char     *name)
 {
@@ -77,7 +77,7 @@ _load_openvr_mesh (RenderModel_t **model,
   return TRUE;
 }
 
-bool
+static bool
 _load_openvr_texture (TextureID_t                id,
                       RenderModel_TextureMap_t **texture)
 {
@@ -101,7 +101,7 @@ _load_openvr_texture (TextureID_t                id,
   return TRUE;
 }
 
-gboolean
+static gboolean
 _load_mesh (XrdSceneModel *self,
             GulkanDevice  *device,
             RenderModel_t *vr_model)
@@ -119,7 +119,7 @@ _load_mesh (XrdSceneModel *self,
   return TRUE;
 }
 
-gboolean
+static gboolean
 _load_texture (XrdSceneModel            *self,
                GulkanClient             *gc,
                RenderModel_TextureMap_t *texture)
@@ -135,6 +135,8 @@ _load_texture (XrdSceneModel            *self,
                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                            true);
 
+  guint mip_levels = gulkan_texture_get_mip_levels (self->texture);
+
   VkSamplerCreateInfo sampler_info = {
     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
     .magFilter = VK_FILTER_LINEAR,
@@ -145,7 +147,7 @@ _load_texture (XrdSceneModel            *self,
     .anisotropyEnable = VK_TRUE,
     .maxAnisotropy = 16.0f,
     .minLod = 0.0f,
-    .maxLod = (float) gulkan_texture_get_mip_levels (self->texture),
+    .maxLod = (float) mip_levels,
   };
 
   GulkanDevice *device = gulkan_client_get_device (gc);

@@ -45,7 +45,7 @@ xrd_scene_device_manager_finalize (GObject *gobject)
   g_hash_table_unref (self->devices);
 }
 
-XrdSceneModel*
+static XrdSceneModel*
 _load_content (XrdSceneDeviceManager *self,
                GulkanClient          *client,
                const char            *model_name)
@@ -59,7 +59,7 @@ _load_content (XrdSceneDeviceManager *self,
   return content;
 }
 
-void
+static void
 _insert_at_key (GHashTable *table, uint32_t key, gpointer value)
 {
   gint *keyp = g_new0 (gint, 1);
@@ -150,7 +150,7 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
   for (GList *l = device_keys; l; l = l->next)
     {
       gint *key = l->data;
-      TrackedDeviceIndex_t i = *key;
+      TrackedDeviceIndex_t i = (TrackedDeviceIndex_t) *key;
 
       XrdSceneDevice *device = g_hash_table_lookup (self->devices, &i);
 

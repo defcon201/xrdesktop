@@ -104,7 +104,7 @@ _update_width_meters (GSettings *settings, gchar *key, gpointer _data)
   XrdPointerTipData *data = (XrdPointerTipData*)_data;
   XrdPointerTipSettings *s = &data->settings;
 
-  s->width_meters =
+  s->width_meters = (float)
     g_settings_get_double (settings, key) * XRD_TIP_VIEWPORT_SCALE;
 
   if (s->keep_apparent_size)
@@ -152,7 +152,7 @@ _update_active_color (GSettings *settings, gchar *key, gpointer _data)
 
   double r, g, b;
   g_variant_get (var, "(ddd)", &r, &g, &b);
-  graphene_point3d_init (&s->active_color, r, g, b);
+  graphene_point3d_init (&s->active_color, (float) r, (float) g, (float) b);
 
   if (data->active)
     {
@@ -170,7 +170,7 @@ _update_passive_color (GSettings *settings, gchar *key, gpointer _data)
 
   double r, g, b;
   g_variant_get (var, "(ddd)", &r, &g, &b);
-  graphene_point3d_init (&s->passive_color, r, g, b);
+  graphene_point3d_init (&s->passive_color, (float) r, (float) g, (float) b);
 
   if (!data->active)
     {
@@ -266,10 +266,14 @@ _draw_gradient_circle (cairo_t              *cr,
                                                       center_x, center_y,
                                                       radius);
   cairo_pattern_add_color_stop_rgba (pat, 0,
-                                     color->x, color->y, color->z, a_in);
+                                     (double) color->x,
+                                     (double) color->y,
+                                     (double) color->z, a_in);
 
   cairo_pattern_add_color_stop_rgba (pat, 1,
-                                     color->x, color->y, color->z, a_out);
+                                     (double) color->x,
+                                     (double) color->y,
+                                     (double) color->z, a_out);
   cairo_set_source (cr, pat);
   cairo_arc (cr, center_x, center_y, radius, 0, 2 * M_PI);
   cairo_fill (cr);
@@ -293,11 +297,11 @@ _render_cairo (int                 w,
   cairo_paint (cr);
 
   /* Draw pulse */
-  if (progress != 1.0)
+  if (progress != 1.0f)
     {
       float pulse_scale = XRD_TIP_VIEWPORT_SCALE * (1.0f - progress);
       graphene_point3d_t white = { 1.0f, 1.0f, 1.0f };
-      _draw_gradient_circle (cr, w, h, radius * pulse_scale, &white,
+      _draw_gradient_circle (cr, w, h, radius * (double) pulse_scale, &white,
                              pulse_alpha, 0.0);
     }
 
@@ -436,7 +440,7 @@ xrd_pointer_tip_update_apparent_size (XrdPointerTip *self)
 
   graphene_matrix_t tip_pose;
   xrd_pointer_tip_get_transformation (self, &tip_pose);
-;
+
   graphene_point3d_t tip_point;
   graphene_matrix_get_translation_point3d (&tip_pose, &tip_point);
 

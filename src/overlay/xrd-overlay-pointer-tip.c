@@ -60,7 +60,7 @@ xrd_overlay_pointer_tip_init (XrdOverlayPointerTip *self)
 }
 
 XrdOverlayPointerTip *
-xrd_overlay_pointer_tip_new (int controller_index, GulkanClient *gc)
+xrd_overlay_pointer_tip_new (guint64 controller_index, GulkanClient *gc)
 {
   XrdOverlayPointerTip *self =
     (XrdOverlayPointerTip*) g_object_new (XRD_TYPE_OVERLAY_POINTER_TIP, 0);
@@ -70,7 +70,7 @@ xrd_overlay_pointer_tip_new (int controller_index, GulkanClient *gc)
   self->gc = gc;
 
   char key[k_unVROverlayMaxKeyLength];
-  snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%d",
+  snprintf (key, k_unVROverlayMaxKeyLength - 1, "intersection-%ld",
             controller_index);
 
   openvr_overlay_create (OPENVR_OVERLAY (self), key, key);
@@ -158,7 +158,7 @@ xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
-  iface->submit_texture = (void*) openvr_overlay_submit_texture;
+  iface->submit_texture = (void (*)(XrdPointerTip *, GulkanClient *, GulkanTexture *)) openvr_overlay_submit_texture;
   iface->get_data = _get_data;
   iface->get_gulkan_client = _get_gulkan_client;
 }

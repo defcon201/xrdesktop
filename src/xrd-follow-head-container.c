@@ -77,7 +77,7 @@ xrd_follow_head_container_set_speed (XrdFollowHeadContainer *self,
   self->speed = speed;
 }
 
-void
+static void
 _hmd_facing_pose (graphene_matrix_t *hmd_pose,
                   graphene_point3d_t *look_at_point_ws,
                   graphene_matrix_t *pose_ws)
@@ -126,15 +126,15 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
   float left, right, top, bottom;
   xrd_math_get_frustum_angles (&left, &right, &top, &bottom);
 
-  float left_inner = left * 0.4;
-  float right_inner = right * 0.4;
-  float top_inner = top * 0.4;
-  float bottom_inner = bottom * 0.4;
+  float left_inner = left * 0.4f;
+  float right_inner = right * 0.4f;
+  float top_inner = top * 0.4f;
+  float bottom_inner = bottom * 0.4f;
 
-  float left_outer = left * 0.7;
-  float right_outer = right * 0.7;
-  float top_outer = top * 0.7;
-  float bottom_outer = bottom * 0.7;
+  float left_outer = left * 0.7f;
+  float right_outer = right * 0.7f;
+  float top_outer = top * 0.7f;
+  float bottom_outer = bottom * 0.7f;
 
   float radius = xrd_follow_head_container_get_distance (fhc);
 
@@ -266,13 +266,13 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
   graphene_vec2_t angle_velocity;
   graphene_vec2_init (&angle_velocity, azimuth_diff, inclination_diff);
   float angle_distance = graphene_vec2_length (&angle_velocity);
-  float distance_speed_factor = 0.05;
+  float distance_speed_factor = 0.05f;
   float angle_speed = angle_distance * distance_speed_factor;
 
   float speed = xrd_follow_head_container_get_speed (fhc);
   if (speed < angle_speed)
     {
-      speed += angle_speed / 10.;
+      speed += angle_speed / 10.f;
       angle_speed = speed;
     }
   else

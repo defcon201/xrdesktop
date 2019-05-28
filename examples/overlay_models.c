@@ -21,7 +21,7 @@ typedef struct Example
   OpenVRActionSet *action_set;
 } Example;
 
-gboolean
+static gboolean
 _sigint_cb (gpointer _self)
 {
   Example *self = (Example*) _self;
@@ -57,7 +57,7 @@ _pose_cb (OpenVRAction    *action,
   free (event);
 }
 
-gboolean
+static gboolean
 _update_model (Example *self)
 {
   graphene_vec4_t color;
@@ -76,7 +76,7 @@ _update_model (Example *self)
   return TRUE;
 }
 
-gboolean
+static gboolean
 _next_model (Example *self)
 {
   if (self->current_model_list_index == g_slist_length (self->models) - 1)
@@ -90,7 +90,7 @@ _next_model (Example *self)
   return TRUE;
 }
 
-gboolean
+static gboolean
 _previous_model (Example *self)
 {
   if (self->current_model_list_index == 0)
@@ -128,7 +128,7 @@ _previous_cb (OpenVRAction       *action,
     _previous_model (self);
 }
 
-gboolean
+static gboolean
 _poll_events_cb (gpointer _self)
 {
   Example *self = (Example*) _self;
@@ -139,8 +139,7 @@ _poll_events_cb (gpointer _self)
   return TRUE;
 }
 
-
-gboolean
+static gboolean
 _init_model_overlay (Example *self)
 {
   self->model_overlay = xrd_overlay_model_new ("model", "A 3D model overlay");
@@ -155,7 +154,7 @@ _init_model_overlay (Example *self)
     return FALSE;
 
   char name_ret[k_unMaxPropertyStringSize];
-  graphene_vec4_t color_ret = {};
+  graphene_vec4_t color_ret;
 
   uint32_t id;
   if (!xrd_overlay_model_get_model (self->model_overlay, name_ret, &color_ret, &id))
@@ -180,7 +179,7 @@ _print_model (gpointer name, gpointer unused)
   g_print ("Model: %s\n", (gchar*) name);
 }
 
-void
+static void
 _cleanup (Example *self)
 {
   g_print ("bye\n");

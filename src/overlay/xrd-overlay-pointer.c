@@ -40,12 +40,12 @@ xrd_overlay_pointer_init (XrdOverlayPointer *self)
 }
 
 XrdOverlayPointer *
-xrd_overlay_pointer_new (int controller_index)
+xrd_overlay_pointer_new (guint64 controller_index)
 {
   XrdOverlayPointer *self = (XrdOverlayPointer*) g_object_new (XRD_TYPE_OVERLAY_POINTER, 0);
 
   char key[k_unVROverlayMaxKeyLength];
-  snprintf (key, k_unVROverlayMaxKeyLength - 1, "pointer-%d",
+  snprintf (key, k_unVROverlayMaxKeyLength - 1, "pointer-%ld",
             controller_index);
 
   if (!xrd_overlay_model_initialize (XRD_OVERLAY_MODEL (self), key, key))
@@ -125,7 +125,7 @@ _get_transformation (XrdPointer        *pointer,
   openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), matrix);
 }
 
-gboolean
+static gboolean
 _get_intersection (XrdPointer      *pointer,
                    XrdWindow       *window,
                    float           *distance,

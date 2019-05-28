@@ -27,11 +27,11 @@ typedef struct Example
   guint64 move_source;
   guint64 keyboard_source;
   guint64 quit_source;
-  guint64 render_source;
+  guint render_source;
   bool shutdown;
 } Example;
 
-gboolean
+static gboolean
 _sigint_cb (gpointer _self)
 {
   Example *self = (Example*) _self;
@@ -45,7 +45,7 @@ _init_example (Example *example, XrdClient *client);
 static void
 _cleanup (Example *self);
 
-GdkPixbuf *
+static GdkPixbuf *
 load_gdk_pixbuf (const gchar* name)
 {
   GError * error = NULL;
@@ -83,8 +83,9 @@ _make_texture (GulkanClient *gc, VkImageLayout layout, const gchar *resource)
   return texture;
 }
 
-static XrdWindow* _window_new_from_ppm (XrdClient *client, const char* title,
-                                        int w, int h, float ppm)
+static XrdWindow*
+_window_new_from_ppm (XrdClient *client, const char* title,
+                      uint32_t w, uint32_t h, float ppm)
 {
   XrdWindow *window;
   if (XRD_IS_SCENE_CLIENT (client))
@@ -99,7 +100,7 @@ static XrdWindow* _window_new_from_ppm (XrdClient *client, const char* title,
   return window;
 }
 
-void
+static void
 _head_follow_press_cb (XrdWindow               *button,
                        XrdControllerIndexEvent *event,
                        gpointer                 _self)
@@ -114,7 +115,7 @@ _head_follow_press_cb (XrdWindow               *button,
     {
       guint texture_width = gulkan_texture_get_width (self->hawk_big);
       guint texture_height = gulkan_texture_get_height (self->hawk_big);
-      float ppm = texture_width / 0.5;
+      float ppm = texture_width / 0.5f;
 
       self->head_follow_window =
         _window_new_from_ppm (self->client, "Head Tracked window.",
@@ -124,7 +125,7 @@ _head_follow_press_cb (XrdWindow               *button,
                              self->head_follow_window, FALSE, TRUE);
 
       xrd_window_submit_texture (self->head_follow_window, gc, self->hawk_big);
-      graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2 };
+      graphene_point3d_t point = { .x = 0, .y = 1, .z = -1.2f };
       graphene_matrix_t transform;
       graphene_matrix_init_translate (&transform, &point);
       xrd_window_set_transformation (self->head_follow_window, &transform);
@@ -143,7 +144,7 @@ _head_follow_press_cb (XrdWindow               *button,
   g_free (event);
 }
 
-gboolean
+static gboolean
 perform_switch (Example *self)
 {
   if (XRD_IS_OVERLAY_CLIENT (self->client))
@@ -159,7 +160,7 @@ perform_switch (Example *self)
   return FALSE;
 }
 
-void
+static void
 _button_switch_press_cb (XrdWindow               *window,
                          XrdControllerIndexEvent *event,
                          gpointer                 _self)
@@ -186,7 +187,7 @@ _init_child_window (Example      *self,
   guint texture_width = gulkan_texture_get_width (self->cat_texture);
   guint texture_height = gulkan_texture_get_height (self->cat_texture);
 
-  float ppm = texture_width / 0.25;
+  float ppm = texture_width / 0.25f;
   XrdWindow *child;
 
   child = _window_new_from_ppm (self->client, "A child.",
@@ -255,7 +256,7 @@ _init_buttons (Example *self)
                          self);
 }
 
-gboolean
+static gboolean
 _init_windows (Example *self)
 {
   GulkanClient *gc = xrd_client_get_uploader (self->client);
@@ -271,7 +272,7 @@ _init_windows (Example *self)
       for (int row = 0; row < GRID_HEIGHT; row++)
         {
           // a window should have ~0.5 meter
-          float ppm = texture_width / 0.5;
+          float ppm = texture_width / 0.5f;
           XrdWindow *window =
             _window_new_from_ppm (self->client, "A window.",
                                   texture_width, texture_height, ppm);
@@ -345,7 +346,8 @@ _click_cb (XrdClient     *client,
   (void) self;
   g_print ("button %d %s at %f, %f\n",
            event->button, event->state ? "pressed" : "released",
-           event->position->x, event->position->y);
+           (double) event->position->x,
+           (double) event->position->y);
 }
 
 
@@ -384,7 +386,7 @@ _request_quit_cb (XrdClient *client,
   g_main_loop_quit (self->loop);
 }
 
-gboolean
+static gboolean
 _iterate_cb (gpointer _self)
 {
   Example *self = (Example*) _self;
@@ -452,7 +454,6 @@ static gboolean overlay = FALSE;
 static GOptionEntry entries[] =
 {
   { "overlay", 'o', 0, G_OPTION_ARG_NONE, &overlay, "Launch overlay client by default.", NULL },
-  { NULL }
 };
 
 int

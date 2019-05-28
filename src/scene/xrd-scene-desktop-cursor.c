@@ -109,9 +109,9 @@ xrd_scene_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
   iface->submit_texture = _submit_texture;
   iface->get_data = _get_data;
-  iface->show = (void*) xrd_scene_object_show;
-  iface->hide = (void*) xrd_scene_object_hide;
-  iface->set_width_meters = (void*) xrd_scene_window_set_width_meters;
   iface->get_transformation = _get_transformation;
-  iface->set_transformation = (void*) xrd_scene_object_set_transformation;
+  iface->show = (void (*)(XrdDesktopCursor *)) xrd_scene_object_show;
+  iface->hide = (void (*)(XrdDesktopCursor *)) xrd_scene_object_hide;
+  iface->set_width_meters = (void (*)(XrdDesktopCursor *, float)) xrd_scene_window_set_width_meters;
+  iface->set_transformation = (void (*)(XrdDesktopCursor *, graphene_matrix_t *)) xrd_scene_object_set_transformation;
 }

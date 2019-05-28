@@ -25,7 +25,7 @@ G_DECLARE_FINAL_TYPE (XrdOverlayDesktopCursor, xrd_overlay_desktop_cursor, XRD,
 struct _XrdOverlayDesktopCursor;
 
 XrdOverlayDesktopCursor *
-xrd_overlay_desktop_cursor_new ();
+xrd_overlay_desktop_cursor_new (void);
 
 G_END_DECLS
 

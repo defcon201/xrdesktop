@@ -47,12 +47,12 @@ typedef struct _XrdClientPrivate
 
   XrdWindow *keyboard_window;
 
-  guint keyboard_press_signal;
-  guint keyboard_close_signal;
+  gulong keyboard_press_signal;
+  gulong keyboard_close_signal;
 
   guint poll_runtime_event_source_id;
   guint poll_input_source_id;
-  int poll_input_rate_ms;
+  guint poll_input_rate_ms;
 
   double analog_threshold;
 
@@ -208,9 +208,9 @@ xrd_button_set_text (XrdWindow    *button,
   float width_meter = xrd_window_get_current_width_meters (button);
   float height_meter = xrd_window_get_current_height_meters (button);
   float ppm = xrd_window_get_current_ppm (button);
-  int width = width_meter * ppm;
-  int height = height_meter * ppm;
-  unsigned char image[4 * width * height];
+  uint32_t width = (uint32_t) (width_meter * ppm);
+  uint32_t height = (uint32_t) (height_meter * ppm);
+  unsigned char* image = g_malloc (sizeof(unsigned char) * 4 * width * height);
   cairo_surface_t* surface =
     xrd_client_create_button_surface (image, width, height, label_count, label);
   GulkanTexture *texture =
@@ -224,6 +224,7 @@ xrd_button_set_text (XrdWindow    *button,
   cairo_surface_destroy (surface);
 
   g_object_set (button, "native", texture, NULL);
+  g_free (image);
 }
 
 void
@@ -302,7 +303,7 @@ xrd_client_init_controller (XrdClient *self,
   XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
   if (klass->init_controller == NULL)
       return;
-  return klass->init_controller (self, controller);
+  klass->init_controller (self, controller);
 }
 
 /**
@@ -597,23 +598,23 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
 
   GrabState *grab_state = xrd_controller_get_grab_state (controller);
 
-  float x_state = graphene_vec3_get_x (&event->state);
+  double x_state = (double) graphene_vec3_get_x (&event->state);
   if (grab_state->window && fabs (x_state) > priv->analog_threshold)
     {
-      float factor = x_state * priv->scroll_to_scale_ratio;
-      xrd_window_manager_scale (priv->manager, grab_state, factor,
+      double factor = x_state * priv->scroll_to_scale_ratio;
+      xrd_window_manager_scale (priv->manager, grab_state, (float) factor,
                                 priv->poll_input_rate_ms);
     }
 
-  float y_state = graphene_vec3_get_y (&event->state);
+  double y_state = (double) graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
     {
       HoverState *hover_state = xrd_controller_get_hover_state (controller);
       hover_state->distance +=
-        priv->scroll_to_push_ratio *
+        (float) priv->scroll_to_push_ratio *
         hover_state->distance *
         graphene_vec3_get_y (&event->state) *
-        (priv->poll_input_rate_ms / 1000.);
+        (priv->poll_input_rate_ms / 1000.f);
 
       xrd_pointer_set_length (xrd_controller_get_pointer (controller),
                               hover_state->distance);
@@ -745,7 +746,7 @@ _action_reset_orientation_cb (OpenVRAction       *action,
 static void
 _mark_windows_for_selection_mode (XrdClient *self);
 
-void
+static void
 _window_grab_start_cb (XrdWindow               *window,
                        XrdControllerIndexEvent *event,
                        gpointer                 _self)
@@ -779,7 +780,7 @@ _window_grab_start_cb (XrdWindow               *window,
   g_free (event);
 }
 
-void
+static void
 _window_grab_cb (XrdWindow    *window,
                  XrdGrabEvent *event,
                  gpointer     _self)
@@ -798,16 +799,16 @@ _window_grab_cb (XrdWindow    *window,
 }
 
 /* TODO: Move to xrd window */
-void
-xrd_window_unmark (XrdWindow *self)
+static void
+_window_unmark (XrdWindow *self)
 {
   graphene_vec3_t unmarked_color;
   graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
   xrd_window_set_color (self, &unmarked_color);
 }
 
-void
-xrd_window_mark_color (XrdWindow *self, float r, float g, float b)
+static void
+_window_mark_color (XrdWindow *self, float r, float g, float b)
 {
   graphene_vec3_t marked_color;
   //graphene_vec3_init (&marked_color, .8f, .4f, .2f);
@@ -828,9 +829,9 @@ _mark_windows_for_selection_mode (XrdClient *self)
           XrdWindow *win = l->data;
 
           if (xrd_window_manager_is_pinned (manager, win))
-            xrd_window_mark_color (win, 0.0, 0.0, 1.0);
+            _window_mark_color (win, 0.0f, 0.0f, 1.0f);
           else
-            xrd_window_mark_color (win, 0.1, 0.1, 0.1);
+            _window_mark_color (win, 0.1f, 0.1f, 0.1f);
 
           xrd_window_set_hidden (win, FALSE);
         }
@@ -842,7 +843,7 @@ _mark_windows_for_selection_mode (XrdClient *self)
         {
           XrdWindow *win = l->data;
 
-          xrd_window_unmark (win);
+          _window_unmark (win);
 
           if (priv->pinned_only &&
               !xrd_window_manager_is_pinned (manager, win))
@@ -851,7 +852,7 @@ _mark_windows_for_selection_mode (XrdClient *self)
     }
 }
 
-void
+static void
 _button_hover_cb (XrdWindow     *window,
                   XrdHoverEvent *event,
                   gpointer       _self)
@@ -860,7 +861,7 @@ _button_hover_cb (XrdWindow     *window,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
-  xrd_window_mark_color (window, .8f, .4f, .2f);
+  _window_mark_color (window, .8f, .4f, .2f);
 
   XrdPointer *pointer = xrd_controller_get_pointer (controller);
   XrdPointerTip *pointer_tip = xrd_controller_get_pointer_tip (controller);
@@ -875,7 +876,7 @@ _button_hover_cb (XrdWindow     *window,
   g_free (event);
 }
 
-void
+static void
 _window_hover_end_cb (XrdWindow               *window,
                       XrdControllerIndexEvent *event,
                       gpointer                 _self)
@@ -905,7 +906,7 @@ _window_hover_end_cb (XrdWindow               *window,
   g_free (event);
 }
 
-void
+static void
 _button_hover_end_cb (XrdWindow               *window,
                       XrdControllerIndexEvent *event,
                       gpointer                 _self)
@@ -916,7 +917,7 @@ _button_hover_end_cb (XrdWindow               *window,
 
   /* unmark if no controller is hovering over this button */
   if (!xrd_client_is_hovered (self, window))
-    xrd_window_unmark (window);
+    _window_unmark (window);
 
   _window_hover_end_cb (window, event, _self);
 
@@ -924,7 +925,7 @@ _button_hover_end_cb (XrdWindow               *window,
   /* g_free (event); */
 }
 
-void
+static void
 _button_sphere_press_cb (XrdWindow               *window,
                          XrdControllerIndexEvent *event,
                          gpointer                 _self)
@@ -937,7 +938,7 @@ _button_sphere_press_cb (XrdWindow               *window,
   g_free (event);
 }
 
-void
+static void
 _button_reset_press_cb (XrdWindow               *window,
                         XrdControllerIndexEvent *event,
                         gpointer                 _self)
@@ -950,7 +951,7 @@ _button_reset_press_cb (XrdWindow               *window,
   g_free (event);
 }
 
-void
+static void
 _button_pinned_press_cb (XrdWindow               *button,
                          XrdControllerIndexEvent *event,
                          gpointer                 _self)
@@ -969,7 +970,7 @@ _button_pinned_press_cb (XrdWindow               *button,
 }
 
 
-void
+static void
 _button_select_pinned_press_cb (XrdOverlayWindow        *button,
                                 XrdControllerIndexEvent *event,
                                 gpointer                 _self)
@@ -1136,7 +1137,7 @@ _action_show_keyboard_cb (OpenVRAction       *action,
   g_free (event);
 }
 
-void
+static void
 _window_hover_cb (XrdWindow     *window,
                   XrdHoverEvent *event,
                   XrdClient     *self)
@@ -1169,7 +1170,7 @@ _window_hover_cb (XrdWindow     *window,
   g_free (event);
 }
 
-void
+static void
 _window_hover_start_cb (XrdWindow               *window,
                         XrdControllerIndexEvent *event,
                         XrdClient               *self)
@@ -1185,7 +1186,7 @@ _window_hover_start_cb (XrdWindow               *window,
   g_free (event);
 }
 
-void
+static void
 _manager_no_hover_cb (XrdWindowManager *manager,
                       XrdNoHoverEvent  *event,
                       XrdClient        *self)
@@ -1243,7 +1244,7 @@ _update_input_poll_rate (GSettings *settings, gchar *key, gpointer _self)
 
   if (priv->poll_input_source_id != 0)
     g_source_remove (priv->poll_input_source_id);
-  priv->poll_input_rate_ms = g_settings_get_int (settings, key);
+  priv->poll_input_rate_ms = g_settings_get_uint (settings, key);
 
   priv->poll_input_source_id =
       g_timeout_add (priv->poll_input_rate_ms,
@@ -1353,8 +1354,8 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
   cairo_surface_t *surface =
     cairo_image_surface_create_for_data (image,
                                          CAIRO_FORMAT_ARGB32,
-                                         width, height,
-                                         width * 4);
+                                         (int) width, (int) height,
+                                         (int) width * 4);
 
   cairo_t *cr = cairo_create (surface);
 
@@ -1392,14 +1393,14 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
       CAIRO_FONT_SLANT_NORMAL,
       CAIRO_FONT_WEIGHT_NORMAL);
 
-  uint longest_line = 0;
+  uint64_t longest_line = 0;
   for (int i = 0; i < lines; i++)
     {
       if (strlen (text[i]) > longest_line)
         longest_line = strlen (text[i]);
     }
 
-  float font_size = 42;
+  double font_size = 42;
   cairo_set_font_size (cr, font_size);
 
   for (int i = 0; i < lines; i++)
@@ -1408,11 +1409,11 @@ xrd_client_create_button_surface (unsigned char *image, uint32_t width,
       cairo_text_extents (cr, text[i], &extents);
 
       /* horizontally centered*/
-      float x = center_x - extents.width / 2;
+      double x = center_x - (double) extents.width / 2.0;
 
-      float line_spacing = 0.25 * font_size;
+      double line_spacing = 0.25 * font_size;
 
-      float y;
+      double y;
       if (lines == 1)
         y = .25 * font_size + center_y;
       else if (lines == 2)

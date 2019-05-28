@@ -29,7 +29,10 @@ if compiler_id == 'clang'
     '-Wno-overlength-strings',
     '-Wno-disabled-macro-expansion',
     '-Wno-atomic-implicit-seq-cst',
-    '-Wno-gnu-empty-initializer'
+    '-Wno-float-equal',
+    '-Wno-used-but-marked-unused',
+    '-Wno-assign-enum',
+    '-Wno-gnu-folding-constant',
   ]
 endif
 

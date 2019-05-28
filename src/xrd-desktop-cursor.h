@@ -37,8 +37,8 @@ typedef struct _XrdDesktopCursorData
   int hotspot_x;
   int hotspot_y;
 
-  int texture_width;
-  int texture_height;
+  uint32_t texture_width;
+  uint32_t texture_height;
 } XrdDesktopCursorData;
 
 struct _XrdDesktopCursorInterface

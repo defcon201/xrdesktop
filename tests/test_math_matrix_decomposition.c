@@ -9,7 +9,7 @@
 
 #include "graphene-ext.h"
 
-void
+static void
 _print_translation (graphene_matrix_t *m)
 {
   graphene_vec3_t t;
@@ -18,10 +18,13 @@ _print_translation (graphene_matrix_t *m)
   float f[3];
   graphene_vec3_to_float (&t, f);
 
-  g_print ("Translation: [%f %f %f]\n", f[0], f[1], f[2]);
+  g_print ("Translation: [%f %f %f]\n",
+           (double) f[0],
+           (double) f[1],
+           (double) f[2]);
 }
 
-void
+static void
 _print_scale (graphene_matrix_t *m)
 {
   graphene_vec3_t s;
@@ -30,16 +33,19 @@ _print_scale (graphene_matrix_t *m)
   float f[3];
   graphene_vec3_to_float (&s, f);
 
-  g_print ("Scale: [%f %f %f]\n", f[0], f[1], f[2]);
+  g_print ("Scale: [%f %f %f]\n",
+           (double) f[0],
+           (double) f[1],
+           (double) f[2]);
 }
 
-void
+static void
 _print_rotation (graphene_matrix_t *m)
 {
   float x, y, z;
   graphene_matrix_get_rotation_angles (m, &x, &y, &z);
 
-  g_print ("Angles: [%f %f %f]\n", x, y, z);
+  g_print ("Angles: [%f %f %f]\n", (double) x, (double) y, (double) z);
 }
 
 int

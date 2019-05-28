@@ -143,9 +143,9 @@ xrd_window_default_init (XrdWindowInterface *iface)
                        "Scaling Factor",
                        "Scaling Factor of this Window.",
                         /* TODO: use gsettings values */
-                       .1  /* minimum value */,
-                       10. /* maximum value */,
-                       1.  /* default value */,
+                       .1f  /* minimum value */,
+                       10.f /* maximum value */,
+                       1.f  /* default value */,
                        G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_interface_install_property (iface, pspec);
 
@@ -227,7 +227,7 @@ xrd_window_submit_texture (XrdWindow *self,
                            GulkanTexture *texture)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->submit_texture (self, client, texture);
+  iface->submit_texture (self, client, texture);
 }
 
 float
@@ -312,7 +312,7 @@ void
 xrd_window_poll_event (XrdWindow *self)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->poll_event (self);
+  iface->poll_event (self);
 }
 
 /**
@@ -498,7 +498,7 @@ xrd_window_add_child (XrdWindow        *self,
   child_data->parent_window = self;
 
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->add_child (self, child, offset_center);
+  iface->add_child (self, child, offset_center);
 }
 
 /**
@@ -511,7 +511,7 @@ xrd_window_set_color (XrdWindow *self,
                       graphene_vec3_t *color)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->set_color (self, color);
+  iface->set_color (self, color);
 }
 
 void
@@ -519,7 +519,7 @@ xrd_window_set_flip_y (XrdWindow *self,
                        gboolean flip_y)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->set_flip_y (self, flip_y);
+  iface->set_flip_y (self, flip_y);
 }
 
 void
@@ -527,7 +527,7 @@ xrd_window_set_hidden (XrdWindow *self,
                        gboolean hidden)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->set_hidden (self, hidden);
+  iface->set_hidden (self, hidden);
 }
 
 gboolean
@@ -550,7 +550,7 @@ xrd_window_update_child (XrdWindow *self)
   XrdWindowData *data = xrd_window_get_data (self);
   XrdWindow *child = data->child_window;
 
-  g_object_set (G_OBJECT(child), "scale", data->scale, NULL);
+  g_object_set (G_OBJECT(child), "scale", (double) data->scale, NULL);
 
   float initial_ppm = xrd_window_get_initial_ppm (XRD_WINDOW (self));
 
@@ -562,7 +562,7 @@ xrd_window_update_child (XrdWindow *self)
   graphene_point3d_t scaled_offset3d = {
     .x = scaled_offset.x,
     .y = scaled_offset.y,
-    .z = 0.01
+    .z = 0.01f
   };
   graphene_matrix_t child_transform;
   graphene_matrix_init_translate (&child_transform, &scaled_offset3d);

@@ -36,7 +36,7 @@ G_DECLARE_FINAL_TYPE (XrdSceneRenderer, xrd_scene_renderer,
 XrdSceneRenderer *xrd_scene_renderer_get_instance (void);
 
 GulkanDevice*
-xrd_scene_renderer_get_device ();
+xrd_scene_renderer_get_device (void);
 
 bool
 xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self);

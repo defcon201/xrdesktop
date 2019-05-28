@@ -36,6 +36,7 @@ xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
  * Exceptions are FOVs where both opposing sides are on the same side of the
  * center view axis (e.g. 2+ viewports per eye).
  */
+
 void
 xrd_math_get_frustum_angles (float *left, float *right,
                              float *top, float *bottom)
@@ -44,10 +45,10 @@ xrd_math_get_frustum_angles (float *left, float *right,
   context->system->GetProjectionRaw (EVREye_Eye_Left,
                                      left, right, top, bottom);
 
-  *left = RAD_TO_DEG (atan (*left));
-  *right = RAD_TO_DEG (atan (*right));
-  *top = - RAD_TO_DEG (atan (*top));
-  *bottom = - RAD_TO_DEG (atan (*bottom));
+  *left = RAD_TO_DEG (atanf (*left));
+  *right = RAD_TO_DEG (atanf (*right));
+  *top = - RAD_TO_DEG (atanf (*top));
+  *bottom = - RAD_TO_DEG (atanf (*bottom));
 
   // TODO: check if flipping top and bottom is the right thing to do
 
@@ -85,12 +86,12 @@ xrd_math_get_rotation_angles (graphene_vec3_t *direction,
   graphene_vec3_cross (&y_axis, &anti_direction, &cross);
   float mag = graphene_vec3_length (&cross);
   float dot = graphene_vec3_dot (&y_axis, &anti_direction);
-  *inclination =  (90 - RAD_TO_DEG (atan2 (mag, dot)));
+  *inclination =  (90 - RAD_TO_DEG (atan2f (mag, dot)));
 
   /* rotation around y axis, "left-right".
    * Negate z axis because z = -1 is forward */
   *azimuth =
-      RAD_TO_DEG (atan2 (graphene_vec3_get_x (&anti_direction),
+      RAD_TO_DEG (atan2f (graphene_vec3_get_x (&anti_direction),
                          - graphene_vec3_get_z (&anti_direction)));
 }
 
@@ -235,11 +236,11 @@ xrd_math_sphere_to_3d_coords (float azimuth,
                               graphene_point3d_t *point)
 {
 
-  float dist_2d = distance * cos (DEG_TO_RAD (inclination));
+  float dist_2d = distance * cosf (DEG_TO_RAD (inclination));
   graphene_point3d_init (point,
-                         dist_2d * sin (DEG_TO_RAD (azimuth)),
-                         distance * sin (DEG_TO_RAD (inclination)),
-                         - dist_2d * cos (DEG_TO_RAD (azimuth)));
+                         dist_2d * sinf (DEG_TO_RAD (azimuth)),
+                         distance * sinf (DEG_TO_RAD (inclination)),
+                         - dist_2d * cosf (DEG_TO_RAD (azimuth)));
 }
 
 /**

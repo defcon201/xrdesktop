@@ -17,9 +17,9 @@
 #include <glib.h>
 #include "xrd-window.h"
 
-#define PI   ((float) 3.1415926535)
-#define DEG_TO_RAD(x) ( (x) * 2.0 * PI / 360.0 )
-#define RAD_TO_DEG(x) ( (x) * 360.0 / ( 2.0 * PI ) )
+#define PI 3.1415926535f
+#define DEG_TO_RAD(x) ( (x) * 2.0f * PI / 360.0f )
+#define RAD_TO_DEG(x) ( (x) * 360.0f / ( 2.0f * PI ) )
 
 float
 xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,

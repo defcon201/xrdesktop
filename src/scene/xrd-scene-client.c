@@ -48,8 +48,8 @@ G_DEFINE_TYPE (XrdSceneClient, xrd_scene_client, XRD_TYPE_CLIENT)
 
 static void xrd_scene_client_finalize (GObject *gobject);
 
-void _init_device_model (XrdSceneClient *self,
-                         guint64 device_id);
+void _init_device_model (XrdSceneClient      *self,
+                         TrackedDeviceIndex_t device_id);
 void _init_device_models (XrdSceneClient *self);
 
 
@@ -103,7 +103,7 @@ xrd_scene_client_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_client_parent_class)->finalize (gobject);
 }
 
-bool
+static bool
 _init_openvr ()
 {
   if (!openvr_context_is_installed ())
@@ -137,7 +137,7 @@ _device_activate_cb (OpenVRContext          *context,
   XrdSceneClient *self = (XrdSceneClient*) _self;
   g_print ("Device %lu activated, initializing model.\n",
            event->controller_handle);
-  _init_device_model (self, event->controller_handle);
+  _init_device_model (self, (TrackedDeviceIndex_t) event->controller_handle);
 }
 
 static void
@@ -150,7 +150,7 @@ _device_deactivate_cb (OpenVRContext          *context,
   g_print ("Device %lu deactivated. Removing scene device.\n",
            event->controller_handle);
   xrd_scene_device_manager_remove (self->device_manager,
-                                   event->controller_handle);
+                                   (TrackedDeviceIndex_t) event->controller_handle);
   /* TODO: Remove pointer in client */
   // g_hash_table_remove (self->pointers, &event->index);
 }
@@ -255,7 +255,7 @@ _render_eye_cb (uint32_t         eye,
 #endif
 }
 
-bool
+static bool
 _init_vulkan (XrdSceneClient *self)
 {
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
@@ -340,8 +340,8 @@ xrd_scene_client_initialize (XrdSceneClient *self)
 }
 
 void
-_init_device_model (XrdSceneClient *self,
-                    guint64 device_id)
+_init_device_model (XrdSceneClient      *self,
+                    TrackedDeviceIndex_t device_id)
 {
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   VkDescriptorSetLayout *descriptor_set_layout =
@@ -365,14 +365,14 @@ _init_device_models (XrdSceneClient *self)
     }
 }
 
-void
+static void
 _test_intersection (XrdSceneClient *self)
 {
   GList *controllers =
     g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
-  for (GList *l = controllers; l; l = l->next)
+  for (GList *lc = controllers; lc; lc = lc->next)
     {
-      XrdController *controller = XRD_CONTROLLER (l->data);
+      XrdController *controller = XRD_CONTROLLER (lc->data);
 
       XrdScenePointer *pointer =
         XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
@@ -496,9 +496,9 @@ _add_button (XrdClient          *client,
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, position);
 
-  int width = 220;
-  int height = 220;
-  int ppm = 450;
+  uint32_t width = 220;
+  uint32_t height = 220;
+  float ppm = 450;
 
   GulkanClient *gc = xrd_client_get_uploader (client);
 

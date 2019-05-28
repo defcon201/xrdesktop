@@ -25,7 +25,7 @@ G_DECLARE_FINAL_TYPE (XrdOverlayPointer, xrd_overlay_pointer, XRD, OVERLAY_POINT
 
 struct _XrdOverlayPointer;
 
-XrdOverlayPointer *xrd_overlay_pointer_new (int controller_index);
+XrdOverlayPointer *xrd_overlay_pointer_new (guint64 controller_index);
 
 G_END_DECLS
 

@@ -15,10 +15,10 @@
 #include <gio/gio.h>
 
 GSettings *
-xrd_settings_get_instance ();
+xrd_settings_get_instance (void);
 
 void
-xrd_settings_destroy_instance ();
+xrd_settings_destroy_instance (void);
 
 void
 xrd_settings_connect_and_apply (GCallback callback, gchar *key, gpointer data);

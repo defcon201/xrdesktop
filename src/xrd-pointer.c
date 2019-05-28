@@ -21,7 +21,7 @@ xrd_pointer_move (XrdPointer        *self,
                   graphene_matrix_t *transform)
 {
   XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
-  return iface->move (self, transform);
+  iface->move (self, transform);
 }
 
 void
@@ -35,7 +35,7 @@ xrd_pointer_set_length (XrdPointer *self,
   data->length = length;
 
   XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
-  return iface->set_length (self, length);
+  iface->set_length (self, length);
 }
 
 float

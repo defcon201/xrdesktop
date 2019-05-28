@@ -66,7 +66,7 @@ main ()
   guint texture_width = gulkan_texture_get_width (texture);
   guint texture_height = gulkan_texture_get_height (texture);
 
-  float ppm = texture_width / 0.25;
+  float ppm = texture_width / 0.25f;
 
   XrdSceneWindow *window = xrd_scene_window_new_from_ppm ("win.",
                                                           texture_width,

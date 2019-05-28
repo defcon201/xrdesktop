@@ -42,7 +42,7 @@ xrd_scene_vector_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_scene_vector_parent_class)->finalize (gobject);
 }
 
-void
+static void
 _append_vector (GulkanVertexBuffer *buffer,
                 graphene_vec4_t    *start,
                 graphene_vec4_t    *end,
@@ -52,10 +52,10 @@ _append_vector (GulkanVertexBuffer *buffer,
   gulkan_vertex_buffer_append_with_color (buffer, end, color);
 }
 
-void
-xrd_scene_vector_append_plane (GulkanVertexBuffer *buffer,
-                               graphene_plane_t   *plane,
-                               graphene_vec3_t    *color)
+static void
+_append_plane (GulkanVertexBuffer *buffer,
+               graphene_plane_t   *plane,
+               graphene_vec3_t    *color)
 {
   graphene_vec3_t normal;
   graphene_plane_get_normal (plane, &normal);
@@ -154,7 +154,7 @@ xrd_scene_vector_update_from_plane (XrdSceneVector   *self,
                                     graphene_vec3_t  *color)
 {
   gulkan_vertex_buffer_reset (self->vertex_buffer);
-  xrd_scene_vector_append_plane (self->vertex_buffer, plane, color);
+  _append_plane (self->vertex_buffer, plane, color);
   gulkan_vertex_buffer_map_array (self->vertex_buffer);
 }
 
