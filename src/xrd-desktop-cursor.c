@@ -102,6 +102,8 @@ _update_keep_apparent_size (GSettings *settings, gchar *key, gpointer _data)
       graphene_vec3_t cursor_point_vec;
       graphene_matrix_get_translation_vec3 (&cursor_pose, &cursor_point_vec);
       graphene_point3d_t cursor_point;
+      graphene_point3d_init_from_vec3 (&cursor_point, &cursor_point_vec);
+
       xrd_desktop_cursor_update_apparent_size (XRD_DESKTOP_CURSOR (self),
                                                &cursor_point);
     }
