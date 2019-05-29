@@ -476,12 +476,12 @@ xrd_client_remove_window (XrdClient *self,
             xrd_controller_get_handle (controller);
           xrd_window_emit_hover_end (window, hover_end_event);
 
-          xrd_controller_get_hover_state (controller)->window = NULL;
+          xrd_controller_reset_hover_state (controller);
         }
 
       if (xrd_controller_get_grab_state (controller)->window ==
           XRD_WINDOW (window))
-        xrd_controller_get_grab_state (controller)->window = NULL;
+        xrd_controller_reset_grab_state (controller);
     }
   g_list_free(controllers);
 }
@@ -1263,7 +1263,7 @@ _manager_no_hover_cb (XrdWindowManager *manager,
       event->controller_handle)
     xrd_input_synth_reset_scroll (priv->input_synth);
 
-  xrd_controller_get_hover_state (controller)->window = NULL;
+  xrd_controller_reset_hover_state (controller);
 
   g_free (event);
 }

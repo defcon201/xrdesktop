@@ -59,6 +59,12 @@ xrd_controller_get_hover_state (XrdController *self);
 GrabState *
 xrd_controller_get_grab_state (XrdController *self);
 
+void
+xrd_controller_reset_grab_state (XrdController *self);
+
+void
+xrd_controller_reset_hover_state (XrdController *self);
+
 G_END_DECLS
 
 #endif /* XRD_GLIB_CONTROLLER_H_ */

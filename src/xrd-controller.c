@@ -98,3 +98,22 @@ xrd_controller_get_grab_state (XrdController *self)
 {
   return &self->grab_state;
 }
+
+void
+xrd_controller_reset_grab_state (XrdController *self)
+{
+  self->grab_state.window = NULL;
+  graphene_point3d_init (&self->grab_state.offset_translation_point, 0, 0, 0);
+  graphene_quaternion_init_identity (
+    &self->grab_state.window_transformed_rotation_neg);
+  graphene_quaternion_init_identity (&self->grab_state.window_rotation);
+}
+
+void
+xrd_controller_reset_hover_state (XrdController *self)
+{
+  self->hover_state.window = NULL;
+  graphene_point_init (&self->hover_state.intersection_2d, 0, 0);
+  self->hover_state.distance = 1.0;
+  graphene_matrix_init_identity (&self->hover_state.pose);
+}

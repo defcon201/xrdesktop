@@ -492,7 +492,7 @@ _test_hover (XrdWindowManager  *self,
       if (hover_state->window != NULL)
         {
           XrdWindow *last_hovered_window = hover_state->window;
-          hover_state->window = NULL;
+          xrd_controller_reset_hover_state (controller);
           XrdControllerIndexEvent *hover_end_event =
               g_malloc (sizeof (XrdControllerIndexEvent));
           hover_end_event->controller_handle =
@@ -697,7 +697,7 @@ xrd_window_manager_check_release (XrdWindowManager *self,
       g_malloc (sizeof (XrdControllerIndexEvent));
   release_event->controller_handle = xrd_controller_get_handle (controller);
   xrd_window_emit_release (grab_state->window, release_event);
-  grab_state->window = NULL;
+  xrd_controller_reset_grab_state (controller);
 }
 
 void
