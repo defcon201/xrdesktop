@@ -624,6 +624,40 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
 }
 
 static void
+_action_push_pull_cb (OpenVRAction        *action,
+                      OpenVRAnalogEvent   *event,
+                      XrdClient           *self)
+{
+  (void) action;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    {
+      g_free (event);
+      return;
+    }
+
+  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+
+  double y_state = (double) graphene_vec3_get_y (&event->state);
+  if (grab_state->window && fabs (y_state) > priv->analog_threshold)
+    {
+      HoverState *hover_state = xrd_controller_get_hover_state (controller);
+      hover_state->distance +=
+        priv->scroll_to_push_ratio *
+        hover_state->distance *
+        graphene_vec3_get_y (&event->state) *
+        (priv->poll_input_rate_ms / 1000.);
+
+      xrd_pointer_set_length (xrd_controller_get_pointer (controller),
+                              hover_state->distance);
+    }
+
+  g_free (event);
+}
+
+static void
 _action_grab_cb (OpenVRAction        *action,
                  OpenVRDigitalEvent  *event,
                  XrdClient           *self)
@@ -1602,7 +1636,7 @@ xrd_client_post_openvr_init (XrdClient *self)
                              (GCallback) _action_push_pull_scale_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_ANALOG,
                              "/actions/wm/in/push_pull",
-                             (GCallback) _action_push_pull_scale_cb, self);
+                             (GCallback) _action_push_pull_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/show_keyboard",
                              (GCallback) _action_show_keyboard_cb, self);
