@@ -585,6 +585,24 @@ _action_hand_pose_cb (OpenVRAction            *action,
 }
 
 static void
+_perform_push_pull (XrdClient *self,
+                    XrdController *controller,
+                    float push_pull_strength)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  HoverState *hover_state = xrd_controller_get_hover_state (controller);
+  hover_state->distance +=
+    (float) priv->scroll_to_push_ratio *
+    hover_state->distance *
+    push_pull_strength *
+    (priv->poll_input_rate_ms / 1000.f);
+
+  xrd_pointer_set_length (xrd_controller_get_pointer (controller),
+                          hover_state->distance);
+}
+
+static void
 _action_push_pull_scale_cb (OpenVRAction        *action,
                             OpenVRAnalogEvent   *event,
                             XrdClient           *self)
@@ -608,17 +626,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
 
   double y_state = (double) graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
-    {
-      HoverState *hover_state = xrd_controller_get_hover_state (controller);
-      hover_state->distance +=
-        (float) priv->scroll_to_push_ratio *
-        hover_state->distance *
-        graphene_vec3_get_y (&event->state) *
-        (priv->poll_input_rate_ms / 1000.f);
-
-      xrd_pointer_set_length (xrd_controller_get_pointer (controller),
-                              hover_state->distance);
-    }
+    _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state));
 
   g_free (event);
 }
@@ -642,17 +650,7 @@ _action_push_pull_cb (OpenVRAction        *action,
 
   double y_state = (double) graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
-    {
-      HoverState *hover_state = xrd_controller_get_hover_state (controller);
-      hover_state->distance +=
-        priv->scroll_to_push_ratio *
-        hover_state->distance *
-        graphene_vec3_get_y (&event->state) *
-        (priv->poll_input_rate_ms / 1000.);
-
-      xrd_pointer_set_length (xrd_controller_get_pointer (controller),
-                              hover_state->distance);
-    }
+    _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state));
 
   g_free (event);
 }
