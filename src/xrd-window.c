@@ -10,6 +10,9 @@
 
 #include "graphene-ext.h"
 
+#define SCALE_MIN_FACTOR .05f
+#define SCALE_MAX_FACTOR 15.f
+
 G_DEFINE_INTERFACE (XrdWindow, xrd_window, G_TYPE_OBJECT)
 
 enum {
@@ -142,10 +145,9 @@ xrd_window_default_init (XrdWindowInterface *iface)
     g_param_spec_float ("scale",
                        "Scaling Factor",
                        "Scaling Factor of this Window.",
-                        /* TODO: use gsettings values */
-                       .1f  /* minimum value */,
-                       10.f /* maximum value */,
-                       1.f  /* default value */,
+                       SCALE_MIN_FACTOR,  /* minimum value */
+                       SCALE_MAX_FACTOR, /* maximum value */
+                       1.f,  /* default value */
                        G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_interface_install_property (iface, pspec);
 

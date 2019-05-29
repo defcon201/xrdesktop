@@ -17,6 +17,9 @@
 #include "xrd-settings.h"
 #include "xrd-controller.h"
 
+#define WINDOW_MIN_DIST .05f
+#define WINDOW_MAX_DIST 15.f
+
 enum {
   KEYBOARD_PRESS_EVENT,
   CLICK_EVENT,
@@ -592,11 +595,18 @@ _perform_push_pull (XrdClient *self,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   HoverState *hover_state = xrd_controller_get_hover_state (controller);
-  hover_state->distance +=
+
+  float new_dist =
+    hover_state->distance +
     (float) priv->scroll_to_push_ratio *
     hover_state->distance *
     push_pull_strength *
     (priv->poll_input_rate_ms / 1000.f);
+
+  if (new_dist < WINDOW_MIN_DIST || new_dist > WINDOW_MAX_DIST)
+    return;
+
+  hover_state->distance = new_dist;
 
   xrd_pointer_set_length (xrd_controller_get_pointer (controller),
                           hover_state->distance);

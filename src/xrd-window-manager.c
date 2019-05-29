@@ -43,8 +43,6 @@ struct _XrdWindowManager
 
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
 
-#define MINIMAL_SCALE_FACTOR 0.01f
-
 enum {
   NO_HOVER_EVENT,
   LAST_SIGNAL
@@ -630,6 +628,19 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
       &grab_state->window_transformed_rotation_neg);
 }
 
+/* checks if a float is in the range specified when the property was created */
+static gboolean
+_valid_float_prop (GObject *object, const gchar *prop, float value)
+{
+  GParamSpec *spec =
+    g_object_class_find_property (G_OBJECT_GET_CLASS (object), prop);
+  GValue gvalue = G_VALUE_INIT;
+  g_value_init (&gvalue, G_TYPE_FLOAT);
+  g_value_set_float (&gvalue, value);
+  gboolean oor = g_param_value_validate (spec, &gvalue);
+  return !oor;
+}
+
 /**
  * xrd_window_manager_scale:
  * @self: The #XrdWindowManager
@@ -639,7 +650,6 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
  *
  * While dragging a window, scale the window *factor* times per second
  */
-
 void
 xrd_window_manager_scale (XrdWindowManager *self,
                           GrabState        *grab_state,
@@ -653,18 +663,19 @@ xrd_window_manager_scale (XrdWindowManager *self,
   float current_factor;
   g_object_get (G_OBJECT(grab_state->window), "scale", &current_factor, NULL);
 
-  float new_factor = current_factor + current_factor * factor * (update_rate_ms / 1000.f);
-  /* Don't make the overlay so small it can not be grabbed anymore */
-  if (new_factor > MINIMAL_SCALE_FACTOR)
-    {
-      /* Grab point is relative to overlay center so we can just scale it */
-      graphene_point3d_scale (&grab_state->offset_translation_point,
-                              1 + factor * (update_rate_ms / 1000.f),
-                              &grab_state->offset_translation_point);
+  float new_factor = current_factor +
+                     current_factor * factor * (update_rate_ms / 1000.f);
 
-      g_object_set (G_OBJECT(grab_state->window),
-                    "scale", (double) new_factor, NULL);
-    }
+  if (!_valid_float_prop (G_OBJECT (grab_state->window), "scale", new_factor))
+      return;
+
+  /* Grab point is relative to overlay center so we can just scale it */
+  graphene_point3d_scale (&grab_state->offset_translation_point,
+                          1 + factor * (update_rate_ms / 1000.f),
+                          &grab_state->offset_translation_point);
+
+  g_object_set (G_OBJECT(grab_state->window),
+                "scale", (double) new_factor, NULL);
 }
 
 void
