@@ -94,7 +94,7 @@
                "mode": "trackpad",
                "inputs": {
                   "position": {
-                     "output": "/actions/wm/in/push_pull"
+                     "output": "/actions/wm/in/push_pull_scale"
                   }
                }
             },
@@ -121,7 +121,7 @@
                "mode": "trackpad",
                "inputs": {
                   "position": {
-                     "output": "/actions/wm/in/push_pull"
+                     "output": "/actions/wm/in/push_pull_scale"
                   }
                }
             },
