@@ -234,6 +234,11 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
   guint i = 0;
 
+  graphene_matrix_t hmd_pose;
+  openvr_system_get_hmd_pose (&hmd_pose);
+  graphene_vec3_t hmd_vec;
+  graphene_matrix_get_translation_vec3 (&hmd_pose, &hmd_vec);
+
   for (float theta = theta_start; theta < theta_end; theta += theta_step)
     {
       /* TODO: don't need hack 0.01 to check phi range */
@@ -259,6 +264,13 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
                                         &position,
                                         graphene_vec3_zero (),
                                         graphene_vec3_y_axis ());
+
+          graphene_vec3_t translation;
+          graphene_matrix_get_translation_vec3 (&transform, &translation);
+
+          graphene_vec3_add (&translation, &hmd_vec, &translation);
+
+          graphene_matrix_set_translation_vec3 (&transform, &translation);
 
           XrdWindow *window =
               (XrdWindow *) g_slist_nth_data (self->managed_windows, i);
