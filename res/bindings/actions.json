@@ -35,10 +35,6 @@
         "type": "pose"
       },
       {
-        "name": "/actions/wm/in/hand_pose2",
-        "type": "pose"
-      },
-      {
         "name": "/actions/wm/out/haptic",
         "type": "vibration"
       },
