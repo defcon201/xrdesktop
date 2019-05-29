@@ -130,12 +130,22 @@ _set_transformation (XrdDesktopCursor  *cursor,
 }
 
 static void
+_set_width_meters (XrdDesktopCursor *cursor,
+                   float             width)
+{
+  XrdOverlayDesktopCursor *self = XRD_OVERLAY_DESKTOP_CURSOR (cursor);
+  if (!openvr_overlay_set_width_meters (OPENVR_OVERLAY (self), width))
+    g_warning ("Could not set overlay desktop cursor width to %f\n",
+               (double) width);
+}
+
+static void
 xrd_overlay_desktop_cursor_interface_init (XrdDesktopCursorInterface *iface)
 {
   iface->submit_texture = _submit_texture;
   iface->show = _show;
   iface->hide = _hide;
-  iface->set_width_meters = (void (*)(XrdDesktopCursor *, float)) openvr_overlay_set_width_meters;
+  iface->set_width_meters = _set_width_meters;
   iface->get_data = _get_data;
   iface->get_transformation = _get_transformation;
   iface->set_transformation = _set_transformation;

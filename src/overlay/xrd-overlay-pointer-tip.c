@@ -151,6 +151,16 @@ _get_gulkan_client (XrdPointerTip *tip)
 }
 
 static void
+_submit_texture (XrdPointerTip *tip,
+                 GulkanClient  *gc,
+                 GulkanTexture *texture)
+{
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+  if (!openvr_overlay_submit_texture (OPENVR_OVERLAY (self), gc, texture))
+    g_warning ("Could not submit overlay pointer tip texture.\n");
+}
+
+static void
 xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
 {
   iface->set_transformation = _set_transformation;
@@ -158,7 +168,7 @@ xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->show = _show;
   iface->hide = _hide;
   iface->set_width_meters = _set_width_meters;
-  iface->submit_texture = (void (*)(XrdPointerTip *, GulkanClient *, GulkanTexture *)) openvr_overlay_submit_texture;
+  iface->submit_texture = _submit_texture;
   iface->get_data = _get_data;
   iface->get_gulkan_client = _get_gulkan_client;
 }
