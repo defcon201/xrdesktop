@@ -19,6 +19,12 @@ G_BEGIN_DECLS
 #define XRD_TYPE_CONTROLLER xrd_controller_get_type()
 G_DECLARE_FINAL_TYPE (XrdController, xrd_controller, XRD, CONTROLLER, GObject)
 
+typedef enum {
+  LOCKED_NONE,
+  LOCKED_PUSHPULL,
+  LOCKED_SCALE
+} PushPullScaleLock;
+
 typedef struct HoverState
 {
   XrdWindow *window;
@@ -34,6 +40,7 @@ typedef struct GrabState
   /* the rotation induced by the overlay being moved on the controller arc */
   graphene_quaternion_t window_transformed_rotation_neg;
   graphene_point3d_t offset_translation_point;
+  PushPullScaleLock push_pull_scale_lock;
 } GrabState;
 
 XrdController *xrd_controller_new (guint64 controller_handle);
