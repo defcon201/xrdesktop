@@ -83,23 +83,6 @@
       </description>
     </key>
 
-    <key name='overlay-minimum-size-meter' type='d'>
-      <default>0.1</default>
-      <summary>The minimum size of a window</summary>
-      <description>
-        Windows are prevented from being scaled smaller than this value.
-      </description>
-    </key>
-
-    <key name='overlay-maximum-size-meter' type='d'>
-      <default>10.0</default>
-      <summary>The maximum size of a window</summary>
-      <description>
-        Windows are prevented from being scaled bigger than this value.
-      </description>
-    </key>
-
-
     <key name='pointer-tip-resolution' type='(ii)'>
       <default>(64,64)</default>
       <summary>The pixel resolution of the pointer tip.</summary>
