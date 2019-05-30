@@ -74,9 +74,19 @@ main ()
                                                           ppm);
   xrd_scene_window_initialize (window);
 
+  g_print("calling xrd_window_submit_texture\n");
+  xrd_window_submit_texture (XRD_WINDOW (window), gc, texture);
+
   xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE, FALSE);
 
-  xrd_window_submit_texture (XRD_WINDOW (window), gc, texture);
+  GulkanDevice *device = gulkan_client_get_device (gc);
+  gulkan_device_wait_idle (device);
+
+  xrd_scene_client_render (XRD_SCENE_CLIENT (client));
+  gulkan_device_wait_idle (device);
+
+  xrd_scene_client_render (XRD_SCENE_CLIENT (client));
+  gulkan_device_wait_idle (device);
 
   g_object_unref (texture);
 
