@@ -308,8 +308,9 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
       },
       .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-          .depthTestEnable = VK_FALSE,
-          .depthWriteEnable = VK_FALSE
+          .depthTestEnable = VK_TRUE,
+          .depthWriteEnable = VK_TRUE,
+          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
       },
       .attrib_count = 2,
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
@@ -333,8 +334,9 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
       },
       .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-          .depthTestEnable = VK_FALSE,
-          .depthWriteEnable = VK_FALSE
+          .depthTestEnable = VK_TRUE,
+          .depthWriteEnable = VK_TRUE,
+          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
       },
       .attrib_count = 2,
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
@@ -357,8 +359,9 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
       },
       .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-          .depthTestEnable = VK_FALSE,
-          .depthWriteEnable = VK_FALSE
+          .depthTestEnable = VK_TRUE,
+          .depthWriteEnable = VK_TRUE,
+          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
       },
       .attrib_count = 2,
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
@@ -382,8 +385,9 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
       },
       .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
           .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-          .depthTestEnable = VK_FALSE,
-          .depthWriteEnable = VK_FALSE
+          .depthTestEnable = VK_TRUE,
+          .depthWriteEnable = VK_TRUE,
+          .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
       },
       .attrib_count = 3,
       .blend_attachments = &(VkPipelineColorBlendAttachmentState) {
