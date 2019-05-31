@@ -334,7 +334,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
     {
       self->buttons = g_slist_append (self->buttons, window);
       if (!self->controls_shown)
-        xrd_window_set_hidden (window, TRUE);
+        xrd_window_hide (window);
     }
   else
     {
@@ -436,7 +436,7 @@ _test_hover (XrdWindowManager  *self,
     {
       XrdWindow *window = (XrdWindow *) l->data;
 
-      if (xrd_window_get_hidden (window))
+      if (!xrd_window_is_visible (window))
         continue;
 
       graphene_point3d_t intersection_point;
@@ -779,7 +779,11 @@ xrd_window_manager_show_pinned_only (XrdWindowManager *self,
       gboolean to_show = TRUE;
       if (pinned_only)
         to_show = g_slist_find (self->pinned_windows, window) != NULL;
-      xrd_window_set_hidden (window, !to_show);
+
+      if (to_show)
+        xrd_window_show (window);
+      else
+        xrd_window_hide (window);
     }
 }
 
@@ -793,7 +797,11 @@ xrd_window_manager_show_controls (XrdWindowManager *self,
   for (GSList *l = self->buttons; l != NULL; l = l->next)
     {
       XrdWindow *window = (XrdWindow *) l->data;
-      xrd_window_set_hidden (window, !show_controls);
+
+      if (show_controls)
+        xrd_window_show (window);
+      else
+        xrd_window_hide (window);
     }
   self->controls_shown = show_controls;
 }

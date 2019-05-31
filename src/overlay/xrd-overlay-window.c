@@ -17,7 +17,6 @@ struct _XrdOverlayWindow
 {
   OpenVROverlay parent;
   gboolean      recreate;
-  gboolean      hidden;
 
   XrdWindowData window_data;
 };
@@ -262,7 +261,6 @@ _intersects (XrdWindow          *window,
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
-  self->hidden = false;
   self->window_data.child_window = NULL;
   self->window_data.parent_window = NULL;
   self->window_data.native = NULL;
@@ -336,28 +334,6 @@ _set_color (XrdWindow       *window,
 }
 
 static void
-_set_hidden (XrdWindow *window,
-             gboolean   hidden)
-{
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  if (self->hidden == hidden)
-    return;
-
-  self->hidden = hidden;
-  if (hidden)
-    openvr_overlay_hide (OPENVR_OVERLAY (self));
-  else
-    openvr_overlay_show (OPENVR_OVERLAY (self));
-}
-
-static gboolean
-_get_hidden (XrdWindow *window)
-{
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  return self->hidden;
-}
-
-static void
 xrd_overlay_window_constructed (GObject *gobject)
 {
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->constructed (gobject);
@@ -421,6 +397,20 @@ _get_data (XrdWindow *window)
 }
 
 static void
+_hide (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+  openvr_overlay_hide (OPENVR_OVERLAY (self));
+}
+
+static void
+_show (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+  openvr_overlay_show (OPENVR_OVERLAY (self));
+}
+
+static void
 xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
 {
   iface->set_transformation = _set_transformation;
@@ -431,8 +421,9 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->add_child = _add_child;
   iface->set_color = _set_color;
   iface->set_flip_y = (void (*)(XrdWindow *, gboolean)) openvr_overlay_set_flip_y;
-  iface->set_hidden = _set_hidden;
-  iface->get_hidden = _get_hidden;
+  iface->show = _show;
+  iface->hide = _hide;
+  iface->is_visible = (gboolean (*)(XrdWindow*)) openvr_overlay_is_visible;
   iface->get_data = _get_data;
 }
 

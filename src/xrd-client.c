@@ -899,7 +899,7 @@ _mark_windows_for_selection_mode (XrdClient *self)
           else
             _window_mark_color (win, 0.1f, 0.1f, 0.1f);
 
-          xrd_window_set_hidden (win, FALSE);
+          xrd_window_show (win);
         }
     }
   else
@@ -913,7 +913,7 @@ _mark_windows_for_selection_mode (XrdClient *self)
 
           if (priv->pinned_only &&
               !xrd_window_manager_is_pinned (manager, win))
-            xrd_window_set_hidden (win, TRUE);
+            xrd_window_hide (win);
         }
     }
 }

@@ -525,18 +525,24 @@ xrd_window_set_flip_y (XrdWindow *self,
 }
 
 void
-xrd_window_set_hidden (XrdWindow *self,
-                       gboolean hidden)
+xrd_window_show (XrdWindow *self)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  iface->set_hidden (self, hidden);
+  iface->show (self);
+}
+
+void
+xrd_window_hide (XrdWindow *self)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  iface->show (self);
 }
 
 gboolean
-xrd_window_get_hidden (XrdWindow *self)
+xrd_window_is_visible (XrdWindow *self)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->get_hidden (self);
+  return iface->is_visible (self);
 }
 
 XrdWindowData*

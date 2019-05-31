@@ -127,11 +127,13 @@ struct _XrdWindowInterface
                  gboolean flip_y);
 
   void
-  (*set_hidden) (XrdWindow *self,
-                 gboolean hidden);
+  (*show) (XrdWindow *self);
+
+  void
+  (*hide) (XrdWindow *self);
 
   gboolean
-  (*get_hidden) (XrdWindow *self);
+  (*is_visible) (XrdWindow *self);
 
   void
   (*constructed) (GObject *object);
@@ -217,11 +219,13 @@ float
 xrd_window_get_initial_ppm (XrdWindow *self);
 
 void
-xrd_window_set_hidden (XrdWindow *self,
-                       gboolean hidden);
+xrd_window_show (XrdWindow *self);
+
+void
+xrd_window_hide (XrdWindow *self);
 
 gboolean
-xrd_window_get_hidden (XrdWindow *self);
+xrd_window_is_visible (XrdWindow *self);
 
 float
 xrd_window_get_current_width_meters (XrdWindow *self);

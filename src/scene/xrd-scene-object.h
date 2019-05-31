@@ -86,7 +86,7 @@ xrd_scene_object_set_transformation (XrdSceneObject    *self,
 graphene_matrix_t
 xrd_scene_object_get_transformation (XrdSceneObject *self);
 
-bool
+gboolean
 xrd_scene_object_is_visible (XrdSceneObject *self);
 void
 xrd_scene_object_show (XrdSceneObject *self);

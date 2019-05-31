@@ -246,7 +246,7 @@ xrd_scene_object_get_transformation (XrdSceneObject *self)
   return self->model_matrix;
 }
 
-bool
+gboolean
 xrd_scene_object_is_visible (XrdSceneObject *self)
 {
   return self->visible;

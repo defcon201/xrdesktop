@@ -430,23 +430,6 @@ _set_flip_y (XrdWindow *window,
   self->flip_y = flip_y;
 }
 
-static void
-_set_hidden (XrdWindow *window,
-             gboolean   hidden)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = !hidden;
-}
-
-static gboolean
-_get_hidden (XrdWindow *window)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  return !obj->visible;
-}
-
 void
 xrd_scene_window_set_width_meters (XrdSceneWindow *self,
                                    float           width_meters)
@@ -480,7 +463,8 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->add_child = _add_child;
   iface->set_color = _set_color;
   iface->set_flip_y = _set_flip_y;
-  iface->set_hidden = _set_hidden;
-  iface->get_hidden = _get_hidden;
+  iface->show = (void (*)(XrdWindow*)) xrd_scene_object_show;
+  iface->hide = (void (*)(XrdWindow*)) xrd_scene_object_hide;
+  iface->is_visible = (gboolean (*)(XrdWindow*)) xrd_scene_object_is_visible;
   iface->get_data = _get_data;
 }
