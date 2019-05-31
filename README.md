@@ -22,12 +22,29 @@ ninja -C build xrdesktop-doc
 ## Run
 
 #### Run the examples
+Run the scene client.
 ```
-$ ./build/examples/overlay_management
-$ ./build/examples/scene
+$ ./build/examples/client
+```
+
+Run the overlay client.
+```
+$ ./build/examples/client -o
 ```
 
 #### Run the tests
+
+Run all tests
 ```
 $ ninja -C build test
+```
+
+Don't run tests that require a running XR runtime.
+```
+meson test -C build/ --no-suite xr
+```
+
+Don't run tests that require a running XR runtime or the installed package.
+```
+meson test -C build/ --no-suite xr --no-suite post-install
 ```
