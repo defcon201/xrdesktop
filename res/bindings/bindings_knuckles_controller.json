@@ -180,6 +180,6 @@
       }
    },
    "controller_type" : "knuckles",
-   "description" : "XR Desktop bindings for the Knuckles Controller",
-   "name" : "XR Desktop Knuckles Controller"
+   "description" : "xrdesktop bindings for the Knuckles Controller",
+   "name" : "xrdesktop Knuckles Controller"
 }

@@ -46,7 +46,7 @@ xrd_overlay_desktop_cursor_init (XrdOverlayDesktopCursor *self)
   self->data.texture_height = 0;
 
   openvr_overlay_create (OPENVR_OVERLAY (self),
-                         "org.xrdesktop.cursor", "XR Desktop Cursor");
+                         "org.xrdesktop.cursor", "xrdesktop Cursor");
   if (!openvr_overlay_is_valid (OPENVR_OVERLAY (self)))
     {
       g_printerr ("Cursor overlay unavailable.\n");

@@ -1,5 +1,5 @@
 /*
- * OpenVR GLib
+ * xrdesktop
  * Copyright 2018 Collabora Ltd.
  * Author: Lubosz Sarnecki <lubosz.sarnecki@collabora.com>
  * SPDX-License-Identifier: MIT

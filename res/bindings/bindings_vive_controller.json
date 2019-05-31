@@ -138,6 +138,6 @@
       }
    },
    "controller_type" : "vive_controller",
-   "description" : "XR Desktop bindings for the Vive controller",
-   "name" : "XR Desktop Vive Controller"
+   "description" : "xrdesktop bindings for the Vive controller",
+   "name" : "xrdesktop Vive Controller"
 }

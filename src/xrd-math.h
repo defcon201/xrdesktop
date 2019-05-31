@@ -1,5 +1,5 @@
 /*
- * XR Desktop
+ * xrdesktop
  * Copyright 2019 Collabora Ltd.
  * Author: Lubosz Sarnecki <lubosz.sarnecki@collabora.com>
  * Author: Christoph Haag <christoph.haag@collabora.com>
