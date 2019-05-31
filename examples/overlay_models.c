@@ -196,7 +196,7 @@ int
 main ()
 {
   OpenVRContext *context = openvr_context_get_instance ();
-  if (!openvr_context_init_overlay (context))
+  if (!openvr_context_initialize (context, OPENVR_APP_OVERLAY))
     {
       g_printerr ("Could not init OpenVR.\n");
       return false;

@@ -45,17 +45,12 @@ xrd_overlay_client_init (XrdOverlayClient *self)
 static bool
 _init_openvr (XrdOverlayClient *self)
 {
- OpenVRContext *openvr_context =
+ OpenVRContext *context =
     xrd_client_get_openvr_context (XRD_CLIENT (self));
 
-  if (!openvr_context_init_overlay (openvr_context))
+  if (!openvr_context_initialize (context, OPENVR_APP_OVERLAY))
     {
       g_printerr ("Error: Could not init OpenVR application.\n");
-      return false;
-    }
-  if (!openvr_context_is_valid (openvr_context))
-    {
-      g_printerr ("Error: OpenVR context is invalid.\n");
       return false;
     }
   return true;
