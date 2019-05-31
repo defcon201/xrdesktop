@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_OVERLAY_DESKTOP_CURSOR_H_
-#define XRD_GLIB_OVERLAY_DESKTOP_CURSOR_H_
+#ifndef XRD_OVERLAY_DESKTOP_CURSOR_H_
+#define XRD_OVERLAY_DESKTOP_CURSOR_H_
 
 #if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
 #error "Only <xrd.h> can be included directly."
@@ -29,4 +29,4 @@ xrd_overlay_desktop_cursor_new (void);
 
 G_END_DECLS
 
-#endif /* XRD_GLIB_OVERLAY_DESKTOP_CURSOR_H_ */
+#endif /* XRD_OVERLAY_DESKTOP_CURSOR_H_ */

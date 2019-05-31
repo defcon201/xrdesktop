@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_SCENE_WINDOW_H_
-#define XRD_GLIB_SCENE_WINDOW_H_
+#ifndef XRD_SCENE_WINDOW_H_
+#define XRD_SCENE_WINDOW_H_
 
 #if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
 #error "Only <xrd.h> can be included directly."
@@ -88,4 +88,4 @@ xrd_scene_window_set_width_meters (XrdSceneWindow *self,
 
 G_END_DECLS
 
-#endif /* XRD_GLIB_SCENE_WINDOW_H_ */
+#endif /* XRD_SCENE_WINDOW_H_ */

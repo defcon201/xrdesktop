@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_SETTINGS_H_
-#define XRD_GLIB_SETTINGS_H_
+#ifndef XRD_SETTINGS_H_
+#define XRD_SETTINGS_H_
 
 #if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
 #error "Only <xrd.h> can be included directly."
@@ -32,4 +32,4 @@ xrd_settings_update_int_val (GSettings *settings,
                              gchar *key,
                              int *val);
 
-#endif /* XRD_GLIB_SETTINGS_H_ */
+#endif /* XRD_SETTINGS_H_ */

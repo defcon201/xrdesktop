@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_FOLLOW_HEAD_WINDOW_H_
-#define XRD_GLIB_FOLLOW_HEAD_WINDOW_H_
+#ifndef XRD_FOLLOW_HEAD_WINDOW_H_
+#define XRD_FOLLOW_HEAD_WINDOW_H_
 
 #if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
 #error "Only <xrd.h> can be included directly."
@@ -48,4 +48,4 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc);
 
 G_END_DECLS
 
-#endif /* XRD_GLIB_FOLLOW_HEAD_WINDOW_H_ */
+#endif /* XRD_FOLLOW_HEAD_WINDOW_H_ */

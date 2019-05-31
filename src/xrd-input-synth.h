@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_INPUT_SYNTH_H_
-#define XRD_GLIB_INPUT_SYNTH_H_
+#ifndef XRD_INPUT_SYNTH_H_
+#define XRD_INPUT_SYNTH_H_
 
 #if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
 #error "Only <xrd.h> can be included directly."
@@ -70,4 +70,4 @@ xrd_input_synth_hand_off_to_controller (XrdInputSynth *self,
 
 G_END_DECLS
 
-#endif /* XRD_GLIB_INPUT_SYNTH_H_ */
+#endif /* XRD_INPUT_SYNTH_H_ */

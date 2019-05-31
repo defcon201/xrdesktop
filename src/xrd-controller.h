@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_CONTROLLER_H_
-#define XRD_GLIB_CONTROLLER_H_
+#ifndef XRD_CONTROLLER_H_
+#define XRD_CONTROLLER_H_
 
 #include <glib-object.h>
 
@@ -74,4 +74,4 @@ xrd_controller_reset_hover_state (XrdController *self);
 
 G_END_DECLS
 
-#endif /* XRD_GLIB_CONTROLLER_H_ */
+#endif /* XRD_CONTROLLER_H_ */

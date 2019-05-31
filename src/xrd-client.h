@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef XRD_GLIB_CLIENT_H_
-#define XRD_GLIB_CLIENT_H_
+#ifndef XRD_CLIENT_H_
+#define XRD_CLIENT_H_
 
 #if !defined (XRD_INSIDE) && !defined (XRD_COMPILATION)
 #error "Only <xrd.h> can be included directly."
@@ -221,4 +221,4 @@ xrd_client_is_hovered (XrdClient *self,
 
 G_END_DECLS
 
-#endif /* XRD_GLIB_CLIENT_H_ */
+#endif /* XRD_CLIENT_H_ */
