@@ -399,10 +399,8 @@ _request_quit_cb (XrdClient *client,
     case VR_QUIT_APPLICATION_TRANSITION:
     {
       g_print ("Quit event: Application transition\n");
-      /* TODO:
-       * If currently using scene client, switch to overlay client.
-       * If currently using overlay client, do nothing. */
-      g_main_loop_quit (self->loop);
+      if (XRD_IS_SCENE_CLIENT (self->client))
+        g_timeout_add (0, G_SOURCE_FUNC (perform_switch), self);
     } break;
   }
 }
