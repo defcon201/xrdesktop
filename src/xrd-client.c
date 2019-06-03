@@ -521,14 +521,26 @@ xrd_client_poll_input_events (XrdClient *self)
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   if (!priv->context)
-    return FALSE;
+    {
+      g_printerr ("Error polling events: No OpenVR Context\n");
+      priv->poll_input_source_id = 0;
+      return FALSE;
+    }
 
   if (!openvr_action_set_poll (priv->wm_actions))
-    return FALSE;
-
-  if (xrd_client_is_hovering (self) && !xrd_client_is_grabbing (self))
-    if (!xrd_input_synth_poll_events (priv->input_synth))
+    {
+      g_printerr ("Error polling wm actions\n");
+      priv->poll_input_source_id = 0;
       return FALSE;
+    }
+
+  if (xrd_client_is_hovering (self) && !xrd_client_is_grabbing (self) &&
+      !xrd_input_synth_poll_events (priv->input_synth))
+    {
+      g_printerr ("Error polling synth actions\n");
+      priv->poll_input_source_id = 0;
+      return FALSE;
+    }
 
   xrd_window_manager_poll_window_events (priv->manager);
 
