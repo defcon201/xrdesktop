@@ -90,6 +90,15 @@
                }
             },
             {
+               "path": "/user/hand/right/input/trigger/click",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/reset_orientation"
+                  }
+               }
+            },
+            {
                "path": "/user/hand/right/input/trackpad",
                "mode": "trackpad",
                "inputs": {
@@ -113,6 +122,15 @@
                "inputs": {
                   "click": {
                      "output": "/actions/wm/in/grab_window"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/left/input/trigger/click",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/reset_orientation"
                   }
                }
             },
