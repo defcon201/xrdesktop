@@ -394,7 +394,8 @@ _request_quit_cb (XrdClient *client,
     case VR_QUIT_PROCESS_QUIT:
     {
       g_print ("Quit event: Process quit\n");
-      g_main_loop_quit (self->loop);
+      if (XRD_IS_OVERLAY_CLIENT (self->client))
+        g_timeout_add (0, G_SOURCE_FUNC (perform_switch), self);
     } break;
     case VR_QUIT_APPLICATION_TRANSITION:
     {
