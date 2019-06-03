@@ -404,10 +404,6 @@ _request_quit_cb (XrdClient *client,
        * If currently using overlay client, do nothing. */
       g_main_loop_quit (self->loop);
     } break;
-    default:
-    {
-      g_printerr ("Unknown VR quit event %d\n", event->reason);
-    }
   }
 }
 
