@@ -378,12 +378,37 @@ _keyboard_press_cb (XrdClient   *client,
 
 static void
 _request_quit_cb (XrdClient *client,
+                  OpenVRQuitEvent *event,
                   Example   *self)
 {
   (void) client;
   (void) self;
-  g_print ("Got quit request from the runtime\n");
-  g_main_loop_quit (self->loop);
+
+  switch (event->reason)
+  {
+    case VR_QUIT_SHUTDOWN:
+    {
+      g_print ("Quit event: Shutdown\n");
+      g_main_loop_quit (self->loop);
+    } break;
+    case VR_QUIT_PROCESS_QUIT:
+    {
+      g_print ("Quit event: Process quit\n");
+      g_main_loop_quit (self->loop);
+    } break;
+    case VR_QUIT_APPLICATION_TRANSITION:
+    {
+      g_print ("Quit event: Application transition\n");
+      /* TODO:
+       * If currently using scene client, switch to overlay client.
+       * If currently using overlay client, do nothing. */
+      g_main_loop_quit (self->loop);
+    } break;
+    default:
+    {
+      g_printerr ("Unknown VR quit event %d\n", event->reason);
+    }
+  }
 }
 
 static gboolean

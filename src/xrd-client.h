@@ -95,7 +95,7 @@ xrd_client_emit_move_cursor (XrdClient *self,
 
 void
 xrd_client_emit_system_quit (XrdClient *self,
-                             GdkEvent *event);
+                             OpenVRQuitEvent *event);
 
 XrdWindow *
 xrd_client_get_synth_hovered (XrdClient *self);

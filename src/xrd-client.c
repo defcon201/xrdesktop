@@ -111,7 +111,8 @@ xrd_client_class_init (XrdClientClass *klass)
     g_signal_new ("request-quit-event",
                    G_TYPE_FROM_CLASS (klass),
                    G_SIGNAL_RUN_LAST,
-                   0, NULL, NULL, NULL, G_TYPE_NONE, 0, 0);
+                   0, NULL, NULL, NULL, G_TYPE_NONE,
+                   1, GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 }
 
 void
@@ -381,7 +382,7 @@ xrd_client_emit_move_cursor (XrdClient *self,
 
 void
 xrd_client_emit_system_quit (XrdClient *self,
-                             GdkEvent *event)
+                             OpenVRQuitEvent *event)
 {
   g_signal_emit (self, signals[REQUEST_QUIT_EVENT], 0, event);
 }
@@ -1625,16 +1626,18 @@ xrd_client_init (XrdClient *self)
                     (GCallback) _device_deactivate_cb, self);
 }
 
-static void _system_quit_cb (OpenVRContext *context,
-                             GdkEvent      *event,
-                             XrdClient     *self)
+static void
+_system_quit_cb (OpenVRContext *context,
+                 OpenVRQuitEvent *event,
+                 XrdClient     *self)
 {
   (void) event;
-  /* g_print("Handling VR quit event\n"); */
+  (void) self;
+  /* g_print("Handling VR quit event %d\n", event->reason); */
   openvr_context_acknowledge_quit (context);
-  xrd_client_emit_system_quit (self, event);
 
-  gdk_event_free (event);
+  xrd_client_emit_system_quit (self, event);
+  g_free (event);
 }
 
 void
