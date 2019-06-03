@@ -535,7 +535,7 @@ void
 xrd_window_hide (XrdWindow *self)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  iface->show (self);
+  iface->hide (self);
 }
 
 gboolean
