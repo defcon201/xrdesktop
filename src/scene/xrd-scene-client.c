@@ -376,6 +376,9 @@ _test_intersection (XrdSceneClient *self)
         {
           XrdSceneWindow *window = (XrdSceneWindow *) l->data;
 
+          if (!xrd_window_is_visible (XRD_WINDOW (window)))
+            continue;
+
           graphene_vec3_t intersection;
           float distance;
           bool intersects = xrd_pointer_get_intersection (XRD_POINTER (pointer),
