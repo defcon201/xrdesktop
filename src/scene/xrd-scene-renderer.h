@@ -39,7 +39,10 @@ GulkanDevice*
 xrd_scene_renderer_get_device (void);
 
 bool
-xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self);
+xrd_scene_renderer_init_vulkan_simple (XrdSceneRenderer *self);
+
+bool
+xrd_scene_renderer_init_vulkan_openvr (XrdSceneRenderer *self);
 
 VkDescriptorSetLayout *
 xrd_scene_renderer_get_descriptor_set_layout (XrdSceneRenderer *self);

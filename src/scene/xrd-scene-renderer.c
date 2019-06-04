@@ -119,8 +119,18 @@ _init_framebuffers (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 {
   OpenVRContext *context = openvr_context_get_instance ();
 
-  context->system->GetRecommendedRenderTargetSize (&self->render_width,
-                                                   &self->render_height);
+  if (openvr_context_is_valid (context))
+    {
+      context->system->GetRecommendedRenderTargetSize (&self->render_width,
+                                                       &self->render_height);
+    }
+  else
+    {
+      g_warning ("Using default render target dimensions.\n");
+      self->render_width = 1080;
+      self->render_height = 1080;
+    }
+
   self->render_width =
       (uint32_t) (self->super_sample_scale * (float) self->render_width);
   self->render_height =
@@ -484,13 +494,10 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
   return true;
 }
 
-bool
-xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self)
-{
-  if (!openvr_compositor_gulkan_client_init (GULKAN_CLIENT (self),
-                                             use_validation))
-    return false;
 
+static bool
+_init_vulkan (XrdSceneRenderer *self)
+{
   GulkanCommandBuffer cmd_buffer;
   if (!gulkan_client_begin_cmd_buffer (GULKAN_CLIENT (self),
                                       &cmd_buffer))
@@ -517,6 +524,31 @@ xrd_scene_renderer_init_vulkan (XrdSceneRenderer *self)
   if (!_init_pipeline_cache (self))
     return false;
   if (!_init_graphics_pipelines (self))
+    return false;
+
+  return true;
+}
+
+bool
+xrd_scene_renderer_init_vulkan_simple (XrdSceneRenderer *self)
+{
+  gulkan_client_init_vulkan (GULKAN_CLIENT (self),
+                             NULL, NULL, use_validation);
+
+  if (!_init_vulkan (self))
+    return false;
+
+  return true;
+}
+
+bool
+xrd_scene_renderer_init_vulkan_openvr (XrdSceneRenderer *self)
+{
+  if (!openvr_compositor_gulkan_client_init (GULKAN_CLIENT (self),
+                                             use_validation))
+    return false;
+
+  if (!_init_vulkan (self))
     return false;
 
   return true;

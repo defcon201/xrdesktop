@@ -250,7 +250,7 @@ _init_vulkan (XrdSceneClient *self)
 {
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
 
-  if (!xrd_scene_renderer_init_vulkan (renderer))
+  if (!xrd_scene_renderer_init_vulkan_openvr (renderer))
     return false;
 
   _update_matrices (self);
