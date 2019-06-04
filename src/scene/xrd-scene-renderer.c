@@ -587,8 +587,8 @@ _render_stereo (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
     }
 }
 
-void
-xrd_scene_renderer_draw (XrdSceneRenderer *self)
+static void
+_draw (XrdSceneRenderer *self)
 {
   GulkanCommandBuffer cmd_buffer;
   gulkan_client_begin_cmd_buffer (GULKAN_CLIENT (self), &cmd_buffer);
@@ -617,47 +617,28 @@ xrd_scene_renderer_draw (XrdSceneRenderer *self)
                         gulkan_client_get_command_pool (GULKAN_CLIENT (self)),
                         1, &cmd_buffer.handle);
   vkDestroyFence (device_handle, cmd_buffer.fence, NULL);
+}
 
-  VkImage vk_image =
+bool
+xrd_scene_renderer_draw (XrdSceneRenderer *self)
+{
+  _draw (self);
+
+  VkImage left =
     gulkan_frame_buffer_get_color_image (self->framebuffer[EVREye_Eye_Left]);
 
-  VRVulkanTextureData_t openvr_texture_data = {
-    .m_nImage = (uint64_t) vk_image,
-    .m_pDevice = device_handle,
-    .m_pPhysicalDevice = gulkan_client_get_physical_device_handle (
-      GULKAN_CLIENT (self)),
-    .m_pInstance = gulkan_client_get_instance_handle (GULKAN_CLIENT (self)),
-    .m_pQueue = gulkan_device_get_queue_handle (device),
-    .m_nQueueFamilyIndex = gulkan_device_get_queue_family_index (device),
-    .m_nWidth = self->render_width,
-    .m_nHeight = self->render_height,
-    .m_nFormat = VK_FORMAT_R8G8B8A8_UNORM,
-    .m_nSampleCount = self->msaa_sample_count
-  };
-
-  Texture_t texture = {
-    &openvr_texture_data,
-    ETextureType_TextureType_Vulkan,
-    EColorSpace_ColorSpace_Auto
-  };
-
-  VRTextureBounds_t bounds = {
-    .uMin = 0.0f,
-    .uMax = 1.0f,
-    .vMin = 0.0f,
-    .vMax = 1.0f
-  };
-
-  OpenVRContext *context = openvr_context_get_instance ();
-  context->compositor->Submit (EVREye_Eye_Left, &texture, &bounds,
-                               EVRSubmitFlags_Submit_Default);
-
-  vk_image =
+  VkImage right =
     gulkan_frame_buffer_get_color_image (self->framebuffer[EVREye_Eye_Right]);
 
-  openvr_texture_data.m_nImage = (uint64_t) vk_image;
-  context->compositor->Submit (EVREye_Eye_Right, &texture, &bounds,
-                               EVRSubmitFlags_Submit_Default);
+  if (!openvr_compositor_submit (GULKAN_CLIENT(self),
+                                 self->render_width,
+                                 self->render_height,
+                                 VK_FORMAT_R8G8B8A8_UNORM,
+                                 self->msaa_sample_count,
+                                 left, right))
+    return false;
+
+  return true;
 }
 
 void

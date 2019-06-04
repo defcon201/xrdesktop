@@ -47,7 +47,7 @@ xrd_scene_renderer_init_vulkan_openvr (XrdSceneRenderer *self);
 VkDescriptorSetLayout *
 xrd_scene_renderer_get_descriptor_set_layout (XrdSceneRenderer *self);
 
-void
+bool
 xrd_scene_renderer_draw (XrdSceneRenderer *self);
 
 void
