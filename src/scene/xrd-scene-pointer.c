@@ -226,6 +226,27 @@ _get_transformation (XrdPointer        *pointer,
 }
 
 static void
+_set_selected_window (XrdPointer *pointer,
+                      XrdWindow  *window)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (self->selection);
+  if (window == NULL)
+    {
+      selection_obj->visible = FALSE;
+      return;
+    }
+
+  XrdSceneWindow *scene_window = XRD_SCENE_WINDOW (window);
+  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (scene_window);
+  graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
+                                    &window_obj->model_matrix);
+  xrd_scene_selection_set_aspect_ratio (self->selection,
+                                        scene_window->aspect_ratio);
+  selection_obj->visible = TRUE;
+}
+
+static void
 xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
@@ -234,5 +255,6 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
   iface->get_intersection = _get_intersection;
+  iface->set_selected_window = _set_selected_window;
 }
 

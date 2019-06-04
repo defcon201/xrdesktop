@@ -457,6 +457,8 @@ _test_hover (XrdWindowManager  *self,
 
   HoverState *hover_state = xrd_controller_get_hover_state (controller);
 
+  xrd_pointer_set_selected_window (pointer, closest);
+
   if (closest != NULL)
     {
       /* The recipient of the hover_end event should already see that this
@@ -579,6 +581,9 @@ _drag_window (XrdWindowManager  *self,
                                         &transformation_matrix);
 
   xrd_window_emit_grab (grab_state->window, event);
+
+  XrdPointer *pointer = xrd_controller_get_pointer (controller);
+  xrd_pointer_set_selected_window (pointer, grab_state->window);
 }
 
 void

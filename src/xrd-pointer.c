@@ -125,3 +125,11 @@ xrd_pointer_get_intersection (XrdPointer      *self,
   XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
   return iface->get_intersection (self, window, distance, res);
 }
+
+void
+xrd_pointer_set_selected_window (XrdPointer *self,
+                                 XrdWindow  *window)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  iface->set_selected_window (self, window);
+}

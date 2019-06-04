@@ -56,6 +56,10 @@ struct _XrdPointerInterface
                        XrdWindow       *window,
                        float           *distance,
                        graphene_vec3_t *res);
+
+  void
+  (*set_selected_window) (XrdPointer *pointer,
+                          XrdWindow  *window);
 };
 
 void
@@ -95,6 +99,10 @@ xrd_pointer_get_intersection (XrdPointer      *self,
                               XrdWindow       *window,
                               float           *distance,
                               graphene_vec3_t *res);
+
+void
+xrd_pointer_set_selected_window (XrdPointer *self,
+                                 XrdWindow  *window);
 
 G_END_DECLS
 

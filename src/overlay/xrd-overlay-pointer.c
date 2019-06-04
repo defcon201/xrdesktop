@@ -142,6 +142,14 @@ _get_intersection (XrdPointer      *pointer,
 }
 
 static void
+_set_selected_window (XrdPointer *pointer,
+                      XrdWindow  *window)
+{
+  (void) pointer;
+  (void) window;
+}
+
+static void
 xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
@@ -150,4 +158,5 @@ xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
   iface->get_intersection = _get_intersection;
+  iface->set_selected_window = _set_selected_window;
 }

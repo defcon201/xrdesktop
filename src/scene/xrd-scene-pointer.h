@@ -43,6 +43,9 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
                           VkCommandBuffer    cmd_buffer,
                           graphene_matrix_t *vp);
 
+void
+xrd_scene_pointer_set_selected_window (XrdScenePointer *self,
+                                       XrdWindow       *window);
 
 G_END_DECLS
 
