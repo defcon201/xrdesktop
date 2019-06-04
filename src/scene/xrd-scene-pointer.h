@@ -43,8 +43,6 @@ xrd_scene_pointer_render (XrdScenePointer   *self,
                           VkCommandBuffer    cmd_buffer,
                           graphene_matrix_t *vp);
 
-XrdSceneSelection*
-xrd_scene_pointer_get_selection (XrdScenePointer *self);
 
 G_END_DECLS
 

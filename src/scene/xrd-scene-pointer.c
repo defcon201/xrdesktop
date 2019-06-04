@@ -236,8 +236,3 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
   iface->get_intersection = _get_intersection;
 }
 
-XrdSceneSelection*
-xrd_scene_pointer_get_selection (XrdScenePointer *self)
-{
-  return self->selection;
-}

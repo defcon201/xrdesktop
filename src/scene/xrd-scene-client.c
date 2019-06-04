@@ -355,90 +355,9 @@ _init_device_models (XrdSceneClient *self)
     }
 }
 
-static void
-_test_intersection (XrdSceneClient *self)
-{
-  GList *controllers =
-    g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
-  for (GList *lc = controllers; lc; lc = lc->next)
-    {
-      XrdController *controller = XRD_CONTROLLER (lc->data);
-
-      XrdScenePointer *pointer =
-        XRD_SCENE_POINTER (xrd_controller_get_pointer (controller));
-      if (pointer == NULL)
-        continue;
-
-      float lowest_distance = FLT_MAX;
-      XrdSceneWindow *selected_window = NULL;
-
-      XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
-
-      for (GSList *l = xrd_window_manager_get_windows (manager);
-           l != NULL; l = l->next)
-        {
-          XrdSceneWindow *window = (XrdSceneWindow *) l->data;
-
-          if (!xrd_window_is_visible (XRD_WINDOW (window)))
-            continue;
-
-          graphene_vec3_t intersection;
-          float distance;
-          bool intersects = xrd_pointer_get_intersection (XRD_POINTER (pointer),
-                                                          XRD_WINDOW (window),
-                                                         &distance,
-                                                         &intersection);
-          if (intersects && distance < lowest_distance)
-            {
-              selected_window = window;
-              lowest_distance = distance;
-            }
-        }
-
-      for (GSList *l = xrd_window_manager_get_buttons (manager);
-           l != NULL; l = l->next)
-        {
-          XrdSceneWindow *window = (XrdSceneWindow *) l->data;
-
-          graphene_vec3_t intersection;
-          float distance;
-          bool intersects = xrd_pointer_get_intersection (XRD_POINTER (pointer),
-                                                          XRD_WINDOW (window),
-                                                         &distance,
-                                                         &intersection);
-          if (intersects && distance < lowest_distance)
-            {
-              selected_window = window;
-              lowest_distance = distance;
-            }
-        }
-
-      XrdSceneSelection *selection = xrd_scene_pointer_get_selection (pointer);
-      XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (selection);
-      if (selected_window != NULL)
-        {
-          XrdSceneObject *window_obj = XRD_SCENE_OBJECT (selected_window);
-          graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
-                                            &window_obj->model_matrix);
-          xrd_scene_selection_set_aspect_ratio (selection,
-                                                selected_window->aspect_ratio);
-          selection_obj->visible = TRUE;
-          xrd_pointer_set_length (XRD_POINTER (pointer), lowest_distance);
-        }
-      else
-        {
-          selection_obj->visible = FALSE;
-          xrd_pointer_reset_length (XRD_POINTER (pointer));
-        }
-    }
-    g_list_free (controllers);
-}
-
 void
 xrd_scene_client_render (XrdSceneClient *self)
 {
-  _test_intersection (self);
-
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   xrd_scene_renderer_draw (renderer);
 
