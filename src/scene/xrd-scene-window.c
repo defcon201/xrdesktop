@@ -216,6 +216,8 @@ xrd_scene_window_finalize (GObject *gobject)
   if (child)
     child->window_data.parent_window = NULL;
 
+  g_object_unref (self->texture);
+
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
@@ -352,7 +354,11 @@ _submit_texture (XrdWindow     *window,
       gulkan_vertex_buffer_map_array (self->vertex_buffer);
     }
 
+  if (self->texture)
+    g_object_unref (self->texture);
+
   self->texture = texture;
+  g_object_ref (self->texture);
 
   guint mip_levels = gulkan_texture_get_mip_levels (texture);
 

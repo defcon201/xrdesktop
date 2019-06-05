@@ -229,6 +229,8 @@ xrd_button_set_text (XrdWindow    *button,
 
   g_object_set (button, "native", texture, NULL);
   g_free (image);
+
+  g_object_unref (texture);
 }
 
 void
