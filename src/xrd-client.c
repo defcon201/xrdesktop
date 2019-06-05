@@ -204,11 +204,6 @@ xrd_button_set_text (XrdWindow    *button,
                      int           label_count,
                      gchar       **label)
 {
-  gpointer native;
-  g_object_get (button, "native", &native, NULL);
-  if (native != NULL)
-    g_object_unref (native);
-
   float width_meter = xrd_window_get_current_width_meters (button);
   float height_meter = xrd_window_get_current_height_meters (button);
   float ppm = xrd_window_get_current_ppm (button);
@@ -227,7 +222,6 @@ xrd_button_set_text (XrdWindow    *button,
 
   cairo_surface_destroy (surface);
 
-  g_object_set (button, "native", texture, NULL);
   g_free (image);
 
   g_object_unref (texture);
