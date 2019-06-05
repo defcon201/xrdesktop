@@ -339,6 +339,16 @@ _submit_texture (XrdWindow     *window,
                  GulkanTexture *texture)
 {
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+
+  if (texture == self->texture)
+    {
+      gchar *title;
+      g_object_get (window, "title", &title, NULL);
+      g_debug ("Texture %p was already submitted to window %p (%s).\n",
+                 (void*) texture, (void*) window, title);
+      return;
+    }
+
   VkDevice device = gulkan_client_get_device_handle (client);
 
   uint32_t w = gulkan_texture_get_width (texture);
