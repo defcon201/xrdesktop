@@ -1412,6 +1412,7 @@ xrd_client_set_desktop_cursor (XrdClient        *self,
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   priv->cursor = cursor;
+  xrd_desktop_cursor_hide (priv->cursor);
 }
 
 XrdDesktopCursor*
