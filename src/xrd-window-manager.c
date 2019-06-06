@@ -209,6 +209,27 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
     }
 }
 
+static float
+_ffabs (float v)
+{
+  return (float) fabs ((double) v);
+}
+
+static float
+_azimuth_from_pose (graphene_matrix_t *mat)
+{
+  graphene_matrix_t rotation_matrix;
+  graphene_matrix_get_rotation_matrix (mat, &rotation_matrix);
+
+  graphene_vec3_t start;
+  graphene_vec3_init (&start, 0, 0,- 1);
+  graphene_vec3_t direction;
+  graphene_matrix_transform_vec3 (&rotation_matrix, &start, &direction);
+
+  return atan2f (graphene_vec3_get_x (&direction),
+                -graphene_vec3_get_z (&direction));
+}
+
 gboolean
 xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 {
@@ -222,31 +243,36 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
   while (grid_width * grid_height < num_overlays)
     grid_width++;
 
-  float theta_start = (float) M_PI / 2.0f;
-  float theta_end = (float) M_PI - (float) M_PI / 8.0f;
-  float theta_range = theta_end - theta_start;
-  float theta_step = theta_range / grid_width;
-
-  float phi_start = 0;
-  float phi_end = (float) M_PI;
-  float phi_range = phi_end - phi_start;
-  float phi_step = phi_range / grid_height;
-
-  guint i = 0;
-
   graphene_matrix_t hmd_pose;
   openvr_system_get_hmd_pose (&hmd_pose);
   graphene_vec3_t hmd_vec;
   graphene_matrix_get_translation_vec3 (&hmd_pose, &hmd_vec);
 
-  for (float theta = theta_start; theta < theta_end; theta += theta_step)
+  graphene_vec3_t hmd_vec_neg;
+  graphene_vec3_negate (&hmd_vec, &hmd_vec_neg);
+
+  float theta_fov = (float) M_PI / 2.5f;
+  float theta_center = (float) M_PI / 2.0f;
+  float theta_start = theta_center + theta_fov / 2.0f;
+  float theta_end = theta_center - theta_fov / 2.0f;
+  float theta_range = _ffabs(theta_end - theta_start);
+  float theta_step = theta_range / (float) (grid_height - 1);
+
+  float phi_fov = (float) M_PI / 2.5f;
+  float phi_center = -(float) M_PI / 2.0f + _azimuth_from_pose (&hmd_pose);
+  float phi_start = phi_center - phi_fov / 2.0f;
+  float phi_end = phi_center + phi_fov / 2.0f;
+  float phi_range = _ffabs(phi_end - phi_start);
+  float phi_step = phi_range / (float)(grid_width - 1);
+
+  float radius = 5.0f;
+
+  guint i = 0;
+  for (float theta = theta_start; theta > theta_end - 0.01f; theta -= theta_step)
     {
-      /* TODO: don't need hack 0.01 to check phi range */
-      for (float phi = phi_start; phi < phi_end - 0.01f; phi += phi_step)
+      for (float phi = phi_start; phi < phi_end + 0.01f; phi += phi_step)
         {
           TransformTransition *transition = g_malloc (sizeof *transition);
-
-          float radius = 3.0f;
 
           float const x = sinf (theta) * cosf (phi);
           float const y = cosf (theta);
@@ -260,17 +286,14 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
                               y * radius,
                               z * radius);
 
+          graphene_vec3_add (&position, &hmd_vec, &position);
+
+          graphene_vec3_negate (&position, &position);
+
           graphene_matrix_init_look_at (&transform,
                                         &position,
-                                        graphene_vec3_zero (),
+                                        &hmd_vec_neg,
                                         graphene_vec3_y_axis ());
-
-          graphene_vec3_t translation;
-          graphene_matrix_get_translation_vec3 (&transform, &translation);
-
-          graphene_vec3_add (&translation, &hmd_vec, &translation);
-
-          graphene_matrix_set_translation_vec3 (&transform, &translation);
 
           XrdWindow *window =
               (XrdWindow *) g_slist_nth_data (self->managed_windows, i);
