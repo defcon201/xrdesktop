@@ -233,6 +233,14 @@ xrd_window_get_data (XrdWindow *self);
 void
 xrd_window_update_child (XrdWindow *self);
 
+void
+xrd_window_get_normal (XrdWindow       *self,
+                       graphene_vec3_t *normal);
+
+void
+xrd_window_get_plane (XrdWindow        *self,
+                      graphene_plane_t *res);
+
 G_END_DECLS
 
 #endif /* XRD_WINDOW_H_ */

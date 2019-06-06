@@ -135,9 +135,8 @@ _get_intersection (XrdPointer      *pointer,
   graphene_ray_t ray;
   xrd_pointer_get_ray (pointer, &ray);
 
-  XrdSceneWindow *scene_window = XRD_SCENE_WINDOW (window);
   graphene_plane_t plane;
-  xrd_scene_window_get_plane (scene_window, &plane);
+  xrd_window_get_plane (window, &plane);
 
   *distance = graphene_ray_get_distance_to_plane (&ray, &plane);
   if (*distance == INFINITY)
@@ -151,6 +150,8 @@ _get_intersection (XrdPointer      *pointer,
   graphene_vec3_add (&origin, res, res);
 
   graphene_matrix_t inverse;
+
+  XrdSceneWindow *scene_window = XRD_SCENE_WINDOW (window);
   XrdSceneObject *window_obj = XRD_SCENE_OBJECT (scene_window);
   graphene_matrix_inverse (&window_obj->model_matrix, &inverse);
 

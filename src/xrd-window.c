@@ -588,3 +588,35 @@ xrd_window_update_child (XrdWindow *self)
 
   xrd_window_set_transformation (XRD_WINDOW (child), &child_transform);
 }
+
+void
+xrd_window_get_normal (XrdWindow       *self,
+                       graphene_vec3_t *normal)
+{
+  graphene_vec3_init (normal, 0, 0, 1);
+
+  graphene_matrix_t model_matrix;
+  xrd_window_get_transformation (self, &model_matrix);
+
+  graphene_matrix_t rotation_matrix;
+  graphene_matrix_get_rotation_matrix (&model_matrix,
+                                       &rotation_matrix);
+
+  graphene_matrix_transform_vec3 (&rotation_matrix, normal, normal);
+}
+
+void
+xrd_window_get_plane (XrdWindow        *self,
+                      graphene_plane_t *res)
+{
+  graphene_vec3_t normal;
+  xrd_window_get_normal (self, &normal);
+
+  graphene_matrix_t model_matrix;
+  xrd_window_get_transformation (self, &model_matrix);
+
+  graphene_point3d_t position;
+  graphene_matrix_get_translation_point3d (&model_matrix, &position);
+
+  graphene_plane_init_from_point (res, &normal, &position);
+}

@@ -279,31 +279,6 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
   gulkan_vertex_buffer_draw (self->vertex_buffer, cmd_buffer);
 }
 
-void
-xrd_scene_window_get_normal (XrdSceneWindow  *self,
-                             graphene_vec3_t *normal)
-{
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-
-  graphene_vec3_init (normal, 0, 0, 1);
-
-  graphene_matrix_t rotation_matrix;
-  graphene_matrix_get_rotation_matrix (&obj->model_matrix,
-                                       &rotation_matrix);
-
-  graphene_matrix_transform_vec3 (&rotation_matrix, normal, normal);
-}
-
-void
-xrd_scene_window_get_plane (XrdSceneWindow   *self,
-                            graphene_plane_t *res)
-{
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  graphene_vec3_t normal;
-  xrd_scene_window_get_normal (self, &normal);
-  graphene_plane_init_from_point (res, &normal, &obj->position);
-}
-
 /* XrdWindow Interface functions */
 
 static gboolean
