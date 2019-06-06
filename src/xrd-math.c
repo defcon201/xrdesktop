@@ -73,26 +73,22 @@ xrd_math_get_rotation_angles (graphene_vec3_t *direction,
                               float *azimuth,
                               float *inclination)
 {
-  // -z is forward, so we look "in the other direction"
-  graphene_vec3_t anti_direction;
-  graphene_vec3_scale (direction, 1, &anti_direction);
-
   /* y axis = 90° up. angle diff to y axis when looking up = 0°: 90°-0°=90°
    * Looking up, angle to y axis shrinks to 0° -> 90°-0°=90° inclination.
    * Looking down, angle to y axis grows to -90° -> 90°--90°=-90° incl. */
   graphene_vec3_t y_axis;
   graphene_vec3_init_from_vec3 (&y_axis, graphene_vec3_y_axis ());
   graphene_vec3_t cross;
-  graphene_vec3_cross (&y_axis, &anti_direction, &cross);
+  graphene_vec3_cross (&y_axis, direction, &cross);
   float mag = graphene_vec3_length (&cross);
-  float dot = graphene_vec3_dot (&y_axis, &anti_direction);
+  float dot = graphene_vec3_dot (&y_axis, direction);
   *inclination =  (90 - RAD_TO_DEG (atan2f (mag, dot)));
 
   /* rotation around y axis, "left-right".
    * Negate z axis because z = -1 is forward */
   *azimuth =
-      RAD_TO_DEG (atan2f (graphene_vec3_get_x (&anti_direction),
-                         - graphene_vec3_get_z (&anti_direction)));
+      RAD_TO_DEG (atan2f (graphene_vec3_get_x (direction),
+                          - graphene_vec3_get_z (direction)));
 }
 
 void

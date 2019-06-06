@@ -8,6 +8,15 @@ test_math_matrix_decomposition = executable(
   install: false)
 test('test_math_matrix_decomposition', test_math_matrix_decomposition)
 
+test_math_angles = executable(
+  'test_math_angles', 'test_math_angles.c',
+  dependencies: xrdesktop_deps,
+  link_with: xrdesktop_lib,
+  include_directories: xrdesktop_inc,
+  c_args : ['-DXRD_COMPILATION'],
+  install: false)
+test('test_math_angles', test_math_angles)
+
 test_gsettings = executable(
   'test_gsettings', 'test_gsettings.c',
   dependencies: xrdesktop_deps,
