@@ -620,3 +620,12 @@ xrd_window_get_plane (XrdWindow        *self,
 
   graphene_plane_init_from_point (res, &normal, &position);
 }
+
+float
+xrd_window_get_aspect_ratio (XrdWindow *self)
+{
+  uint32_t w, h;
+  g_object_get (self, "texture-width", &w, "texture-height", &h, NULL);
+  return (float) w / (float) h;
+}
+

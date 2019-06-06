@@ -151,9 +151,10 @@ _get_intersection (XrdPointer      *pointer,
 
   graphene_matrix_t inverse;
 
-  XrdSceneWindow *scene_window = XRD_SCENE_WINDOW (window);
-  XrdSceneObject *window_obj = XRD_SCENE_OBJECT (scene_window);
-  graphene_matrix_inverse (&window_obj->model_matrix, &inverse);
+  graphene_matrix_t model_matrix;
+  xrd_window_get_transformation (window, &model_matrix);
+
+  graphene_matrix_inverse (&model_matrix, &inverse);
 
   graphene_vec4_t intersection_vec4;
   graphene_vec4_init_from_vec3 (&intersection_vec4, res, 1.0f);
@@ -167,8 +168,9 @@ _get_intersection (XrdPointer      *pointer,
   graphene_vec4_to_float (&intersection_origin, f);
 
   /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
-  if (f[0] >= -scene_window->aspect_ratio / 2.0f
-      && f[0] <= scene_window->aspect_ratio / 2.0f
+  float aspect_ratio = xrd_window_get_aspect_ratio (window);
+
+  if (f[0] >= -aspect_ratio / 2.0f && f[0] <= aspect_ratio / 2.0f
       && f[1] >= -0.5f && f[1] <= 0.5f)
     return TRUE;
 

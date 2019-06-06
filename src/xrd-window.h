@@ -241,6 +241,9 @@ void
 xrd_window_get_plane (XrdWindow        *self,
                       graphene_plane_t *res);
 
+float
+xrd_window_get_aspect_ratio (XrdWindow *self);
+
 G_END_DECLS
 
 #endif /* XRD_WINDOW_H_ */
