@@ -8,6 +8,8 @@
 #include "xrd-pointer.h"
 #include "xrd-window.h"
 
+#include "graphene-ext.h"
+
 G_DEFINE_INTERFACE (XrdPointer, xrd_pointer, G_TYPE_OBJECT)
 
 static void
@@ -122,8 +124,49 @@ xrd_pointer_get_intersection (XrdPointer      *self,
                               float           *distance,
                               graphene_vec3_t *res)
 {
-  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
-  return iface->get_intersection (self, window, distance, res);
+  graphene_ray_t ray;
+  xrd_pointer_get_ray (self, &ray);
+
+  graphene_plane_t plane;
+  xrd_window_get_plane (window, &plane);
+
+  *distance = graphene_ray_get_distance_to_plane (&ray, &plane);
+  if (*distance == INFINITY)
+    return FALSE;
+
+  graphene_ray_get_direction (&ray, res);
+  graphene_vec3_scale (res, *distance, res);
+
+  graphene_vec3_t origin;
+  graphene_ray_get_origin_vec3 (&ray, &origin);
+  graphene_vec3_add (&origin, res, res);
+
+  graphene_matrix_t inverse;
+
+  graphene_matrix_t model_matrix;
+  xrd_window_get_transformation (window, &model_matrix);
+
+  graphene_matrix_inverse (&model_matrix, &inverse);
+
+  graphene_vec4_t intersection_vec4;
+  graphene_vec4_init_from_vec3 (&intersection_vec4, res, 1.0f);
+
+  graphene_vec4_t intersection_origin;
+  graphene_matrix_transform_vec4 (&inverse,
+                                  &intersection_vec4,
+                                  &intersection_origin);
+
+  float f[4];
+  graphene_vec4_to_float (&intersection_origin, f);
+
+  /* Test if we are in [0-aspect_ratio, 0-1] plane coordinates */
+  float aspect_ratio = xrd_window_get_aspect_ratio (window);
+
+  if (f[0] >= -aspect_ratio / 2.0f && f[0] <= aspect_ratio / 2.0f
+      && f[1] >= -0.5f && f[1] <= 0.5f)
+    return TRUE;
+
+  return FALSE;
 }
 
 void

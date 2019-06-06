@@ -125,22 +125,6 @@ _get_transformation (XrdPointer        *pointer,
   openvr_overlay_get_transform_absolute (OPENVR_OVERLAY(self), matrix);
 }
 
-static gboolean
-_get_intersection (XrdPointer      *pointer,
-                   XrdWindow       *window,
-                   float           *distance,
-                   graphene_vec3_t *res)
-{
-  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
-
-  (void) self;
-  (void) window;
-  (void) distance;
-  (void) res;
-  g_warning ("stub: get_intersection\n");
-  return FALSE;
-}
-
 static void
 _set_selected_window (XrdPointer *pointer,
                       XrdWindow  *window)
@@ -157,6 +141,5 @@ xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
   iface->get_data = _get_data;
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
-  iface->get_intersection = _get_intersection;
   iface->set_selected_window = _set_selected_window;
 }

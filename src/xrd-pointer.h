@@ -51,12 +51,6 @@ struct _XrdPointerInterface
   (*get_transformation) (XrdPointer        *self,
                          graphene_matrix_t *matrix);
 
-  gboolean
-  (*get_intersection) (XrdPointer      *self,
-                       XrdWindow       *window,
-                       float           *distance,
-                       graphene_vec3_t *res);
-
   void
   (*set_selected_window) (XrdPointer *pointer,
                           XrdWindow  *window);
