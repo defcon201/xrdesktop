@@ -267,9 +267,8 @@ _init_vulkan (XrdSceneClient *self)
 
 #if DEBUG_GEOMETRY
   for (uint32_t i = 0; i < G_N_ELEMENTS (self->debug_vectors); i++)
-    xrd_scene_vector_initialize (self->debug_vectors[i],
-                                 client->device,
-                                &self->descriptor_set_layout);
+    xrd_scene_vector_initialize (self->debug_vectors[i], device,
+                                 descriptor_set_layout);
 #endif
 
   XrdDesktopCursor *cursor =
