@@ -402,24 +402,6 @@ _poll_event (XrdWindow *self)
   (void) self;
 }
 
-static gboolean
-_intersects (XrdWindow          *window,
-             XrdPointer         *pointer,
-             graphene_matrix_t  *mat,
-             graphene_point3d_t *intersection_point)
-{
-  (void) mat;
-
-  float distance;
-  graphene_vec3_t intersection_vec;
-  bool intersects = xrd_pointer_get_intersection (pointer, window,
-                                                  &distance, &intersection_vec);
-
-  graphene_point3d_init_from_vec3 (intersection_point, &intersection_vec);
-
- return intersects;
-}
-
 static void
 _add_child (XrdWindow        *window,
             XrdWindow        *child,
@@ -475,7 +457,6 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->get_transformation = _get_transformation;
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
-  iface->intersects = _intersects;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
   iface->set_flip_y = _set_flip_y;

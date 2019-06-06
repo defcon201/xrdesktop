@@ -91,12 +91,6 @@ struct _XrdWindowInterface
   void
   (*poll_event) (XrdWindow *self);
 
-  gboolean
-  (*intersects) (XrdWindow          *self,
-                 XrdPointer         *pointer,
-                 graphene_matrix_t  *pointer_transformation,
-                 graphene_point3d_t *intersection);
-
   void
   (*emit_grab_start) (XrdWindow *self, XrdControllerIndexEvent *event);
 

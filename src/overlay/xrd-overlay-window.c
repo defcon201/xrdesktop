@@ -252,20 +252,6 @@ _poll_event (XrdWindow *window)
   openvr_overlay_poll_event (OPENVR_OVERLAY (self));
 }
 
-static gboolean
-_intersects (XrdWindow          *window,
-             XrdPointer         *pointer,
-             graphene_matrix_t  *pointer_transformation,
-             graphene_point3d_t *intersection)
-{
-  (void) pointer;
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  gboolean res = openvr_overlay_intersects (OPENVR_OVERLAY (self),
-                                            intersection,
-                                            pointer_transformation);
-  return res;
-}
-
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
@@ -427,7 +413,6 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->get_transformation = _get_transformation;
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
-  iface->intersects = _intersects;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
   iface->set_flip_y = (void (*)(XrdWindow *, gboolean)) openvr_overlay_set_flip_y;

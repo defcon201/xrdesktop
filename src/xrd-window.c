@@ -329,14 +329,19 @@ xrd_window_poll_event (XrdWindow *self)
 gboolean
 xrd_window_intersects (XrdWindow          *self,
                        XrdPointer         *pointer,
-                       graphene_matrix_t  *pointer_transformation,
+                       graphene_matrix_t  *mat,
                        graphene_point3d_t *intersection)
 {
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->intersects (self,
-                            pointer,
-                            pointer_transformation,
-                            intersection);
+  (void) mat;
+
+  float distance;
+  graphene_vec3_t intersection_vec;
+  bool intersects = xrd_pointer_get_intersection (pointer, self,
+                                                  &distance, &intersection_vec);
+
+  graphene_point3d_init_from_vec3 (intersection, &intersection_vec);
+
+  return intersects;
 }
 
 /**
