@@ -102,8 +102,7 @@ xrd_scene_client_finalize (GObject *gobject)
 
   G_OBJECT_CLASS (xrd_scene_client_parent_class)->finalize (gobject);
 
-  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
-  g_object_unref (renderer);
+  xrd_scene_renderer_destroy_instance ();
 }
 
 static bool

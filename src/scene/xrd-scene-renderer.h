@@ -35,6 +35,8 @@ G_DECLARE_FINAL_TYPE (XrdSceneRenderer, xrd_scene_renderer,
 
 XrdSceneRenderer *xrd_scene_renderer_get_instance (void);
 
+void xrd_scene_renderer_destroy_instance (void);
+
 GulkanDevice*
 xrd_scene_renderer_get_device (void);
 

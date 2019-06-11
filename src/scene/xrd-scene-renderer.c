@@ -114,6 +114,11 @@ XrdSceneRenderer *xrd_scene_renderer_get_instance (void)
   return singleton;
 }
 
+void xrd_scene_renderer_destroy_instance (void)
+{
+  g_clear_object (&singleton);
+}
+
 static bool
 _init_framebuffers (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 {
