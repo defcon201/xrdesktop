@@ -47,8 +47,8 @@ _make_texture (GulkanClient *gc, const gchar *resource)
   return texture;
 }
 
-int
-main ()
+static int
+_test_scene_client ()
 {
   XrdSceneClient *client = xrd_scene_client_new ();
 
@@ -94,5 +94,13 @@ main ()
   //g_object_unref (window);
 
   g_object_unref (client);
+  return 0;
+}
+
+int
+main ()
+{
+  _test_scene_client ();
+  _test_scene_client ();
   return 0;
 }
