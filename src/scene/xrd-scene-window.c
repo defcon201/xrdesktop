@@ -216,7 +216,8 @@ xrd_scene_window_finalize (GObject *gobject)
   if (child)
     child->window_data.parent_window = NULL;
 
-  g_object_unref (self->texture);
+  if (self->texture)
+    g_object_unref (self->texture);
 
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
