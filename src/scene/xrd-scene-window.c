@@ -265,7 +265,7 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
 {
   if (!self->texture)
     {
-      g_warning ("Trying to draw window with no texture.\n");
+      /* g_warning ("Trying to draw window with no texture.\n"); */
       return;
     }
 
