@@ -69,6 +69,9 @@ typedef struct XrdWindowData
   XrdWindow *parent_window;
 
   graphene_point_t child_offset_center;
+
+  /* cache of the currently rendered texture */
+  GulkanTexture *texture;
 } XrdWindowData;
 
 struct _XrdWindowInterface

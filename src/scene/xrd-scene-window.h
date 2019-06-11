@@ -32,7 +32,6 @@ struct _XrdSceneWindow
   XrdSceneObject parent;
 
   GulkanVertexBuffer *vertex_buffer;
-  GulkanTexture *texture;
   VkSampler sampler;
   float aspect_ratio;
 

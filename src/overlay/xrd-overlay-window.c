@@ -18,8 +18,6 @@ struct _XrdOverlayWindow
   OpenVROverlay parent;
   gboolean      recreate;
 
-  GulkanTexture *texture;
-
   XrdWindowData window_data;
 };
 
@@ -264,10 +262,10 @@ _submit_texture (XrdWindow     *window,
   openvr_overlay_submit_texture (OPENVR_OVERLAY (self), client, texture);
 
   /* let the previous texture stay alive until this one has been submitted */
-  if (self->texture)
-    g_object_unref (self->texture);
-  self->texture = texture;
-  g_object_ref (self->texture);
+  if (self->window_data.texture)
+    g_object_unref (self->window_data.texture);
+  self->window_data.texture = texture;
+  g_object_ref (self->window_data.texture);
 }
 
 static void
@@ -296,6 +294,7 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
   self->window_data.native = NULL;
   self->window_data.texture_width = 0;
   self->window_data.texture_height = 0;
+  self->window_data.texture = NULL;
 }
 
 /** xrd_overlay_window_new:
@@ -416,7 +415,7 @@ xrd_overlay_window_finalize (GObject *gobject)
   if (child)
     child->window_data.parent_window = NULL;
 
-  g_object_unref (self->texture);
+  g_object_unref (self->window_data.texture);
 
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }

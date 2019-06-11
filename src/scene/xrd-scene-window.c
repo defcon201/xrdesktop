@@ -133,7 +133,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
   self->vertex_buffer = gulkan_vertex_buffer_new ();
   self->sampler = VK_NULL_HANDLE;
   self->aspect_ratio = 1.0;
-  self->texture = NULL;
+  self->window_data.texture = NULL;
 }
 
 XrdSceneWindow *
@@ -216,8 +216,8 @@ xrd_scene_window_finalize (GObject *gobject)
   if (child)
     child->window_data.parent_window = NULL;
 
-  if (self->texture)
-    g_object_unref (self->texture);
+  if (self->window_data.texture)
+    g_object_unref (self->window_data.texture);
 
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
@@ -263,7 +263,7 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
                        VkCommandBuffer    cmd_buffer,
                        graphene_matrix_t *vp)
 {
-  if (!self->texture)
+  if (!self->window_data.texture)
     {
       /* g_warning ("Trying to draw window with no texture.\n"); */
       return;
@@ -325,7 +325,7 @@ _submit_texture (XrdWindow     *window,
 {
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
 
-  if (texture == self->texture)
+  if (texture == self->window_data.texture)
     {
       gchar *title;
       g_object_get (window, "title", &title, NULL);
@@ -349,11 +349,11 @@ _submit_texture (XrdWindow     *window,
       gulkan_vertex_buffer_map_array (self->vertex_buffer);
     }
 
-  if (self->texture)
-    g_object_unref (self->texture);
+  if (self->window_data.texture)
+    g_object_unref (self->window_data.texture);
 
-  self->texture = texture;
-  g_object_ref (self->texture);
+  self->window_data.texture = texture;
+  g_object_ref (self->window_data.texture);
 
   guint mip_levels = gulkan_texture_get_mip_levels (texture);
 
@@ -378,7 +378,7 @@ _submit_texture (XrdWindow     *window,
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
   xrd_scene_object_update_descriptors_texture (obj, self->sampler,
                                                gulkan_texture_get_image_view (
-                                                 self->texture));
+                                                 self->window_data.texture));
 }
 
 static void
