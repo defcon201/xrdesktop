@@ -196,7 +196,7 @@ _init_descriptor_layout (XrdSceneRenderer *self)
                                                 GULKAN_CLIENT (self)),
                                              &info, NULL,
                                              &self->descriptor_set_layout);
-  vk_check_error ("vkCreateDescriptorSetLayout", res)
+  vk_check_error ("vkCreateDescriptorSetLayout", res, false)
 
   return true;
 }
@@ -215,7 +215,7 @@ _init_pipeline_layout (XrdSceneRenderer *self)
   VkResult res = vkCreatePipelineLayout (gulkan_client_get_device_handle (
                                            GULKAN_CLIENT (self)),
                                         &info, NULL, &self->pipeline_layout);
-  vk_check_error ("vkCreatePipelineLayout", res)
+  vk_check_error ("vkCreatePipelineLayout", res, false)
 
   return true;
 }
@@ -229,7 +229,7 @@ _init_pipeline_cache (XrdSceneRenderer *self)
   VkResult res = vkCreatePipelineCache (gulkan_client_get_device_handle (
                                           GULKAN_CLIENT (self)),
                                        &info, NULL, &self->pipeline_cache);
-  vk_check_error ("vkCreatePipelineCache", res)
+  vk_check_error ("vkCreatePipelineCache", res, false)
 
   return true;
 }
@@ -488,7 +488,7 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
                                                 self->pipeline_cache, 1,
                                                &pipeline_info,
                                                 NULL, &self->pipelines[i]);
-      vk_check_error ("vkCreateGraphicsPipelines", res)
+      vk_check_error ("vkCreateGraphicsPipelines", res, false)
     }
 
   return true;
