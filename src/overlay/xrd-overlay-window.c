@@ -189,8 +189,44 @@ _get_transformation (XrdWindow         *window,
                      graphene_matrix_t *mat)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  return openvr_overlay_get_transform_absolute (OPENVR_OVERLAY (self), mat);
+
+  graphene_matrix_t mat_no_scale;
+  if (!openvr_overlay_get_transform_absolute (OPENVR_OVERLAY (self),
+                                             &mat_no_scale))
+    return FALSE;
+
+  /* Rebuild model matrix to include scale */
+  float width_meters;
+  if (!openvr_overlay_get_width_meters (OPENVR_OVERLAY (self), &width_meters))
+    return FALSE;
+
+  float height_meters = width_meters / xrd_window_get_aspect_ratio (window);
+
+  graphene_matrix_init_scale (mat, height_meters, height_meters, height_meters);
+
+  graphene_quaternion_t orientation;
+  graphene_matrix_get_rotation_quaternion (&mat_no_scale, &orientation);
+  graphene_matrix_rotate_quaternion (mat, &orientation);
+
+  graphene_point3d_t position;
+  graphene_matrix_get_translation_point3d (&mat_no_scale, &position);
+  graphene_matrix_translate (mat, &position);
+
+  return TRUE;
 }
+
+
+static gboolean
+_get_transformation_no_scale (XrdWindow         *window,
+                              graphene_matrix_t *mat)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+  if (!openvr_overlay_get_transform_absolute (OPENVR_OVERLAY (self), mat))
+    return FALSE;
+
+  return TRUE;
+}
+
 
 static void
 _submit_texture (XrdWindow     *window,
@@ -411,6 +447,7 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
 {
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
+  iface->get_transformation_no_scale = _get_transformation_no_scale;
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;

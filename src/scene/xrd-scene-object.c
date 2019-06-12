@@ -246,6 +246,16 @@ xrd_scene_object_get_transformation (XrdSceneObject *self)
   return self->model_matrix;
 }
 
+graphene_matrix_t
+xrd_scene_object_get_transformation_no_scale (XrdSceneObject *self)
+{
+  graphene_matrix_t mat;
+  graphene_matrix_init_identity (&mat);
+  graphene_matrix_rotate_quaternion (&mat, &self->orientation);
+  graphene_matrix_translate (&mat, &self->position);
+  return mat;
+}
+
 gboolean
 xrd_scene_object_is_visible (XrdSceneObject *self)
 {

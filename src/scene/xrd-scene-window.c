@@ -308,6 +308,15 @@ _get_transformation (XrdWindow         *window,
   return TRUE;
 }
 
+static gboolean
+_get_transformation_no_scale (XrdWindow         *window,
+                              graphene_matrix_t *mat)
+{
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  *mat = xrd_scene_object_get_transformation_no_scale (XRD_SCENE_OBJECT (self));
+  return TRUE;
+}
+
 static void
 _submit_texture (XrdWindow     *window,
                  GulkanClient  *client,
@@ -430,6 +439,7 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
 {
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
+  iface->get_transformation_no_scale = _get_transformation_no_scale;
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;

@@ -215,6 +215,14 @@ xrd_window_get_transformation (XrdWindow *self, graphene_matrix_t *mat)
   return iface->get_transformation (self, mat);
 }
 
+gboolean
+xrd_window_get_transformation_no_scale (XrdWindow         *self,
+                                        graphene_matrix_t *mat)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  return iface->get_transformation_no_scale (self, mat);
+}
+
 /**
  * xrd_window_submit_texture:
  * @self: The #XrdWindow
