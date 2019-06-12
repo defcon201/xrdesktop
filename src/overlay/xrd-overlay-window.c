@@ -415,7 +415,8 @@ xrd_overlay_window_finalize (GObject *gobject)
   if (child)
     child->window_data.parent_window = NULL;
 
-  g_object_unref (self->window_data.texture);
+  if (self->window_data.texture)
+    g_object_unref (self->window_data.texture);
 
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }
