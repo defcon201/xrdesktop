@@ -933,24 +933,6 @@ _window_grab_cb (XrdWindow    *window,
   g_free (event);
 }
 
-/* TODO: Move to xrd window */
-static void
-_window_unmark (XrdWindow *self)
-{
-  graphene_vec3_t unmarked_color;
-  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
-  xrd_window_set_color (self, &unmarked_color);
-}
-
-static void
-_window_mark_color (XrdWindow *self, float r, float g, float b)
-{
-  graphene_vec3_t marked_color;
-  //graphene_vec3_init (&marked_color, .8f, .4f, .2f);
-  graphene_vec3_init (&marked_color, r, g, b);
-  xrd_window_set_color (self, &marked_color);
-}
-
 static void
 _mark_windows_for_selection_mode (XrdClient *self)
 {
@@ -964,9 +946,9 @@ _mark_windows_for_selection_mode (XrdClient *self)
           XrdWindow *win = l->data;
 
           if (xrd_window_manager_is_pinned (manager, win))
-            _window_mark_color (win, 0.0f, 0.0f, 1.0f);
+            xrd_window_select (win);
           else
-            _window_mark_color (win, 0.1f, 0.1f, 0.1f);
+            xrd_window_deselect (win);
 
           xrd_window_show (win);
         }
@@ -978,7 +960,7 @@ _mark_windows_for_selection_mode (XrdClient *self)
         {
           XrdWindow *win = l->data;
 
-          _window_unmark (win);
+          xrd_window_end_selection (win);
 
           if (priv->pinned_only &&
               !xrd_window_manager_is_pinned (manager, win))
@@ -996,7 +978,7 @@ _button_hover_cb (XrdWindow     *window,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
-  _window_mark_color (window, .8f, .4f, .2f);
+  xrd_window_select (window);
 
   XrdPointer *pointer = xrd_controller_get_pointer (controller);
   XrdPointerTip *pointer_tip = xrd_controller_get_pointer_tip (controller);
@@ -1052,7 +1034,7 @@ _button_hover_end_cb (XrdWindow               *window,
 
   /* unmark if no controller is hovering over this button */
   if (!xrd_client_is_hovered (self, window))
-    _window_unmark (window);
+    xrd_window_end_selection (window);
 
   _window_hover_end_cb (window, event, _self);
 

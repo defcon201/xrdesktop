@@ -516,19 +516,6 @@ xrd_window_add_child (XrdWindow        *self,
   iface->add_child (self, child, offset_center);
 }
 
-/**
- * xrd_window_set_color:
- * @self: The #XrdWindow
- * @color: RGB  value in [0,1]x[0,1]x[0,1]
- */
-void
-xrd_window_set_color (XrdWindow *self,
-                      graphene_vec3_t *color)
-{
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  iface->set_color (self, color);
-}
-
 void
 xrd_window_select (XrdWindow *self)
 {

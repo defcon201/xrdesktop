@@ -356,14 +356,6 @@ xrd_overlay_window_new_from_native (const gchar *title,
 }
 
 static void
-_set_color (XrdWindow       *window,
-            graphene_vec3_t *color)
-{
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  openvr_overlay_set_color (OPENVR_OVERLAY (self), color);
-}
-
-static void
 _select (XrdWindow *window)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
@@ -496,7 +488,6 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;
-  iface->set_color = _set_color;
   iface->select = _select;
   iface->deselect = _deselect;
   iface->is_selected = _is_selected;

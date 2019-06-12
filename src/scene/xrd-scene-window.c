@@ -431,15 +431,6 @@ _add_child (XrdWindow        *window,
 }
 
 static void
-_set_color (XrdWindow       *window,
-            graphene_vec3_t *color)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  graphene_vec3_init_from_vec3 (&priv->color, color);
-}
-
-static void
 _select (XrdWindow *window)
 {
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
@@ -519,7 +510,6 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;
-  iface->set_color = _set_color;
   iface->select = _select;
   iface->deselect = _deselect;
   iface->is_selected = _is_selected;
