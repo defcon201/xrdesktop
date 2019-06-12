@@ -58,6 +58,8 @@ typedef struct XrdWindowData
   uint32_t texture_height;
   GString *title;
 
+  gboolean selected;
+
   graphene_point_t initial_size_meters;
 
   float scale;
@@ -122,6 +124,18 @@ struct _XrdWindowInterface
 
   void
   (*set_color) (XrdWindow *self, graphene_vec3_t *color);
+
+  void
+  (*select) (XrdWindow *self);
+
+  void
+  (*deselect) (XrdWindow *self);
+
+  gboolean
+  (*is_selected) (XrdWindow *self);
+
+  void
+  (*end_selection) (XrdWindow *self);
 
   void
   (*set_flip_y) (XrdWindow *self,
@@ -212,6 +226,18 @@ xrd_window_add_child (XrdWindow *self,
 void
 xrd_window_set_color (XrdWindow *self,
                       graphene_vec3_t *color);
+
+void
+xrd_window_select (XrdWindow *self);
+
+void
+xrd_window_deselect (XrdWindow *self);
+
+gboolean
+xrd_window_is_selected (XrdWindow *self);
+
+void
+xrd_window_end_selection (XrdWindow *self);
 
 void
 xrd_window_set_flip_y (XrdWindow *self,

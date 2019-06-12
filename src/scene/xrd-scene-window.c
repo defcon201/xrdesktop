@@ -440,6 +440,44 @@ _set_color (XrdWindow       *window,
 }
 
 static void
+_select (XrdWindow *window)
+{
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  priv->window_data.selected = TRUE;
+
+  g_print ("Scene window select STUB\n");
+}
+
+static void
+_deselect (XrdWindow *window)
+{
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  priv->window_data.selected = FALSE;
+
+  g_print ("Scene window deselect STUB\n");
+}
+
+static gboolean
+_is_selected (XrdWindow *window)
+{
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  return priv->window_data.selected;
+}
+
+static void
+_end_selection (XrdWindow *window)
+{
+  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  priv->window_data.selected = FALSE;
+
+  g_print ("Scene window end selection STUB\n");
+}
+
+static void
 _set_flip_y (XrdWindow *window,
              gboolean   flip_y)
 {
@@ -482,6 +520,10 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
+  iface->select = _select;
+  iface->deselect = _deselect;
+  iface->is_selected = _is_selected;
+  iface->end_selection = _end_selection;
   iface->set_flip_y = _set_flip_y;
   iface->show = (void (*)(XrdWindow*)) xrd_scene_object_show;
   iface->hide = (void (*)(XrdWindow*)) xrd_scene_object_hide;

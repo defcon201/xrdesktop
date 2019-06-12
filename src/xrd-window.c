@@ -530,6 +530,34 @@ xrd_window_set_color (XrdWindow *self,
 }
 
 void
+xrd_window_select (XrdWindow *self)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  iface->select (self);
+}
+
+void
+xrd_window_deselect (XrdWindow *self)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  iface->deselect (self);
+}
+
+gboolean
+xrd_window_is_selected (XrdWindow *self)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  return iface->is_selected (self);
+}
+
+void
+xrd_window_end_selection (XrdWindow *self)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  iface->end_selection (self);
+}
+
+void
 xrd_window_set_flip_y (XrdWindow *self,
                        gboolean flip_y)
 {

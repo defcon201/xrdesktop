@@ -295,6 +295,7 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
   self->window_data.texture_width = 0;
   self->window_data.texture_height = 0;
   self->window_data.texture = NULL;
+  self->window_data.selected = FALSE;
 }
 
 /** xrd_overlay_window_new:
@@ -361,6 +362,50 @@ _set_color (XrdWindow       *window,
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   openvr_overlay_set_color (OPENVR_OVERLAY (self), color);
 }
+
+static void
+_select (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+
+  graphene_vec3_t marked_color;
+  graphene_vec3_init (&marked_color, 0.0f, 0.0f, 1.0f);
+  openvr_overlay_set_color (OPENVR_OVERLAY (self), &marked_color);
+
+  self->window_data.selected = TRUE;
+}
+
+static void
+_deselect (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+
+  graphene_vec3_t marked_color;
+  graphene_vec3_init (&marked_color, 0.1f, 0.1f, 0.1f);
+  openvr_overlay_set_color (OPENVR_OVERLAY (self), &marked_color);
+
+  self->window_data.selected = FALSE;
+}
+
+static gboolean
+_is_selected (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+  return self->window_data.selected;
+}
+
+static void
+_end_selection (XrdWindow *window)
+{
+  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
+
+  graphene_vec3_t unmarked_color;
+  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
+  openvr_overlay_set_color (OPENVR_OVERLAY (self), &unmarked_color);
+
+  self->window_data.selected = FALSE;
+}
+
 
 static void
 xrd_overlay_window_constructed (GObject *gobject)
@@ -452,6 +497,10 @@ xrd_overlay_window_window_interface_init (XrdWindowInterface *iface)
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;
   iface->set_color = _set_color;
+  iface->select = _select;
+  iface->deselect = _deselect;
+  iface->is_selected = _is_selected;
+  iface->end_selection = _end_selection;
   iface->set_flip_y = (void (*)(XrdWindow *, gboolean)) openvr_overlay_set_flip_y;
   iface->show = _show;
   iface->hide = _hide;
