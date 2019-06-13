@@ -427,7 +427,7 @@ xrd_window_get_intersection_2d (XrdWindow          *self,
                                 graphene_point_t   *intersection_2d)
 {
   graphene_matrix_t transform;
-  xrd_window_get_transformation (self, &transform);
+  xrd_window_get_transformation_no_scale (self, &transform);
 
   graphene_matrix_t inverse_transform;
   graphene_matrix_inverse (&transform, &inverse_transform);
@@ -589,7 +589,7 @@ xrd_window_update_child (XrdWindow *self)
   graphene_matrix_init_translate (&child_transform, &scaled_offset3d);
 
   graphene_matrix_t parent_transform;
-  xrd_window_get_transformation (self, &parent_transform);
+  xrd_window_get_transformation_no_scale (self, &parent_transform);
 
   graphene_matrix_multiply (&child_transform, &parent_transform,
                             &child_transform);

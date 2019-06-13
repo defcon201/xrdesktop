@@ -1221,7 +1221,7 @@ _window_hover_cb (XrdWindow     *window,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
   graphene_matrix_t window_pose;
-  xrd_window_get_transformation (window, &window_pose);
+  xrd_window_get_transformation_no_scale (window, &window_pose);
   xrd_pointer_tip_update (xrd_controller_get_pointer_tip (controller),
                           &window_pose, &event->point);
 

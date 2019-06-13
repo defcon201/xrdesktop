@@ -185,7 +185,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
       graphene_matrix_t *transform =
         g_hash_table_lookup (self->reset_transforms, window);
 
-      xrd_window_get_transformation (window, &transition->from);
+      xrd_window_get_transformation_no_scale (window, &transition->from);
 
       float *scaling = g_hash_table_lookup (self->reset_scalings, window);
       transition->to_scaling = *scaling;
@@ -341,7 +341,7 @@ xrd_window_manager_save_reset_transform (XrdWindowManager *self,
 {
   graphene_matrix_t *transform =
     g_hash_table_lookup (self->reset_transforms, window);
-  xrd_window_get_transformation (window, transform);
+  xrd_window_get_transformation_no_scale (window, transform);
 
   float *scaling = g_hash_table_lookup (self->reset_scalings, window);
   g_object_get (G_OBJECT(window), "scale", scaling, NULL);
@@ -391,7 +391,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
 
   /* Register reset position */
   graphene_matrix_t *transform = graphene_matrix_alloc ();
-  xrd_window_get_transformation (window, transform);
+  xrd_window_get_transformation_no_scale (window, transform);
   g_hash_table_insert (self->reset_transforms, window, transform);
 
   float *scaling = (float*) g_malloc (sizeof (float));
@@ -627,7 +627,7 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
                                            &controller_rotation);
 
   graphene_matrix_t window_transform;
-  xrd_window_get_transformation (grab_state->window, &window_transform);
+  xrd_window_get_transformation_no_scale (grab_state->window, &window_transform);
 
   graphene_matrix_get_rotation_quaternion (&window_transform,
                                            &grab_state->window_rotation);

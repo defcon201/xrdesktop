@@ -181,8 +181,8 @@ xrd_desktop_cursor_update (XrdDesktopCursor   *self,
   graphene_matrix_translate (&transform, &cursor_hotspot);
 
   graphene_matrix_t overlay_transform;
-  xrd_window_get_transformation (window, &overlay_transform);
-  graphene_matrix_multiply(&transform, &overlay_transform, &transform);
+  xrd_window_get_transformation_no_scale (window, &overlay_transform);
+  graphene_matrix_multiply (&transform, &overlay_transform, &transform);
 
   xrd_desktop_cursor_set_transformation (self, &transform);
 }
