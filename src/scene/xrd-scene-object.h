@@ -15,7 +15,7 @@
 #include <glib-object.h>
 #include <gulkan.h>
 #include <graphene.h>
-#include <openvr_capi.h>
+#include <openvr-glib.h>
 
 G_BEGIN_DECLS
 
