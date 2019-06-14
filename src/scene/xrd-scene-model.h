@@ -22,23 +22,21 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneModel, xrd_scene_model,
                       XRD, SCENE_MODEL, GObject)
 
-struct _XrdSceneModel
-{
-  GObject parent;
-
-  GulkanDevice *device;
-
-  GulkanTexture *texture;
-  GulkanVertexBuffer *vbo;
-  VkSampler sampler;
-};
-
 XrdSceneModel *xrd_scene_model_new (void);
 
 gboolean
 xrd_scene_model_load (XrdSceneModel *self,
                       GulkanClient  *gc,
                       const char    *model_name);
+
+VkSampler
+xrd_scene_model_get_sampler (XrdSceneModel *self);
+
+GulkanVertexBuffer*
+xrd_scene_model_get_vbo (XrdSceneModel *self);
+
+GulkanTexture*
+xrd_scene_model_get_texture (XrdSceneModel *self);
 
 G_END_DECLS
 

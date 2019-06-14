@@ -11,6 +11,17 @@
 
 #include "xrd-scene-renderer.h"
 
+struct _XrdSceneModel
+{
+  GObject parent;
+
+  GulkanDevice *device;
+
+  GulkanTexture *texture;
+  GulkanVertexBuffer *vbo;
+  VkSampler sampler;
+};
+
 G_DEFINE_TYPE (XrdSceneModel, xrd_scene_model, G_TYPE_OBJECT)
 
 static void
@@ -186,4 +197,22 @@ xrd_scene_model_load (XrdSceneModel *self,
   context->model->FreeTexture (vr_diffuse_texture);
 
   return TRUE;
+}
+
+VkSampler
+xrd_scene_model_get_sampler (XrdSceneModel *self)
+{
+  return self->sampler;
+}
+
+GulkanVertexBuffer*
+xrd_scene_model_get_vbo (XrdSceneModel *self)
+{
+  return self->vbo;
+}
+
+GulkanTexture*
+xrd_scene_model_get_texture (XrdSceneModel *self)
+{
+  return self->texture;
 }

@@ -69,8 +69,8 @@ xrd_scene_device_initialize (XrdSceneDevice        *self,
   g_object_ref (self->model);
 
   xrd_scene_object_update_descriptors_texture (
-    obj, self->model->sampler,
-    gulkan_texture_get_image_view (self->model->texture));
+    obj, xrd_scene_model_get_sampler (self->model),
+    gulkan_texture_get_image_view (xrd_scene_model_get_texture (self->model)));
 
   return TRUE;
 }
@@ -107,6 +107,7 @@ xrd_scene_device_draw (XrdSceneDevice    *self,
 
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
-  gulkan_vertex_buffer_draw_indexed (self->model->vbo, cmd_buffer);
+  gulkan_vertex_buffer_draw_indexed (xrd_scene_model_get_vbo (self->model),
+                                     cmd_buffer);
 }
 
