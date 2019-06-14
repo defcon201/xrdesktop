@@ -209,3 +209,23 @@ graphene_matrix_equals (graphene_matrix_t *a,
 
   return TRUE;
 }
+
+void
+graphene_matrix_interpolate_simple (const graphene_matrix_t *from,
+                                    const graphene_matrix_t *to,
+                                    float                    factor,
+                                    graphene_matrix_t       *result)
+{
+  float from_f[16];
+  float to_f[16];
+  float interpolated_f[16];
+
+  graphene_matrix_to_float (from, from_f);
+  graphene_matrix_to_float (to, to_f);
+
+  for (uint32_t i = 0; i < 16; i++)
+    interpolated_f[i] = from_f[i] * (1.0f - factor) + to_f[i] * factor;
+
+  graphene_matrix_init_from_float (result, interpolated_f);
+}
+

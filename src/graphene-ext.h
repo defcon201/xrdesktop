@@ -79,4 +79,10 @@ bool
 graphene_matrix_equals (graphene_matrix_t *a,
                         graphene_matrix_t *b);
 
+void
+graphene_matrix_interpolate_simple (const graphene_matrix_t *from,
+                                    const graphene_matrix_t *to,
+                                    float                    factor,
+                                    graphene_matrix_t       *result);
+
 #endif /* XRD_GRAPHENE_QUATERNION_H_ */

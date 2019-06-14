@@ -129,10 +129,10 @@ _interpolate_cb (gpointer _transition)
   XrdWindow *window = transition->window;
 
   graphene_matrix_t interpolated;
-  openvr_math_matrix_interpolate (&transition->from,
-                                  &transition->to,
-                                   transition->interpolate,
-                                  &interpolated);
+  graphene_matrix_interpolate_simple (&transition->from,
+                                      &transition->to,
+                                       transition->interpolate,
+                                      &interpolated);
   xrd_window_set_transformation (window, &interpolated);
 
   float interpolated_scaling =
