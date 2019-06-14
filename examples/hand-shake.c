@@ -220,7 +220,7 @@ _init_windows (Example *self)
                                                     canvas_width_meter,
                                                     canvas_height_meter));
 
-  xrd_client_add_window (self->client, self->canvas, FALSE, FALSE);
+  xrd_client_add_window (self->client, self->canvas, FALSE);
 
   xrd_window_submit_texture (self->canvas, gc, self->canvas_texture);
 

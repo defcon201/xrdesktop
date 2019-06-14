@@ -53,10 +53,24 @@ struct _XrdClientClass
 XrdClient *xrd_client_new (void);
 
 void
+xrd_client_add_container (XrdClient *self,
+                          XrdContainer *container);
+
+void
+xrd_client_remove_container (XrdClient *self,
+                             XrdContainer *container);
+
+XrdWindow *
+xrd_client_window_new_from_ppm (XrdClient *client,
+                                const char* title,
+                                uint32_t w,
+                                uint32_t h,
+                                float ppm);
+
+void
 xrd_client_add_window (XrdClient *self,
                        XrdWindow *window,
-                       gboolean   is_child,
-                       gboolean   follow_head);
+                       gboolean   draggable);
 
 void
 xrd_client_remove_window (XrdClient *self,
@@ -218,6 +232,9 @@ xrd_client_is_grabbed (XrdClient *self,
 gboolean
 xrd_client_is_hovered (XrdClient *self,
                        XrdWindow *window);
+
+GSList *
+xrd_client_get_windows (XrdClient *self);
 
 G_END_DECLS
 

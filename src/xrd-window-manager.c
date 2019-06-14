@@ -14,7 +14,6 @@
 #include "xrd-math.h"
 #include "graphene-ext.h"
 
-#include "xrd-follow-head-container.h"
 #include "xrd-controller.h"
 
 struct _XrdWindowManager
@@ -25,7 +24,7 @@ struct _XrdWindowManager
   GSList *managed_windows;
   GSList *hoverable_windows;
   GSList *destroy_windows;
-  GSList *following;
+  GSList *containers;
 
   /* all windows except XRD_WINDOW_MANAGER_BUTTON */
   GSList *all_windows;
@@ -115,7 +114,7 @@ xrd_window_manager_finalize (GObject *gobject)
 
   g_slist_free (self->pinned_windows);
   g_slist_free (self->hoverable_windows);
-  g_slist_free (self->following);
+  g_slist_free (self->containers);
   g_slist_free (self->draggable_windows);
 
   g_slist_free_full (self->destroy_windows, g_object_unref);
@@ -348,6 +347,20 @@ xrd_window_manager_save_reset_transform (XrdWindowManager *self,
 }
 
 void
+xrd_window_manager_add_container (XrdWindowManager *self,
+                                  XrdContainer *container)
+{
+  self->containers = g_slist_append (self->containers, container);
+}
+
+void
+xrd_window_manager_remove_container (XrdWindowManager *self,
+                                     XrdContainer *container)
+{
+  self->containers = g_slist_remove (self->containers, container);
+}
+
+void
 xrd_window_manager_add_window (XrdWindowManager *self,
                                XrdWindow *window,
                                XrdWindowFlags flags)
@@ -380,15 +393,6 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   if (flags & XRD_WINDOW_HOVERABLE)
     self->hoverable_windows = g_slist_append (self->hoverable_windows, window);
 
-  if (flags & XRD_WINDOW_FOLLOW_HEAD)
-    {
-      XrdFollowHeadContainer *fhc = xrd_follow_head_container_new ();
-      float distance = xrd_math_hmd_window_distance (window);
-      xrd_follow_head_container_set_window (fhc, window, distance);
-
-      self->following = g_slist_append (self->following, fhc);
-    }
-
   /* Register reset position */
   graphene_matrix_t *transform = graphene_matrix_alloc ();
   xrd_window_get_transformation_no_scale (window, transform);
@@ -411,10 +415,10 @@ xrd_window_manager_poll_window_events (XrdWindowManager *self)
       xrd_window_poll_event (window);
     }
 
-  for (GSList *l = self->following; l != NULL; l = l->next)
+  for (GSList *l = self->containers; l != NULL; l = l->next)
     {
-      XrdFollowHeadContainer *fhc = (XrdFollowHeadContainer *) l->data;
-      xrd_follow_head_container_step (fhc);
+      XrdContainer *wc = (XrdContainer *) l->data;
+      xrd_container_step (wc);
     }
 }
 
@@ -429,14 +433,6 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
   self->managed_windows = g_slist_remove (self->managed_windows, window);
   self->hoverable_windows = g_slist_remove (self->hoverable_windows, window);
 
-  for (GSList *l = self->following; l != NULL; l = l->next) {
-    XrdFollowHeadContainer *fhc = (XrdFollowHeadContainer *) l->data;
-    if (xrd_follow_head_container_get_window (fhc) == window)
-      {
-        self->following = g_slist_remove (self->following, fhc);
-        g_object_unref (fhc);
-      }
-  }
   g_hash_table_remove (self->reset_transforms, window);
 
   /* remove the window manager's reference to the window */

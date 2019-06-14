@@ -18,6 +18,7 @@
 
 #include "xrd-window.h"
 #include "xrd-controller.h"
+#include "xrd-container.h"
 
 G_BEGIN_DECLS
 
@@ -46,9 +47,8 @@ typedef enum
   XRD_WINDOW_HOVERABLE           = 1 << 0,
   XRD_WINDOW_DRAGGABLE           = 1 << 1,
   XRD_WINDOW_MANAGED             = 1 << 2,
-  XRD_WINDOW_FOLLOW_HEAD         = 1 << 3,
-  XRD_WINDOW_DESTROY_WITH_PARENT = 1 << 4,
-  XRD_WINDOW_MANAGER_BUTTON      = 1 << 5,
+  XRD_WINDOW_DESTROY_WITH_PARENT = 1 << 3,
+  XRD_WINDOW_MANAGER_BUTTON      = 1 << 4,
 } XrdWindowFlags;
 
 XrdWindowManager *xrd_window_manager_new (void);
@@ -58,6 +58,14 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self);
 
 gboolean
 xrd_window_manager_arrange_sphere (XrdWindowManager *self);
+
+void
+xrd_window_manager_add_container (XrdWindowManager *self,
+                                  XrdContainer *container);
+
+void
+xrd_window_manager_remove_container (XrdWindowManager *self,
+                                     XrdContainer *container);
 
 void
 xrd_window_manager_add_window (XrdWindowManager *self,

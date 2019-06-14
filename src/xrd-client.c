@@ -19,6 +19,10 @@
 
 #include "xrd-scene-client.h"
 
+#include "xrd-container.h"
+
+#include "xrd-math.h"
+
 #define WINDOW_MIN_DIST .05f
 #define WINDOW_MAX_DIST 15.f
 
@@ -132,35 +136,57 @@ xrd_client_get_upload_layout (XrdClient *self)
 }
 
 /**
+ * xrd_client_add_container:
+ * @self: The #XrdClient
+ * @container: The #XrdWindowContainer to add
+ *
+ * For a container to start behaving according to its layout and attachment,
+ * it must be added to the client.
+ *
+ * Note: windows in the container must be added to the client separately with
+ * xrd_client_add_window(), preferably with draggable set to false.
+ */
+void
+xrd_client_add_container (XrdClient *self,
+                          XrdContainer *container)
+{
+  XrdWindowManager *manager = xrd_client_get_manager (self);
+  xrd_window_manager_add_container (manager, container);
+}
+
+void
+xrd_client_remove_container (XrdClient *self,
+                             XrdContainer *container)
+{
+  XrdWindowManager *manager = xrd_client_get_manager (self);
+  xrd_window_manager_remove_container (manager, container);
+}
+
+/**
  * xrd_client_add_window:
  * @self: The #XrdClient
  * @window: The #XrdWindow to add
- * @is_child: If true, the window can not be dragged with controllers and will
- * not be otherwise managed by the window manager. For windows that have this
- * attribute set, xrd_window_add_child() should be called on a desired parent
- * window.
- * @follow_head: An #XrdWindow with this attribute will move to keep its
- * current distance from the user and will move to stay in the user's view.
+ * @draggable: Desktop windows should set this to true. This will enable the
+ * expected interaction of being able to grab windows and drag them around.
+ * It should be set to false for example for
+ *  - child windows
+ *  - windows in a container that is attached to the FOV, a controller, etc.
  */
 void
 xrd_client_add_window (XrdClient *self,
                        XrdWindow *window,
-                       gboolean   is_child,
-                       gboolean   follow_head)
+                       gboolean   draggable)
 {
   XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
 
   /* User can't drag child windows, they are attached to the parent.
    * The child window's position is managed by its parent, not the WM. */
-  if (!is_child && !follow_head)
+  if (draggable)
     flags |= XRD_WINDOW_DRAGGABLE | XRD_WINDOW_MANAGED;
 
-  if (follow_head)
-      flags |= XRD_WINDOW_FOLLOW_HEAD;
-
   XrdWindowManager *manager = xrd_client_get_manager (self);
-  xrd_window_manager_add_window (manager, window, flags);
 
+  xrd_window_manager_add_window (manager, window, flags);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   if (priv->pinned_only &&
       !(flags & XRD_WINDOW_MANAGER_BUTTON) &&
@@ -172,23 +198,6 @@ xrd_client_add_window (XrdClient *self,
   xrd_client_add_window_callbacks (self, window);
 }
 
-static XrdWindow*
-_window_new_from_ppm (XrdClient *client, const char* title,
-                      uint32_t w, uint32_t h, float ppm)
-{
-  XrdWindow *window;
-  if (XRD_IS_SCENE_CLIENT (client))
-    {
-      window = XRD_WINDOW (xrd_scene_window_new_from_ppm (title, w, h, ppm));
-      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
-    }
-  else
-    {
-      window = XRD_WINDOW (xrd_overlay_window_new_from_ppm (title, w, h, ppm));
-    }
-  return window;
-}
-
 /**
  * xrd_client_add_button:
  * @self: The #XrdClient
@@ -198,6 +207,9 @@ _window_new_from_ppm (XrdClient *client, const char* title,
  * @position: World space position of the button.
  * @press_callback: A function that will be called when the button is grabbed.
  * @press_callback_data: User pointer passed to @press_callback.
+ *
+ * Buttons are special windows that can not be grabbed and dragged around.
+ * Instead a button's press_callback is called on the grab action.
  */
 gboolean
 xrd_client_add_button (XrdClient          *self,
@@ -223,8 +235,8 @@ xrd_client_add_button (XrdClient          *self,
         g_string_append (full_label, " ");
     }
 
-  XrdWindow *window = _window_new_from_ppm (self, full_label->str,
-                                            width, height, ppm);
+  XrdWindow *window = xrd_client_window_new_from_ppm (self, full_label->str,
+                                                      width, height, ppm);
 
   g_string_free (full_label, FALSE);
 
@@ -455,6 +467,13 @@ XrdClient *
 xrd_client_new (void)
 {
   return (XrdClient*) g_object_new (XRD_TYPE_CLIENT, 0);
+}
+
+GSList *
+xrd_client_get_windows (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return xrd_window_manager_get_windows (priv->manager);
 }
 
 static void
@@ -1422,6 +1441,26 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
     xrd_client_emit_move_cursor (self, event);
 
   g_free (event);
+}
+
+XrdWindow *
+xrd_client_window_new_from_ppm (XrdClient *client,
+                                const char* title,
+                                uint32_t w,
+                                uint32_t h,
+                                float ppm)
+{
+  XrdWindow *window;
+  if (XRD_IS_SCENE_CLIENT (client))
+    {
+      window = XRD_WINDOW (xrd_scene_window_new_from_ppm (title, w, h, ppm));
+      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+    }
+  else
+    {
+      window = XRD_WINDOW (xrd_overlay_window_new_from_ppm (title, w, h, ppm));
+    }
+  return window;
 }
 
 void

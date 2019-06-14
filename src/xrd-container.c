@@ -5,74 +5,90 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "xrd-follow-head-container.h"
+#include "xrd-container.h"
 
 #include <openvr-glib.h>
 
 #include "xrd-math.h"
 #include "graphene-ext.h"
 
-struct _XrdFollowHeadContainer
+struct _XrdContainer
 {
   GObject parent;
-  XrdWindow *window;
+  GSList *windows;
   float distance;
   /* TODO: inertia */
   float speed;
+
+  graphene_matrix_t transform;
+
+  XrdContainerAttachment attachment;
+  XrdContainerLayout layout;
 };
 
-G_DEFINE_TYPE (XrdFollowHeadContainer, xrd_follow_head_container, G_TYPE_OBJECT)
+G_DEFINE_TYPE (XrdContainer, xrd_container, G_TYPE_OBJECT)
 
 static void
-xrd_follow_head_container_finalize (GObject *gobject);
+xrd_container_finalize (GObject *gobject);
 
 static void
-xrd_follow_head_container_class_init (XrdFollowHeadContainerClass *klass)
+xrd_container_class_init (XrdContainerClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->finalize = xrd_follow_head_container_finalize;
+  object_class->finalize = xrd_container_finalize;
 }
 
 static void
-xrd_follow_head_container_init (XrdFollowHeadContainer *self)
+xrd_container_init (XrdContainer *self)
 {
-  self->window = NULL;
+  self->windows = NULL;
   self->distance = 0;
   self->speed = 0;
+  self->layout = XRD_CONTAINER_VERTICAL;
+  self->attachment = XRD_CONTAINER_ATTACHMENT_NONE;
 }
 
 void
-xrd_follow_head_container_set_window (XrdFollowHeadContainer *self,
-                                      XrdWindow *window,
-                                      float distance)
+xrd_container_add_window (XrdContainer *self,
+                                 XrdWindow *window)
 {
   self->speed = 0;
-  self->window = window;
+  self->windows = g_slist_append (self->windows, window);
+
+  /* initial positioning not important, will be overriden by attachment */
+  graphene_matrix_t window_transform;
+  xrd_window_get_transformation (window, &window_transform);
+  graphene_matrix_init_from_matrix (&self->transform, &window_transform);
+}
+
+void
+xrd_container_set_distance (XrdContainer *self, float distance)
+{
   self->distance = distance;
 }
 
-XrdWindow*
-xrd_follow_head_container_get_window (XrdFollowHeadContainer *self)
+GSList *
+xrd_container_get_windows (XrdContainer *self)
 {
-  return self->window;
+  return self->windows;
 }
 
 float
-xrd_follow_head_container_get_distance (XrdFollowHeadContainer *self)
+xrd_container_get_distance (XrdContainer *self)
 {
   return self->distance;
 }
 
 float
-xrd_follow_head_container_get_speed (XrdFollowHeadContainer *self)
+xrd_container_get_speed (XrdContainer *self)
 {
   return self->speed;
 }
 
 void
-xrd_follow_head_container_set_speed (XrdFollowHeadContainer *self,
-                                     float speed)
+xrd_container_set_speed (XrdContainer *self,
+                         float speed)
 {
   self->speed = speed;
 }
@@ -104,24 +120,111 @@ _hmd_facing_pose (graphene_matrix_t *hmd_pose,
   xrd_math_matrix_set_translation_point (pose_ws, look_at_point_ws);
 }
 
-gboolean
-xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
+static void
+_window_container_set_transformation (XrdContainer *self,
+                                      graphene_matrix_t *transform)
 {
-  XrdWindow *window = xrd_follow_head_container_get_window (fhc);
+  float container_width = 0;
+  float container_height = 0;
+
+  for (GSList *w = self->windows; w; w = w->next)
+    {
+      XrdWindow *window = w->data;
+      if (self->layout == XRD_CONTAINER_VERTICAL)
+        {
+          container_height += xrd_window_get_current_height_meters (window);
+          container_width =
+            fmaxf (container_width,
+                   xrd_window_get_current_width_meters (window));
+        }
+      else if (self->layout == XRD_CONTAINER_HORIZONTAL)
+        {
+          container_height =
+            fmaxf (container_height,
+                   xrd_window_get_current_height_meters (window));
+          container_width += xrd_window_get_current_height_meters (window);
+        }
+    }
+
+  /* How windows are placed:
+   * Keep tally of left / top edge of unoccupied space in container in
+   * x_offset/y_offset (-x left, +y up).
+   *
+   * In vertical layout:
+   * Place window's center half the window height below the edge.
+   * Then move the edge down the height of this window and repeat.
+   * Finally, multiply with container's transform to place in world space.
+   *
+   * In horizontal layout: Same, but with width.
+   */
+  if (self->layout == XRD_CONTAINER_VERTICAL)
+    {
+      float y_offset = +container_height / 2.f;
+      for (GSList *w = self->windows; w; w = w->next)
+        {
+          XrdWindow *window = w->data;
+
+          float window_height = xrd_window_get_current_height_meters (window);
+
+          graphene_point3d_t xyoffset = {
+            .x = 0.f,
+            .y = y_offset - window_height / 2.f,
+            .z = 0.f
+          };
+          graphene_matrix_t window_transform;
+          graphene_matrix_init_translate (&window_transform, &xyoffset);
+          graphene_matrix_multiply (&window_transform, transform,
+                                    &window_transform);
+
+          y_offset -= window_height;
+
+          xrd_window_set_transformation (window, &window_transform);
+        }
+    }
+  else if (self->layout == XRD_CONTAINER_HORIZONTAL)
+    {
+      float x_offset = -container_width / 2.f;
+      for (GSList *w = self->windows; w; w = w->next)
+        {
+          XrdWindow *window = w->data;
+
+          float window_width = xrd_window_get_current_width_meters (window);
+
+          graphene_point3d_t xyoffset = {
+            .x = x_offset + window_width / 2.f,
+            .y = 0.f,
+            .z = 0.f
+          };
+          graphene_matrix_t window_transform;
+          graphene_matrix_init_translate (&window_transform, &xyoffset);
+          graphene_matrix_multiply (&window_transform, transform,
+                                    &window_transform);
+
+          x_offset += window_width;
+
+          xrd_window_set_transformation (window, &window_transform);
+        }
+    }
+
+  graphene_matrix_init_from_matrix (&self->transform, transform);
+}
+
+static gboolean
+_step_fov (XrdContainer *self)
+{
   graphene_matrix_t hmd_pose;
   openvr_system_get_hmd_pose (&hmd_pose);
   graphene_matrix_t hmd_pose_inv;
   graphene_matrix_inverse (&hmd_pose, &hmd_pose_inv);
 
   /* _cs means camera (hmd) space, _ws means world space. */
-  graphene_matrix_t window_transform_ws;
-  xrd_window_get_transformation (window, &window_transform_ws);
-  graphene_matrix_t window_transform_cs;
-  graphene_matrix_multiply (&window_transform_ws, &hmd_pose_inv,
-                            &window_transform_cs);
+  graphene_matrix_t wc_transform_ws = self->transform;
+  graphene_matrix_t wc_transform_cs;
+  graphene_matrix_multiply (&wc_transform_ws, &hmd_pose_inv,
+                            &wc_transform_cs);
 
-  graphene_vec3_t window_vec_cs;
-  graphene_matrix_get_translation_vec3 (&window_transform_cs, &window_vec_cs);
+  graphene_vec3_t wc_vec_cs;
+  graphene_matrix_get_translation_vec3 (&wc_transform_cs, &wc_vec_cs);
 
   float left, right, top, bottom;
   xrd_math_get_frustum_angles (&left, &right, &top, &bottom);
@@ -136,7 +239,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
   float top_outer = top * 0.7f;
   float bottom_outer = bottom * 0.7f;
 
-  float radius = xrd_follow_head_container_get_distance (fhc);
+  float radius = xrd_container_get_distance (self);
 
   /* azimuth: angle between view direction to window, "left-right" component.
    * inclination: angle between view directiont to window, "up-down" component.
@@ -157,7 +260,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
    * */
 
   float azimuth, inclination;
-  xrd_math_get_rotation_angles (&window_vec_cs, &azimuth, &inclination);
+  xrd_math_get_rotation_angles (&wc_vec_cs, &azimuth, &inclination);
 
   /* Bail early when the window already is in the "center area".
    * However still update the pose to reflect movement towards/away. */
@@ -169,10 +272,10 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
     xrd_math_sphere_to_3d_coords (azimuth, inclination, radius, &new_pos_ws);
     graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
 
-    graphene_matrix_t new_window_pose_ws;
-    _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_window_pose_ws);
+    graphene_matrix_t new_wc_pose_ws;
+    _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_wc_pose_ws);
 
-    xrd_window_set_transformation (window, &new_window_pose_ws);
+    _window_container_set_transformation (self, &new_wc_pose_ws);
     return TRUE;
   }
 
@@ -216,18 +319,17 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
                                     &new_pos_ws);
       graphene_matrix_transform_point3d (&hmd_pose, &new_pos_ws, &new_pos_ws);
 
-      graphene_matrix_t new_window_pose_ws;
-      _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_window_pose_ws);
+      graphene_matrix_t new_wc_pose_ws;
+      _hmd_facing_pose (&hmd_pose, &new_pos_ws, &new_wc_pose_ws);
 
-      xrd_window_set_transformation (window, &new_window_pose_ws);
+      _window_container_set_transformation (self, &new_wc_pose_ws);
 
 
       graphene_vec2_t velocity;
       graphene_vec2_init (&velocity,
                           inclination - intersection_azimuth_inclination.y,
                           azimuth - intersection_azimuth_inclination.x);
-      xrd_follow_head_container_set_speed (fhc,
-                                           graphene_vec2_length (&velocity));
+      xrd_container_set_speed (self, graphene_vec2_length (&velocity));
 
       //g_print ("Snap window to view frustum edge!\n");
       return TRUE;
@@ -269,7 +371,7 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
   float distance_speed_factor = 0.05f;
   float angle_speed = angle_distance * distance_speed_factor;
 
-  float speed = xrd_follow_head_container_get_speed (fhc);
+  float speed = xrd_container_get_speed (self);
   if (speed < angle_speed)
     {
       speed += angle_speed / 10.f;
@@ -296,23 +398,86 @@ xrd_follow_head_container_step (XrdFollowHeadContainer *fhc)
   graphene_point3d_t next_point_ws;
   graphene_matrix_transform_point3d (&hmd_pose, &next_point_cs, &next_point_ws);
 
-  graphene_matrix_t new_window_pose_ws;
-  _hmd_facing_pose (&hmd_pose, &next_point_ws, &new_window_pose_ws);
-  xrd_window_set_transformation (window, &new_window_pose_ws);
+  graphene_matrix_t new_wc_pose_ws;
+  _hmd_facing_pose (&hmd_pose, &next_point_ws, &new_wc_pose_ws);
+  _window_container_set_transformation (self, &new_wc_pose_ws);
 
   //g_print ("Moving head following window with %f!\n", angle_speed);
   return TRUE;
 }
 
-XrdFollowHeadContainer *
-xrd_follow_head_container_new (void)
+/**
+ * xrd_container_step:
+ * Updates the container's position based on its attachment.
+ */
+gboolean
+xrd_container_step (XrdContainer *self)
 {
-  return (XrdFollowHeadContainer*) g_object_new (XRD_TYPE_FOLLOW_HEAD_CONTAINER, 0);
+  switch (self->attachment)
+  {
+    case (XRD_CONTAINER_ATTACHMENT_HEAD):
+    {
+      return _step_fov (self);
+    }
+    case (XRD_CONTAINER_ATTACHMENT_NONE):
+    {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+void
+xrd_container_set_attachment (XrdContainer *self,
+                              XrdContainerAttachment attachment)
+{
+  self->attachment = attachment;
+
+  switch (attachment)
+  {
+    case (XRD_CONTAINER_ATTACHMENT_HEAD):
+    {
+      break;
+    }
+    case (XRD_CONTAINER_ATTACHMENT_NONE):
+    {
+      break;
+    }
+  }
+}
+
+void
+xrd_container_set_layout (XrdContainer *self,
+                          XrdContainerLayout layout)
+{
+  self->layout = layout;
+  switch (layout)
+  {
+    case (XRD_CONTAINER_VERTICAL):
+    {
+      break;
+    }
+    case (XRD_CONTAINER_HORIZONTAL):
+    {
+      break;
+    }
+    case (XRD_CONTAINER_NO_LAYOUT):
+    {
+      g_print ("window container: no layout\n");
+      break;
+    }
+  }
+}
+
+XrdContainer *
+xrd_container_new (void)
+{
+  return (XrdContainer*) g_object_new (XRD_TYPE_CONTAINER, 0);
 }
 
 static void
-xrd_follow_head_container_finalize (GObject *gobject)
+xrd_container_finalize (GObject *gobject)
 {
-  XrdFollowHeadContainer *self = XRD_FOLLOW_HEAD_CONTAINER (gobject);
+  XrdContainer *self = XRD_CONTAINER (gobject);
   (void) self;
 }

@@ -15,7 +15,7 @@
 #include "xrd-version.h"
 #include "xrd-client.h"
 #include "xrd-desktop-cursor.h"
-#include "xrd-follow-head-container.h"
+#include "xrd-container.h"
 #include "xrd-input-synth.h"
 #include "xrd-math.h"
 #include "xrd-overlay-client.h"
