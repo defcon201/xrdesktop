@@ -199,7 +199,7 @@ _set_selected_window (XrdPointer *pointer,
                                              &window_transformation);
 
   xrd_scene_selection_set_aspect_ratio (self->selection,
-                                        scene_window->aspect_ratio);
+                                        xrd_window_get_aspect_ratio (window));
   xrd_scene_object_show (selection_obj);
 }
 

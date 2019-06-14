@@ -24,21 +24,12 @@
 G_BEGIN_DECLS
 
 #define XRD_TYPE_SCENE_WINDOW xrd_scene_window_get_type()
-G_DECLARE_FINAL_TYPE (XrdSceneWindow, xrd_scene_window,
-                      XRD, SCENE_WINDOW, XrdSceneObject)
+G_DECLARE_DERIVABLE_TYPE (XrdSceneWindow, xrd_scene_window,
+                          XRD, SCENE_WINDOW, XrdSceneObject)
 
-struct _XrdSceneWindow
+struct _XrdSceneWindowClass
 {
-  XrdSceneObject parent;
-
-  GulkanVertexBuffer *vertex_buffer;
-  VkSampler sampler;
-  float aspect_ratio;
-
-  gboolean flip_y;
-  graphene_vec3_t color;
-
-  XrdWindowData window_data;
+  XrdSceneObjectClass parent;
 };
 
 XrdSceneWindow *xrd_scene_window_new (const gchar *title);
