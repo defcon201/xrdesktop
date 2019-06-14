@@ -25,12 +25,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneBackground, xrd_scene_background,
                       XRD, SCENE_BACKGROUND, XrdSceneObject)
 
-struct _XrdSceneBackground
-{
-  XrdSceneObject parent;
-  GulkanVertexBuffer *vertex_buffer;
-};
-
 XrdSceneBackground *xrd_scene_background_new (void);
 
 gboolean

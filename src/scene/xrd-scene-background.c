@@ -9,6 +9,12 @@
 #include <gulkan.h>
 #include "graphene-ext.h"
 
+struct _XrdSceneBackground
+{
+  XrdSceneObject parent;
+  GulkanVertexBuffer *vertex_buffer;
+};
+
 G_DEFINE_TYPE (XrdSceneBackground, xrd_scene_background, XRD_TYPE_SCENE_OBJECT)
 
 static void
