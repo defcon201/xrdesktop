@@ -80,7 +80,7 @@ xrd_scene_selection_set_aspect_ratio (XrdSceneSelection *self,
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_vec3_t color;
-  graphene_vec3_init (&color, .8f, .2f, .2f);
+  graphene_vec3_init (&color, .078f, .471f, .675f);
 
   _append_lines_quad (self->vertex_buffer, aspect_ratio, &color);
 
@@ -95,7 +95,7 @@ xrd_scene_selection_initialize (XrdSceneSelection     *self,
   gulkan_vertex_buffer_reset (self->vertex_buffer);
 
   graphene_vec3_t color;
-  graphene_vec3_init (&color, .8f, .2f, .2f);
+  graphene_vec3_init (&color, .078f, .471f, .675f);
 
   _append_lines_quad (self->vertex_buffer, 1.0f, &color);
 
