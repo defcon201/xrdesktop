@@ -240,6 +240,19 @@ xrd_scene_object_set_transformation (XrdSceneObject    *self,
   _update_model_matrix (self);
 }
 
+/*
+ * Set transformation without matrix decomposition and ability to rebuild
+ * This will include scale as well.
+ */
+
+void
+xrd_scene_object_set_transformation_direct (XrdSceneObject    *self,
+                                            graphene_matrix_t *mat)
+{
+  XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
+  graphene_matrix_init_from_matrix (&priv->model_matrix, mat);
+}
+
 graphene_matrix_t
 xrd_scene_object_get_transformation (XrdSceneObject *self)
 {

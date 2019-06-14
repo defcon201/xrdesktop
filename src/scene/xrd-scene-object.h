@@ -97,6 +97,10 @@ xrd_scene_object_show (XrdSceneObject *self);
 void
 xrd_scene_object_hide (XrdSceneObject *self);
 
+void
+xrd_scene_object_set_transformation_direct (XrdSceneObject    *self,
+                                            graphene_matrix_t *mat);
+
 G_END_DECLS
 
 #endif /* XRD_SCENE_OBJECT_H_ */
