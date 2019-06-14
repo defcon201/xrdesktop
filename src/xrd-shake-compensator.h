@@ -21,8 +21,6 @@ G_BEGIN_DECLS
 #define XRD_TYPE_SHAKE_COMPENSATOR xrd_shake_compensator_get_type()
 G_DECLARE_FINAL_TYPE (XrdShakeCompensator, xrd_shake_compensator, XRD, SHAKE_COMPENSATOR, GObject)
 
-struct _XrdClickDragPredictor;
-
 XrdShakeCompensator *xrd_shake_compensator_new (void);
 
 void

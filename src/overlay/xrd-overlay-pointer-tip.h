@@ -23,9 +23,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayPointerTip, xrd_overlay_pointer_tip, XRD,
                       OVERLAY_POINTER_TIP, OpenVROverlay)
 
-
-struct _XrdOverlayPointerTip;
-
 XrdOverlayPointerTip *
 xrd_overlay_pointer_tip_new (guint64 controller_index, GulkanClient *gc);
 

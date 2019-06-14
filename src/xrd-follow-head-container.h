@@ -18,9 +18,8 @@
 G_BEGIN_DECLS
 
 #define XRD_TYPE_FOLLOW_HEAD_CONTAINER xrd_follow_head_container_get_type()
-G_DECLARE_FINAL_TYPE (XrdFollowHeadContainer, xrd_follow_head_container, XRD, FOLLOW_HEAD_CONTAINER, GObject)
-
-struct _XrdFollowHeadContainer;
+G_DECLARE_FINAL_TYPE (XrdFollowHeadContainer, xrd_follow_head_container, XRD,
+                      FOLLOW_HEAD_CONTAINER, GObject)
 
 XrdFollowHeadContainer*
 xrd_follow_head_container_new (void);

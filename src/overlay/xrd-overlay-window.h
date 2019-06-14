@@ -25,8 +25,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayWindow, xrd_overlay_window,
                       XRD, OVERLAY_WINDOW, OpenVROverlay)
 
-struct _XrdOverlayWindow;
-
 XrdOverlayWindow *
 xrd_overlay_window_new (const gchar *title);
 

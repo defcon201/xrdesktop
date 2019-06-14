@@ -40,8 +40,6 @@ typedef struct XrdMoveCursorEvent {
   gboolean ignore;
 } XrdMoveCursorEvent;
 
-struct _XrdInputSynth;
-
 XrdInputSynth *
 xrd_input_synth_new (void);
 

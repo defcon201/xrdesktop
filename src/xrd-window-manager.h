@@ -51,8 +51,6 @@ typedef enum
   XRD_WINDOW_MANAGER_BUTTON      = 1 << 5,
 } XrdWindowFlags;
 
-struct _XrdWindowManager;
-
 XrdWindowManager *xrd_window_manager_new (void);
 
 void

@@ -31,8 +31,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdOverlayClient, xrd_overlay_client,
                       XRD, OVERLAY_CLIENT, XrdClient)
 
-struct _XrdOverlayClient;
-
 XrdOverlayClient *xrd_overlay_client_new (void);
 
 G_END_DECLS
