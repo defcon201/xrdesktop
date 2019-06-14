@@ -9,6 +9,12 @@
 
 #include <gulkan.h>
 
+struct _XrdSceneVector
+{
+  XrdSceneObject parent;
+  GulkanVertexBuffer *vertex_buffer;
+};
+
 G_DEFINE_TYPE (XrdSceneVector, xrd_scene_vector, XRD_TYPE_SCENE_OBJECT)
 
 static void

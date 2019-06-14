@@ -25,12 +25,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneSelection, xrd_scene_selection,
                       XRD, SCENE_SELECTION, XrdSceneObject)
 
-struct _XrdSceneSelection
-{
-  XrdSceneObject parent;
-  GulkanVertexBuffer *vertex_buffer;
-};
-
 XrdSceneSelection *xrd_scene_selection_new (void);
 
 gboolean

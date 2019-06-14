@@ -25,12 +25,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneVector, xrd_scene_vector,
                       XRD, SCENE_VECTOR, XrdSceneObject)
 
-struct _XrdSceneVector
-{
-  XrdSceneObject parent;
-  GulkanVertexBuffer *vertex_buffer;
-};
-
 XrdSceneVector *xrd_scene_vector_new (void);
 
 gboolean

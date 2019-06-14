@@ -8,6 +8,12 @@
 #include "xrd-scene-selection.h"
 #include <gulkan.h>
 
+struct _XrdSceneSelection
+{
+  XrdSceneObject parent;
+  GulkanVertexBuffer *vertex_buffer;
+};
+
 G_DEFINE_TYPE (XrdSceneSelection, xrd_scene_selection, XRD_TYPE_SCENE_OBJECT)
 
 static void
