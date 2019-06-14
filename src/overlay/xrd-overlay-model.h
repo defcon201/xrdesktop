@@ -19,17 +19,12 @@
 G_BEGIN_DECLS
 
 #define XRD_TYPE_OVERLAY_MODEL xrd_overlay_model_get_type()
-G_DECLARE_FINAL_TYPE (XrdOverlayModel, xrd_overlay_model, XRD,
-                      OVERLAY_MODEL, OpenVROverlay)
-
-struct _XrdOverlayModel
-{
-  OpenVROverlay parent_type;
-};
+G_DECLARE_DERIVABLE_TYPE (XrdOverlayModel, xrd_overlay_model, XRD,
+                          OVERLAY_MODEL, OpenVROverlay)
 
 struct _XrdOverlayModelClass
 {
-  OpenVROverlayClass parent_class;
+  OpenVROverlayClass parent;
 };
 
 XrdOverlayModel *xrd_overlay_model_new (gchar* key, gchar* name);

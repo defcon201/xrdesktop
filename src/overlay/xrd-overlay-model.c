@@ -8,7 +8,13 @@
 #include "xrd-overlay-model.h"
 #include <openvr-glib.h>
 
-G_DEFINE_TYPE (XrdOverlayModel, xrd_overlay_model, OPENVR_TYPE_OVERLAY)
+typedef struct  _XrdOverlayModelPrivate
+{
+  OpenVROverlay parent;
+} XrdOverlayModelPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (XrdOverlayModel, xrd_overlay_model,
+                            OPENVR_TYPE_OVERLAY)
 
 static void
 xrd_overlay_model_finalize (GObject *gobject);
