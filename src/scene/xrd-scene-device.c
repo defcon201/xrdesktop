@@ -10,6 +10,16 @@
 #include <openvr-glib.h>
 #include <gulkan.h>
 
+struct _XrdSceneDevice
+{
+  XrdSceneObject parent;
+
+  XrdSceneModel *model;
+
+  gboolean pose_valid;
+  gboolean is_controller;
+};
+
 G_DEFINE_TYPE (XrdSceneDevice, xrd_scene_device, XRD_TYPE_SCENE_OBJECT)
 
 static void
@@ -63,6 +73,18 @@ xrd_scene_device_initialize (XrdSceneDevice        *self,
     gulkan_texture_get_image_view (self->model->texture));
 
   return TRUE;
+}
+
+void
+xrd_scene_device_set_is_controller (XrdSceneDevice *self, bool is_controller)
+{
+  self->is_controller = is_controller;
+}
+
+void
+xrd_scene_device_set_is_pose_valid (XrdSceneDevice *self, bool valid)
+{
+  self->pose_valid = valid;
 }
 
 void

@@ -102,9 +102,11 @@ xrd_scene_device_manager_add (XrdSceneDeviceManager *self,
 
   g_free (model_name);
 
+
   OpenVRContext *context = openvr_context_get_instance ();
-  device->is_controller = context->system->GetTrackedDeviceClass (device_id) ==
+  bool is_controller = context->system->GetTrackedDeviceClass (device_id) ==
                           ETrackedDeviceClass_TrackedDeviceClass_Controller;
+  xrd_scene_device_set_is_controller (device, is_controller);
 
   _insert_at_key (self->devices, device_id, device);
 
@@ -153,9 +155,9 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
       TrackedDeviceIndex_t i = (TrackedDeviceIndex_t) *key;
 
       XrdSceneDevice *device = g_hash_table_lookup (self->devices, &i);
+      xrd_scene_device_set_is_pose_valid (device, poses[i].bPoseIsValid);
 
-      device->pose_valid = poses[i].bPoseIsValid;
-      if (!device->pose_valid)
+      if (!poses[i].bPoseIsValid)
         continue;
 
       graphene_matrix_t mat;

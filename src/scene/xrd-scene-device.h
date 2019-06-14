@@ -29,16 +29,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneDevice, xrd_scene_device,
                       XRD, SCENE_DEVICE, XrdSceneObject)
 
-struct _XrdSceneDevice
-{
-  XrdSceneObject parent;
-
-  XrdSceneModel *model;
-
-  gboolean pose_valid;
-  gboolean is_controller;
-};
-
 XrdSceneDevice *xrd_scene_device_new (void);
 
 gboolean
@@ -52,6 +42,12 @@ xrd_scene_device_draw (XrdSceneDevice    *self,
                        VkCommandBuffer    cmd_buffer,
                        VkPipelineLayout   pipeline_layout,
                        graphene_matrix_t *mvp);
+
+void
+xrd_scene_device_set_is_controller (XrdSceneDevice *self, bool is_controller);
+
+void
+xrd_scene_device_set_is_pose_valid (XrdSceneDevice *self, bool valid);
 
 G_END_DECLS
 
