@@ -6,6 +6,10 @@
 
 #include "graphene-ext.h"
 
+#define PI 3.1415926535f
+#define DEG_TO_RAD(x) ( (x) * 2.0f * PI / 360.0f )
+#define RAD_TO_DEG(x) ( (x) * 360.0f / ( 2.0f * PI ) )
+
 float
 xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
                                 graphene_matrix_t  *pose)
