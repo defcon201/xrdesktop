@@ -17,6 +17,8 @@
 #include "xrd-settings.h"
 #include "xrd-controller.h"
 
+#include "xrd-scene-client.h"
+
 #define WINDOW_MIN_DIST .05f
 #define WINDOW_MAX_DIST 15.f
 
@@ -162,6 +164,23 @@ xrd_client_add_window (XrdClient *self,
   xrd_client_add_window_callbacks (self, window);
 }
 
+static XrdWindow*
+_window_new_from_ppm (XrdClient *client, const char* title,
+                      uint32_t w, uint32_t h, float ppm)
+{
+  XrdWindow *window;
+  if (XRD_IS_SCENE_CLIENT (client))
+    {
+      window = XRD_WINDOW (xrd_scene_window_new_from_ppm (title, w, h, ppm));
+      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+    }
+  else
+    {
+      window = XRD_WINDOW (xrd_overlay_window_new_from_ppm (title, w, h, ppm));
+    }
+  return window;
+}
+
 /**
  * xrd_client_add_button:
  * @self: The #XrdClient
@@ -181,11 +200,52 @@ xrd_client_add_button (XrdClient          *self,
                        GCallback           press_callback,
                        gpointer            press_callback_data)
 {
-  XrdClientClass *klass = XRD_CLIENT_GET_CLASS (self);
-  if (klass->add_button == NULL)
-      return FALSE;
-  return klass->add_button (self, button, label_count, label, position,
-                            press_callback, press_callback_data);
+  graphene_matrix_t transform;
+  graphene_matrix_init_translate (&transform, position);
+
+  uint32_t width = 220;
+  uint32_t height = 220;
+  float ppm = 450;
+
+  GString *full_label = g_string_new ("");
+  for (int i = 0; i < label_count; i++)
+    {
+      g_string_append (full_label, label[i]);
+      if (i < label_count - 1)
+        g_string_append (full_label, " ");
+    }
+
+  XrdWindow *window = _window_new_from_ppm (self, full_label->str,
+                                            width, height, ppm);
+
+  g_string_free (full_label, FALSE);
+
+  if (window == NULL)
+    return FALSE;
+
+  GulkanClient *gc = xrd_client_get_uploader (self);
+
+  VkImageLayout layout = xrd_client_get_upload_layout (self);
+
+  xrd_button_set_text (window, gc, layout, label_count, label);
+
+  *button = window;
+
+  xrd_window_set_transformation (window, &transform);
+
+  XrdWindowManager *manager = xrd_client_get_manager (self);
+  xrd_window_manager_add_window (manager,
+                                 *button,
+                                 XRD_WINDOW_HOVERABLE |
+                                 XRD_WINDOW_DESTROY_WITH_PARENT |
+                                 XRD_WINDOW_MANAGER_BUTTON);
+
+  g_signal_connect (window, "grab-start-event",
+                    (GCallback) press_callback, press_callback_data);
+
+  xrd_client_add_button_callbacks (self, window);
+
+  return TRUE;
 }
 
 void

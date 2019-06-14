@@ -103,64 +103,6 @@ _get_uploader (XrdClient *client)
   return self->gc;
 }
 
-static gboolean
-_add_button (XrdClient          *client,
-             XrdWindow         **button,
-             int                 label_count,
-             gchar             **label,
-             graphene_point3d_t *position,
-             GCallback           press_callback,
-             gpointer            press_callback_data)
-{
-  graphene_matrix_t transform;
-  graphene_matrix_init_translate (&transform, position);
-
-  uint32_t width = 220;
-  uint32_t height = 220;
-  float ppm = 450;
-
-  GString *full_label = g_string_new ("");
-  for (int i = 0; i < label_count; i++)
-    {
-      g_string_append (full_label, label[i]);
-      if (i < label_count - 1)
-        g_string_append (full_label, " ");
-    }
-
-  XrdWindow *window =
-    XRD_WINDOW (xrd_overlay_window_new_from_ppm (full_label->str,
-                                                 width, height, ppm));
-
-  g_string_free (full_label, FALSE);
-
-  if (window == NULL)
-    return FALSE;
-
-  GulkanClient *gc = xrd_client_get_uploader (client);
-
-  VkImageLayout layout = xrd_client_get_upload_layout (client);
-
-  xrd_button_set_text (window, gc, layout, label_count, label);
-
-  *button = window;
-
-  xrd_window_set_transformation (window, &transform);
-
-  XrdWindowManager *manager = xrd_client_get_manager (client);
-  xrd_window_manager_add_window (manager,
-                                 *button,
-                                 XRD_WINDOW_HOVERABLE |
-                                 XRD_WINDOW_DESTROY_WITH_PARENT |
-                                 XRD_WINDOW_MANAGER_BUTTON);
-
-  g_signal_connect (window, "grab-start-event",
-                    (GCallback) press_callback, press_callback_data);
-
-  xrd_client_add_button_callbacks (client, window);
-
-  return TRUE;
-}
-
 static void
 _init_controller (XrdClient     *client,
                   XrdController *controller)
@@ -198,7 +140,6 @@ xrd_overlay_client_class_init (XrdOverlayClientClass *klass)
   object_class->finalize = xrd_overlay_client_finalize;
 
   XrdClientClass *xrd_client_class = XRD_CLIENT_CLASS (klass);
-  xrd_client_class->add_button = _add_button;
   xrd_client_class->get_uploader = _get_uploader;
   xrd_client_class->init_controller = _init_controller;
 }
