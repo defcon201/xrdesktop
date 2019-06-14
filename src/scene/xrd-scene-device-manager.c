@@ -10,6 +10,14 @@
 
 #include <openvr-glib.h>
 
+struct _XrdSceneDeviceManager
+{
+  GObject parent;
+
+  GHashTable *models; // char* -> XrdSceneModel
+  GHashTable *devices; // int -> XrdSceneDevice
+};
+
 G_DEFINE_TYPE (XrdSceneDeviceManager, xrd_scene_device_manager, G_TYPE_OBJECT)
 
 static void

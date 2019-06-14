@@ -24,14 +24,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdSceneDeviceManager, xrd_scene_device_manager,
                       XRD, SCENE_DEVICE_MANAGER, GObject)
 
-struct _XrdSceneDeviceManager
-{
-  GObject parent;
-
-  GHashTable *models; // char* -> XrdSceneModel
-  GHashTable *devices; // int -> XrdSceneDevice
-};
-
 XrdSceneDeviceManager *xrd_scene_device_manager_new (void);
 
 void
