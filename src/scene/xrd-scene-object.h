@@ -20,27 +20,12 @@
 G_BEGIN_DECLS
 
 #define XRD_TYPE_SCENE_OBJECT xrd_scene_object_get_type()
-G_DECLARE_FINAL_TYPE (XrdSceneObject, xrd_scene_object,
-                      XRD, SCENE_OBJECT, GObject)
+G_DECLARE_DERIVABLE_TYPE (XrdSceneObject, xrd_scene_object,
+                          XRD, SCENE_OBJECT, GObject)
 
-struct _XrdSceneObject
+struct _XrdSceneObjectClass
 {
-  GObject parent;
-
-  GulkanUniformBuffer *uniform_buffers[2];
-
-  VkDescriptorPool descriptor_pool;
-  VkDescriptorSet descriptor_sets[2];
-
-  graphene_matrix_t model_matrix;
-
-  graphene_point3d_t position;
-  float scale;
-  graphene_quaternion_t orientation;
-
-  gboolean visible;
-
-  gboolean initialized;
+  GObjectClass parent;
 };
 
 XrdSceneObject *xrd_scene_object_new (void);

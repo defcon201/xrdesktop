@@ -26,7 +26,7 @@ xrd_scene_selection_init (XrdSceneSelection *self)
 {
   self->vertex_buffer = gulkan_vertex_buffer_new ();
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = FALSE;
+  xrd_scene_object_hide (obj);
 }
 
 XrdSceneSelection *

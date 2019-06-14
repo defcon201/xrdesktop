@@ -99,7 +99,7 @@ _show (XrdPointerTip *tip)
 {
   XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = TRUE;
+  xrd_scene_object_show (obj);
 }
 
 static void
@@ -107,7 +107,7 @@ _hide (XrdPointerTip *tip)
 {
   XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  obj->visible = FALSE;
+  xrd_scene_object_hide (obj);
 }
 
 static void

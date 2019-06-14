@@ -132,7 +132,7 @@ _move (XrdPointer        *pointer,
 {
   XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
   XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  graphene_matrix_init_from_matrix (&obj->model_matrix, transform);
+  xrd_scene_object_set_transformation_direct (obj, transform);
 }
 
 static void
@@ -185,17 +185,22 @@ _set_selected_window (XrdPointer *pointer,
   XrdSceneObject *selection_obj = XRD_SCENE_OBJECT (self->selection);
   if (window == NULL)
     {
-      selection_obj->visible = FALSE;
+      xrd_scene_object_hide (selection_obj);
       return;
     }
 
   XrdSceneWindow *scene_window = XRD_SCENE_WINDOW (window);
   XrdSceneObject *window_obj = XRD_SCENE_OBJECT (scene_window);
-  graphene_matrix_init_from_matrix (&selection_obj->model_matrix,
-                                    &window_obj->model_matrix);
+
+  graphene_matrix_t window_transformation =
+    xrd_scene_object_get_transformation (window_obj);
+
+  xrd_scene_object_set_transformation_direct (selection_obj,
+                                             &window_transformation);
+
   xrd_scene_selection_set_aspect_ratio (self->selection,
                                         scene_window->aspect_ratio);
-  selection_obj->visible = TRUE;
+  xrd_scene_object_show (selection_obj);
 }
 
 static void

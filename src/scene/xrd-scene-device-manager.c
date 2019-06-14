@@ -158,9 +158,12 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
       if (!device->pose_valid)
         continue;
 
-      XrdSceneObject *obj = XRD_SCENE_OBJECT (device);
+      graphene_matrix_t mat;
       openvr_math_matrix34_to_graphene (&poses[i].mDeviceToAbsoluteTracking,
-                                        &obj->model_matrix);
+                                        &mat);
+
+      XrdSceneObject *obj = XRD_SCENE_OBJECT (device);
+      xrd_scene_object_set_transformation_direct (obj, &mat);
 
       //if (device->is_controller)
       //  {
