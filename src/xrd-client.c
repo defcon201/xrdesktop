@@ -161,6 +161,14 @@ xrd_client_add_window (XrdClient *self,
   XrdWindowManager *manager = xrd_client_get_manager (self);
   xrd_window_manager_add_window (manager, window, flags);
 
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  if (priv->pinned_only &&
+      !(flags & XRD_WINDOW_MANAGER_BUTTON) &&
+      !xrd_window_manager_is_pinned (manager, window))
+    {
+      xrd_window_hide (window);
+    }
+
   xrd_client_add_window_callbacks (self, window);
 }
 
