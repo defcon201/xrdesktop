@@ -152,8 +152,9 @@ xrd_scene_object_initialize (XrdSceneObject        *self,
 
   /* Create uniform buffer to hold a matrix per eye */
   for (uint32_t eye = 0; eye < 2; eye++)
-    gulkan_uniform_buffer_allocate_and_map (priv->uniform_buffers[eye],
-                                            device, sizeof (float) * 16);
+    if (!gulkan_uniform_buffer_allocate_and_map (priv->uniform_buffers[eye],
+                                                 device, sizeof (float) * 16))
+      return FALSE;
 
   uint32_t set_count = 2;
 
