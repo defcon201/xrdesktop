@@ -123,16 +123,7 @@ struct _XrdWindowInterface
                 graphene_point_t *offset_center);
 
   void
-  (*select) (XrdWindow *self);
-
-  void
-  (*deselect) (XrdWindow *self);
-
-  gboolean
-  (*is_selected) (XrdWindow *self);
-
-  void
-  (*end_selection) (XrdWindow *self);
+  (*set_color) (XrdWindow *self, const graphene_vec3_t *color);
 
   void
   (*set_flip_y) (XrdWindow *self,
@@ -273,6 +264,9 @@ xrd_window_get_plane (XrdWindow        *self,
 
 float
 xrd_window_get_aspect_ratio (XrdWindow *self);
+
+void
+xrd_window_set_color (XrdWindow *self, const graphene_vec3_t *color);
 
 G_END_DECLS
 

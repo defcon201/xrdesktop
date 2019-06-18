@@ -519,29 +519,41 @@ xrd_window_add_child (XrdWindow        *self,
 void
 xrd_window_select (XrdWindow *self)
 {
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  iface->select (self);
+  graphene_vec3_t marked_color;
+  graphene_vec3_init (&marked_color, 0.0f, 0.0f, 1.0f);
+  xrd_window_set_color (self, &marked_color);
+
+  XrdWindowData *data = xrd_window_get_data (self);
+  data->selected = TRUE;
 }
 
 void
 xrd_window_deselect (XrdWindow *self)
 {
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  iface->deselect (self);
+  graphene_vec3_t marked_color;
+  graphene_vec3_init (&marked_color, 0.1f, 0.1f, 0.1f);
+  xrd_window_set_color (self, &marked_color);
+
+  XrdWindowData *data = xrd_window_get_data (self);
+  data->selected = FALSE;
 }
 
 gboolean
 xrd_window_is_selected (XrdWindow *self)
 {
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  return iface->is_selected (self);
+  XrdWindowData *data = xrd_window_get_data (self);
+  return data->selected;
 }
 
 void
 xrd_window_end_selection (XrdWindow *self)
 {
-  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
-  iface->end_selection (self);
+  graphene_vec3_t unmarked_color;
+  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
+  xrd_window_set_color (self, &unmarked_color);
+
+  XrdWindowData *data = xrd_window_get_data (self);
+  data->selected = FALSE;
 }
 
 void
@@ -557,6 +569,13 @@ xrd_window_show (XrdWindow *self)
 {
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   iface->show (self);
+}
+
+void
+xrd_window_set_color (XrdWindow *self, const graphene_vec3_t *color)
+{
+  XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
+  iface->set_color (self, color);
 }
 
 void

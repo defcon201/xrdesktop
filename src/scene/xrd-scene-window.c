@@ -516,50 +516,6 @@ _add_child (XrdWindow        *window,
 }
 
 static void
-_select (XrdWindow *window)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  priv->window_data.selected = TRUE;
-
-  graphene_vec3_t marked_color;
-  graphene_vec3_init (&marked_color, 0.0f, 0.0f, 1.0f);
-  xrd_scene_window_set_color (self, &marked_color);
-}
-
-static void
-_deselect (XrdWindow *window)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  priv->window_data.selected = FALSE;
-
-  graphene_vec3_t marked_color;
-  graphene_vec3_init (&marked_color, 0.1f, 0.1f, 0.1f);
-  xrd_scene_window_set_color (self, &marked_color);
-}
-
-static gboolean
-_is_selected (XrdWindow *window)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  return priv->window_data.selected;
-}
-
-static void
-_end_selection (XrdWindow *window)
-{
-  XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
-  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  priv->window_data.selected = FALSE;
-
-  graphene_vec3_t unmarked_color;
-  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
-  xrd_scene_window_set_color (self, &unmarked_color);
-}
-
-static void
 _set_flip_y (XrdWindow *window,
              gboolean   flip_y)
 {
@@ -601,10 +557,7 @@ xrd_scene_window_window_interface_init (XrdWindowInterface *iface)
   iface->submit_texture = _submit_texture;
   iface->poll_event = _poll_event;
   iface->add_child = _add_child;
-  iface->select = _select;
-  iface->deselect = _deselect;
-  iface->is_selected = _is_selected;
-  iface->end_selection = _end_selection;
+  iface->set_color = (void (*)(XrdWindow*, const graphene_vec3_t*)) xrd_scene_window_set_color;
   iface->set_flip_y = _set_flip_y;
   iface->show = (void (*)(XrdWindow*)) xrd_scene_object_show;
   iface->hide = (void (*)(XrdWindow*)) xrd_scene_object_hide;
