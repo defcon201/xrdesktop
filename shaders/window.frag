@@ -11,11 +11,15 @@
 layout (location = 0) in vec2 uv;
 
 layout (binding = 1) uniform sampler2D image;
+layout (binding = 2) uniform Shading {
+  vec4 color;
+} ubo;
+
 
 layout (location = 0) out vec4 out_color;
 
 void main ()
 {
-  out_color = texture (image, uv);
+  out_color = texture (image, uv) * ubo.color;
 }
 

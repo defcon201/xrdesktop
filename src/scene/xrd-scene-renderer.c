@@ -180,7 +180,7 @@ _init_descriptor_layout (XrdSceneRenderer *self)
 {
   VkDescriptorSetLayoutCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-    .bindingCount = 2,
+    .bindingCount = 3,
     .pBindings = (VkDescriptorSetLayoutBinding[]) {
       {
         .binding = 0,
@@ -193,12 +193,18 @@ _init_descriptor_layout (XrdSceneRenderer *self)
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
-      }
+      },
+      {
+        .binding = 2,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+      },
     }
   };
 
-  VkResult res = vkCreateDescriptorSetLayout (gulkan_client_get_device_handle (
-                                                GULKAN_CLIENT (self)),
+  VkDevice device = gulkan_client_get_device_handle (GULKAN_CLIENT (self));
+  VkResult res = vkCreateDescriptorSetLayout (device,
                                              &info, NULL,
                                              &self->descriptor_set_layout);
   vk_check_error ("vkCreateDescriptorSetLayout", res, false)

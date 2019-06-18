@@ -37,6 +37,8 @@ typedef struct _XrdSceneWindowPrivate
   gboolean flip_y;
   graphene_vec3_t color;
 
+  GulkanUniformBuffer *shading_buffer;
+
   XrdWindowData window_data;
 } XrdSceneWindowPrivate;
 
@@ -153,6 +155,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
   priv->sampler = VK_NULL_HANDLE;
   priv->aspect_ratio = 1.0;
   priv->window_data.texture = NULL;
+  priv->shading_buffer = gulkan_uniform_buffer_new ();
 }
 
 XrdSceneWindow *
@@ -248,6 +251,8 @@ xrd_scene_window_finalize (GObject *gobject)
   if (priv->window_data.texture)
     g_object_unref (priv->window_data.texture);
 
+  g_object_unref (priv->shading_buffer);
+
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
@@ -270,10 +275,10 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
 
+  GulkanDevice *device = gulkan_client_get_device (GULKAN_CLIENT (renderer));
+
   _append_plane (priv->vertex_buffer, priv->aspect_ratio);
-  if (!gulkan_vertex_buffer_alloc_array (priv->vertex_buffer,
-                                         gulkan_client_get_device (
-                                           GULKAN_CLIENT (renderer))))
+  if (!gulkan_vertex_buffer_alloc_array (priv->vertex_buffer, device))
     return FALSE;
 
   VkDescriptorSetLayout *layout =
@@ -281,6 +286,14 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
 
   if (!xrd_scene_object_initialize (obj, layout))
     return FALSE;
+
+  if (!gulkan_uniform_buffer_allocate_and_map (priv->shading_buffer,
+                                               device, sizeof (float) * 4))
+    return FALSE;
+
+  graphene_vec3_t white;
+  graphene_vec3_init (&white, 1.0f, 1.0f, 1.0f);
+  xrd_scene_window_set_color (self, &white);
 
   return TRUE;
 }
@@ -309,6 +322,81 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw (priv->vertex_buffer, cmd_buffer);
+}
+
+void
+xrd_scene_window_set_color (XrdSceneWindow        *self,
+                            const graphene_vec3_t *color)
+{
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  graphene_vec3_init_from_vec3 (&priv->color, color);
+
+  graphene_vec4_t color_vec4;
+  graphene_vec4_init_from_vec3 (&color_vec4, color, 1.0f);
+  gulkan_uniform_buffer_update_vec4 (priv->shading_buffer, &color_vec4);
+}
+
+void
+xrd_scene_window_update_descriptors (XrdSceneWindow *self)
+{
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  VkDevice device = gulkan_client_get_device_handle (GULKAN_CLIENT (renderer));
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+
+  for (uint32_t eye = 0; eye < 2; eye++)
+    {
+      VkBuffer transformation_buffer =
+        xrd_scene_object_get_transformation_buffer (XRD_SCENE_OBJECT (self),
+                                                    eye);
+
+      VkDescriptorSet descriptor_set =
+        xrd_scene_object_get_descriptor_set (XRD_SCENE_OBJECT (self), eye);
+
+      VkWriteDescriptorSet *write_descriptor_sets = (VkWriteDescriptorSet []) {
+        {
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = descriptor_set,
+          .dstBinding = 0,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          .pBufferInfo = &(VkDescriptorBufferInfo) {
+            .buffer = transformation_buffer,
+            .offset = 0,
+            .range = VK_WHOLE_SIZE
+          },
+          .pTexelBufferView = NULL
+        },
+        {
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = descriptor_set,
+          .dstBinding = 1,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .pImageInfo = &(VkDescriptorImageInfo) {
+            .sampler = priv->sampler,
+            .imageView = gulkan_texture_get_image_view (priv->window_data.texture),
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+          },
+          .pBufferInfo = NULL,
+          .pTexelBufferView = NULL
+        },
+        {
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = descriptor_set,
+          .dstBinding = 2,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          .pBufferInfo = &(VkDescriptorBufferInfo) {
+            .buffer = gulkan_uniform_buffer_get_handle (priv->shading_buffer),
+            .offset = 0,
+            .range = VK_WHOLE_SIZE
+          },
+          .pTexelBufferView = NULL
+        }
+      };
+
+      vkUpdateDescriptorSets (device, 3, write_descriptor_sets, 0, NULL);
+    }
 }
 
 /* XrdWindow Interface functions */
@@ -408,10 +496,7 @@ _submit_texture (XrdWindow     *window,
 
   vkCreateSampler (device, &sampler_info, NULL, &priv->sampler);
 
-  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
-  xrd_scene_object_update_descriptors_texture (obj, priv->sampler,
-                                               gulkan_texture_get_image_view (
-                                                 priv->window_data.texture));
+  xrd_scene_window_update_descriptors (self);
 }
 
 static void

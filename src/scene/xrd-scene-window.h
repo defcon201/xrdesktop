@@ -67,6 +67,12 @@ void
 xrd_scene_window_set_width_meters (XrdSceneWindow *self,
                                    float           width_meters);
 
+void
+xrd_scene_window_set_color (XrdSceneWindow        *self,
+                            const graphene_vec3_t *color);
+
+void
+xrd_scene_window_update_descriptors (XrdSceneWindow *self);
 
 G_END_DECLS
 

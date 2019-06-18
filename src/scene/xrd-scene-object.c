@@ -166,6 +166,10 @@ xrd_scene_object_initialize (XrdSceneObject        *self,
     {
       .descriptorCount = set_count,
       .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    },
+    {
+      .descriptorCount = set_count,
+      .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     }
   };
 
