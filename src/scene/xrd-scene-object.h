@@ -86,6 +86,12 @@ void
 xrd_scene_object_set_transformation_direct (XrdSceneObject    *self,
                                             graphene_matrix_t *mat);
 
+VkBuffer
+xrd_scene_object_get_transformation_buffer (XrdSceneObject *self, uint32_t eye);
+
+VkDescriptorSet
+xrd_scene_object_get_descriptor_set (XrdSceneObject *self, uint32_t eye);
+
 G_END_DECLS
 
 #endif /* XRD_SCENE_OBJECT_H_ */

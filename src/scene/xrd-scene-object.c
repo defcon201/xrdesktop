@@ -327,3 +327,17 @@ xrd_scene_object_hide (XrdSceneObject *self)
   XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
   priv->visible = false;
 }
+
+VkBuffer
+xrd_scene_object_get_transformation_buffer (XrdSceneObject *self, uint32_t eye)
+{
+  XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
+  return gulkan_uniform_buffer_get_handle (priv->uniform_buffers[eye]);
+}
+
+VkDescriptorSet
+xrd_scene_object_get_descriptor_set (XrdSceneObject *self, uint32_t eye)
+{
+  XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
+  return priv->descriptor_sets[eye];
+}
