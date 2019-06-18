@@ -522,7 +522,9 @@ _select (XrdWindow *window)
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
   priv->window_data.selected = TRUE;
 
-  g_print ("Scene window select STUB\n");
+  graphene_vec3_t marked_color;
+  graphene_vec3_init (&marked_color, 0.0f, 0.0f, 1.0f);
+  xrd_scene_window_set_color (self, &marked_color);
 }
 
 static void
@@ -532,7 +534,9 @@ _deselect (XrdWindow *window)
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
   priv->window_data.selected = FALSE;
 
-  g_print ("Scene window deselect STUB\n");
+  graphene_vec3_t marked_color;
+  graphene_vec3_init (&marked_color, 0.1f, 0.1f, 0.1f);
+  xrd_scene_window_set_color (self, &marked_color);
 }
 
 static gboolean
@@ -550,7 +554,9 @@ _end_selection (XrdWindow *window)
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
   priv->window_data.selected = FALSE;
 
-  g_print ("Scene window end selection STUB\n");
+  graphene_vec3_t unmarked_color;
+  graphene_vec3_init (&unmarked_color, 1.f, 1.f, 1.f);
+  xrd_scene_window_set_color (self, &unmarked_color);
 }
 
 static void
