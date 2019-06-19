@@ -125,6 +125,37 @@ _submit_texture_cb (gpointer _submitData)
   return TRUE;
 }
 
+static XrdWindow *
+_add_window (Example *self,
+             gchar *title,
+             float width,
+             GdkPixbuf *texture_source,
+             gboolean draggable)
+{
+  uint32_t texture_width = (uint32_t)gdk_pixbuf_get_width (texture_source);
+  uint32_t texture_height = (uint32_t)gdk_pixbuf_get_height (texture_source);
+  float ppm = texture_width / width;
+
+  XrdWindow *window =
+    xrd_client_window_new_from_ppm (self->client, title,
+                                    texture_width, texture_height, ppm);
+
+  ExampleWindow *native = g_malloc (sizeof (ExampleWindow));
+  native->gulkan_texture = NULL;
+  native->pixbuf = texture_source;
+  g_object_set (window, "native", native, NULL);
+
+  xrd_client_add_window (self->client, window, draggable);
+
+  SubmitData *submitData = g_malloc (sizeof (SubmitData));
+  submitData->self = self;
+  submitData->window = window;
+  native->submit_source =
+    g_timeout_add (16, _submit_texture_cb, submitData);
+  return window;
+}
+
+
 static void
 _head_follow_close_press_cb (XrdWindow               *button,
                              XrdControllerIndexEvent *event,
@@ -143,28 +174,11 @@ _head_follow_press_cb (XrdWindow               *button,
 
   if (self->head_follow_container == NULL)
     {
-      uint32_t texture_width =
-        (uint32_t)gdk_pixbuf_get_width (self->window_pixbuf);
-      uint32_t texture_height =
-        (uint32_t)gdk_pixbuf_get_height (self->window_pixbuf);
-      float ppm = texture_width / 0.5f;
-
-      XrdWindow *head_follow_window =
-        xrd_client_window_new_from_ppm (self->client, "Head Tracked window.",
-                                        texture_width, texture_height, ppm);
-
-      ExampleWindow *native = g_malloc (sizeof (ExampleWindow));
-      native->gulkan_texture = NULL;
-      native->pixbuf = self->window_pixbuf;
-      g_object_set (head_follow_window, "native", native, NULL);
-
-      xrd_client_add_window (self->client, head_follow_window, FALSE);
-
-      SubmitData *submitData = g_malloc (sizeof (SubmitData));
-      submitData->self = self;
-      submitData->window = head_follow_window;
-      native->submit_source =
-        g_timeout_add (16, _submit_texture_cb, submitData);
+      XrdWindow *head_follow_window = _add_window (self,
+                                                   "Head Tracked Window",
+                                                   0.5f,
+                                                   self->window_pixbuf,
+                                                   FALSE);
 
 
       self->head_follow_container = xrd_container_new ();
@@ -269,27 +283,11 @@ static void
 _init_child_window (Example      *self,
                     XrdWindow    *window)
 {
-  uint32_t texture_width =
-    (uint32_t)gdk_pixbuf_get_width (self->child_window_pixbuf);
-  uint32_t texture_height =
-    (uint32_t)gdk_pixbuf_get_height (self->child_window_pixbuf);
-  float ppm = texture_width / 0.25f;
-  XrdWindow *child;
-
-  child = xrd_client_window_new_from_ppm (self->client, "A child.",
-                                          texture_width, texture_height, ppm);
-
-  ExampleWindow *native = g_malloc (sizeof (ExampleWindow));
-  native->gulkan_texture = NULL;
-  native->pixbuf = self->child_window_pixbuf;
-  g_object_set (child, "native", native, NULL);
-
-  xrd_client_add_window (self->client, child, FALSE);
-
-  SubmitData *submitData = g_malloc (sizeof (SubmitData));
-  submitData->self = self;
-  submitData->window = child;
-  native->submit_source = g_timeout_add (16, _submit_texture_cb, submitData);
+  XrdWindow *child = _add_window (self,
+                                  "A child",
+                                  0.25f,
+                                  self->child_window_pixbuf,
+                                  FALSE);
 
   graphene_point_t offset = { .x = 25, .y = 25 };
   xrd_window_add_child (window, child, &offset);
@@ -363,28 +361,11 @@ _init_windows (Example *self)
       float max_window_height = 0;
       for (int row = 0; row < GRID_HEIGHT; row++)
         {
-          uint32_t texture_width =
-            (uint32_t)gdk_pixbuf_get_width (self->window_pixbuf);
-          uint32_t texture_height =
-            (uint32_t)gdk_pixbuf_get_height (self->window_pixbuf);
-          // a window should have ~0.5 meter width
-          float ppm = texture_width / 0.5f;
-          XrdWindow *window =
-            xrd_client_window_new_from_ppm (self->client, "A window.",
-                                            texture_width, texture_height, ppm);
-
-          ExampleWindow *native = g_malloc (sizeof (ExampleWindow));
-          native->gulkan_texture = NULL;
-          native->pixbuf = self->window_pixbuf;
-          g_object_set (window, "native", native, NULL);
-
-          xrd_client_add_window (self->client, window, TRUE);
-
-          SubmitData *submitData = g_malloc (sizeof (SubmitData));
-          submitData->self = self;
-          submitData->window = window;
-          native->submit_source =
-            g_timeout_add (16, _submit_texture_cb, submitData);
+          XrdWindow *window = _add_window (self,
+                                            "A window.",
+                                            0.5f,
+                                            self->window_pixbuf,
+                                            TRUE);
 
           window_x += xrd_window_get_current_width_meters (window);
 
