@@ -20,9 +20,7 @@ typedef struct Example
 
   /* always good to keep a list (or mapping to XrdWindow) around */
   GSList *windows;
-  XrdContainer *head_follow_container;
 
-  XrdWindow *head_follow_button;
   XrdWindow *switch_button;
 
   GulkanTexture *cursor_texture;
@@ -155,101 +153,6 @@ _add_window (Example *self,
   return window;
 }
 
-
-static void
-_head_follow_close_press_cb (XrdWindow               *button,
-                             XrdControllerIndexEvent *event,
-                             gpointer                 _self);
-
-static void
-_head_follow_press_cb (XrdWindow               *button,
-                       XrdControllerIndexEvent *event,
-                       gpointer                 _self)
-{
-  (void) event;
-  (void) button;
-  Example *self = _self;
-  GulkanClient *gc = xrd_client_get_uploader (self->client);
-  VkImageLayout layout = xrd_client_get_upload_layout (self->client);
-
-  if (self->head_follow_container == NULL)
-    {
-      XrdWindow *head_follow_window = _add_window (self,
-                                                   "Head Tracked Window",
-                                                   0.5f,
-                                                   self->window_pixbuf,
-                                                   FALSE);
-
-
-      self->head_follow_container = xrd_container_new ();
-
-      xrd_container_set_attachment (self->head_follow_container,
-
-                                    XRD_CONTAINER_ATTACHMENT_HEAD);
-
-      xrd_container_set_layout (self->head_follow_container,
-
-                                XRD_CONTAINER_VERTICAL);
-
-      xrd_container_add_window (self->head_follow_container,
-                                head_follow_window);
-
-      xrd_container_set_distance (self->head_follow_container, 2.0f);
-
-      /* simple close button to demo the multi window container feature */
-      graphene_point3d_t button_position = {
-        .x =  -0.75f,
-        .y =  1.0f,
-        .z = -1.0f
-      };
-      gchar *close_str[] =  { "Close", "window"};
-      XrdWindow *close_button;
-      xrd_client_add_button (self->client, &close_button,
-                             2, close_str,
-                             &button_position,
-                             (GCallback) _head_follow_close_press_cb,
-                             self);
-      xrd_container_add_window (self->head_follow_container, close_button);
-      xrd_client_add_container (self->client, self->head_follow_container);
-
-      gchar *hide_str[] =  { "Hide", "modal" };
-      xrd_button_set_text (self->head_follow_button, gc, layout, 2, hide_str);
-    }
-  else
-    {
-      GSList *windows = xrd_container_get_windows (self->head_follow_container);
-
-      for (GSList *l = windows; l; l = l->next)
-        {
-          XrdWindow *window = l->data;
-          xrd_client_remove_window (self->client, window);
-
-          ExampleWindow *native = NULL;
-          g_object_get (window, "native", &native, NULL);
-          if (native)
-            g_source_remove (native->submit_source);
-
-          g_object_unref (window);
-        }
-
-      xrd_client_remove_container (self->client, self->head_follow_container);
-      g_clear_object (&self->head_follow_container);
-
-      gchar *show_str[] =  { "Show", "modal" };
-      xrd_button_set_text (self->head_follow_button, gc, layout, 2, show_str);
-    }
-  g_free (event);
-}
-
-static void
-_head_follow_close_press_cb (XrdWindow               *button,
-                             XrdControllerIndexEvent *event,
-                             gpointer                 _self)
-{
-  (void) button;
-  _head_follow_press_cb (NULL, event, _self);
-}
-
 static gboolean
 _init_client (Example *self, XrdClient *client);
 static void
@@ -321,22 +224,9 @@ _init_cursor (Example *self, GulkanClient *gc)
 static void
 _init_buttons (Example *self)
 {
-  graphene_point3d_t button_position = {
-    .x =  -0.75f,
-    .y =  0.0f,
-    .z = -1.0f
-  };
-  gchar *tracked_str[] =  { "Show", "modal"};
-  xrd_client_add_button (self->client, &self->head_follow_button,
-                         2, tracked_str,
-                         &button_position,
-                         (GCallback) _head_follow_press_cb,
-                         self);
-
-
   graphene_point3d_t switch_pos = {
     .x =  -0.75f,
-    .y =  -xrd_window_get_current_height_meters (self->head_follow_button),
+    .y =  0.0f,
     .z = -1.0f
   };
 
@@ -563,8 +453,6 @@ _init_example (Example *self, XrdClient *client)
     if (!xrd_scene_client_initialize (XRD_SCENE_CLIENT (client)))
       return FALSE;
 
-  self->head_follow_button = NULL;
-  self->head_follow_container = NULL;
   self->shutdown = false;
 
   if (!_init_client (self, client))
