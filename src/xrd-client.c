@@ -823,9 +823,11 @@ _action_menu_cb (OpenVRAction        *action,
   if (event->changed && event->state == 1 &&
       !xrd_controller_get_hover_state (controller)->window)
     {
-      XrdWindowManager *manager = xrd_client_get_manager (self);
-      gboolean controls = xrd_window_manager_is_controls_shown (manager);
-      xrd_window_manager_show_controls  (manager, !controls);
+      XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+      if (xrd_container_is_visible (priv->wm_control_container))
+        xrd_container_hide (priv->wm_control_container);
+      else
+        xrd_container_show (priv->wm_control_container);
     }
   g_free (event);
 }

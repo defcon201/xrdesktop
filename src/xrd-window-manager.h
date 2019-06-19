@@ -130,13 +130,6 @@ void
 xrd_window_manager_show_pinned_only (XrdWindowManager *self,
                                      gboolean pinned_only);
 
-void
-xrd_window_manager_show_controls (XrdWindowManager *self,
-                                  gboolean          show_controls);
-
-gboolean
-xrd_window_manager_is_controls_shown (XrdWindowManager *self);
-
 GSList *
 xrd_window_manager_get_buttons (XrdWindowManager *self);
 

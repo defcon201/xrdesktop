@@ -810,28 +810,3 @@ xrd_window_manager_show_pinned_only (XrdWindowManager *self,
         xrd_window_hide (window);
     }
 }
-
-void
-xrd_window_manager_show_controls (XrdWindowManager *self,
-                                  gboolean          show_controls)
-{
-  if (self->controls_shown == show_controls)
-    return;
-
-  for (GSList *l = self->buttons; l != NULL; l = l->next)
-    {
-      XrdWindow *window = (XrdWindow *) l->data;
-
-      if (show_controls)
-        xrd_window_show (window);
-      else
-        xrd_window_hide (window);
-    }
-  self->controls_shown = show_controls;
-}
-
-gboolean
-xrd_window_manager_is_controls_shown (XrdWindowManager *self)
-{
-  return self->controls_shown;
-}
