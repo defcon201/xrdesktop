@@ -24,6 +24,7 @@ struct _XrdContainer
 
   XrdContainerAttachment attachment;
   XrdContainerLayout layout;
+  gboolean visible;
 };
 
 G_DEFINE_TYPE (XrdContainer, xrd_container, G_TYPE_OBJECT)
@@ -47,6 +48,7 @@ xrd_container_init (XrdContainer *self)
   self->speed = 0;
   self->layout = XRD_CONTAINER_VERTICAL;
   self->attachment = XRD_CONTAINER_ATTACHMENT_NONE;
+  self->visible = TRUE;
 }
 
 void
@@ -60,6 +62,11 @@ xrd_container_add_window (XrdContainer *self,
   graphene_matrix_t window_transform;
   xrd_window_get_transformation (window, &window_transform);
   graphene_matrix_init_from_matrix (&self->transform, &window_transform);
+
+  if (self->visible)
+    xrd_window_show (window);
+  else
+    xrd_window_hide (window);
 }
 
 void
@@ -467,6 +474,34 @@ xrd_container_set_layout (XrdContainer *self,
       break;
     }
   }
+}
+
+void
+xrd_container_hide (XrdContainer *self)
+{
+  for (GSList *w = self->windows; w; w = w->next)
+    {
+      XrdWindow *window = w->data;
+      xrd_window_hide (window);
+    }
+  self->visible = FALSE;
+}
+
+void
+xrd_container_show (XrdContainer *self)
+{
+  for (GSList *w = self->windows; w; w = w->next)
+    {
+      XrdWindow *window = w->data;
+      xrd_window_show (window);
+    }
+  self->visible = TRUE;
+}
+
+gboolean
+xrd_container_is_visible (XrdContainer *self)
+{
+  return self->visible;
 }
 
 XrdContainer *

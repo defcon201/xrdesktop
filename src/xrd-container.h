@@ -67,6 +67,15 @@ xrd_container_set_layout (XrdContainer *self,
 gboolean
 xrd_container_step (XrdContainer *self);
 
+void
+xrd_container_hide (XrdContainer *self);
+
+void
+xrd_container_show (XrdContainer *self);
+
+gboolean
+xrd_container_is_visible (XrdContainer *self);
+
 G_END_DECLS
 
 #endif /* xrd_container_H_ */
