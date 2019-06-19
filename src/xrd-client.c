@@ -500,6 +500,7 @@ xrd_client_finalize (GObject *gobject)
   // g_object_unref (priv->input_synth);
 
   g_clear_object (&priv->context);
+  g_clear_object (&priv->wm_control_container);
 
   xrd_settings_destroy_instance ();
 
