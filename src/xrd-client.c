@@ -75,6 +75,7 @@ typedef struct _XrdClientPrivate
   VkImageLayout upload_layout;
   GHashTable *controllers;
 
+  XrdContainer *wm_control_container;
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -1150,72 +1151,51 @@ _init_buttons (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  float button_x = 0.0f;
-  float button_y = 0.0f;
+  priv->wm_control_container = xrd_container_new ();
+  xrd_container_set_attachment (priv->wm_control_container,
+                                XRD_CONTAINER_ATTACHMENT_HEAD);
+  xrd_container_set_layout (priv->wm_control_container,
+                            XRD_CONTAINER_VERTICAL);
+  xrd_container_set_distance (priv->wm_control_container, 2.0f);
 
-  graphene_point3d_t position_reset = {
-    .x =  button_x,
-    .y =  button_y,
-    .z = -1.0f
-  };
+  graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
 
   gchar *reset_str[] =  { "Reset" };
   if (!xrd_client_add_button (self, &priv->button_reset, 1, reset_str,
-                              &position_reset,
+                              &position,
                               (GCallback) _button_reset_press_cb,
                               self))
     return FALSE;
+  xrd_container_add_window (priv->wm_control_container, priv->button_reset);
 
-  float reset_width_meter =
-    xrd_window_get_current_width_meters (priv->button_reset);
-
-  float reset_height_meter =
-    xrd_window_get_current_height_meters (priv->button_reset);
-
-  button_x += reset_width_meter;
-
-  graphene_point3d_t position_sphere = {
-    .x =  button_x,
-    .y =  button_y,
-    .z = -1.0f
-  };
   gchar *sphere_str[] =  { "Sphere" };
   if (!xrd_client_add_button (self, &priv->button_sphere, 1, sphere_str,
-                              &position_sphere,
+                              &position,
                               (GCallback) _button_sphere_press_cb,
                               self))
     return FALSE;
+  xrd_container_add_window (priv->wm_control_container, priv->button_sphere);
 
-  button_x = 0.0f;
-  button_y -= reset_height_meter;
-
-  graphene_point3d_t position_pinned = {
-    .x =  button_x,
-    .y =  button_y,
-    .z = -1.0f
-  };
   gchar *pinned_str[] =  { "Show", "pinned" };
   if (!xrd_client_add_button (self, &priv->pinned_button,
                               2, pinned_str,
-                              &position_pinned,
+                              &position,
                               (GCallback) _button_pinned_press_cb,
                               self))
       return FALSE;
+  xrd_container_add_window (priv->wm_control_container, priv->pinned_button);
 
-  button_x += reset_width_meter;
-
-  graphene_point3d_t select_pinned = {
-    .x =  button_x,
-    .y =  button_y,
-    .z = -1.0f
-  };
   gchar *select_str[] =  { "Select", "pinned" };
   if (!xrd_client_add_button (self, &priv->select_pinned_button,
                               2, select_str,
-                              &select_pinned,
+                              &position,
                               (GCallback) _button_select_pinned_press_cb,
                               self))
       return FALSE;
+  xrd_container_add_window (priv->wm_control_container,
+                            priv->select_pinned_button);
+
+  xrd_client_add_container (self, priv->wm_control_container);
 
   return TRUE;
 }
@@ -1700,6 +1680,7 @@ xrd_client_init (XrdClient *self)
   priv->selection_mode = FALSE;
   priv->wm_actions = NULL;
   priv->cursor = NULL;
+  priv->wm_control_container = NULL;
 
   priv->context = openvr_context_get_instance ();
   priv->manager = xrd_window_manager_new ();
