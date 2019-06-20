@@ -28,7 +28,8 @@ typedef enum {
 typedef enum {
   XRD_CONTAINER_NO_LAYOUT,
   XRD_CONTAINER_HORIZONTAL,
-  XRD_CONTAINER_VERTICAL
+  XRD_CONTAINER_VERTICAL,
+  XRD_CONTAINER_RELATIVE
 } XrdContainerLayout;
 
 struct _XrdContainer;
@@ -38,13 +39,11 @@ xrd_container_new (void);
 
 void
 xrd_container_add_window (XrdContainer *self,
-                          XrdWindow *window);
+                          XrdWindow *window,
+                          graphene_matrix_t *relative_transform);
 
 void
 xrd_container_set_distance (XrdContainer *self, float distance);
-
-GSList *
-xrd_container_get_windows (XrdContainer *self);
 
 float
 xrd_container_get_distance (XrdContainer *self);

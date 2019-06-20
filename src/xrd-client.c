@@ -1158,7 +1158,7 @@ _init_buttons (XrdClient *self)
   xrd_container_set_attachment (priv->wm_control_container,
                                 XRD_CONTAINER_ATTACHMENT_HEAD);
   xrd_container_set_layout (priv->wm_control_container,
-                            XRD_CONTAINER_VERTICAL);
+                            XRD_CONTAINER_RELATIVE);
   xrd_container_set_distance (priv->wm_control_container, 2.0f);
 
   graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
@@ -1169,7 +1169,18 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_reset_press_cb,
                               self))
     return FALSE;
-  xrd_container_add_window (priv->wm_control_container, priv->button_reset);
+  float width = xrd_window_get_current_width_meters (priv->button_reset);
+  float height = xrd_window_get_current_height_meters (priv->button_reset);
+  graphene_point3d_t translation = {
+      .x = -width / 2.,
+      .y = height / 2.,
+      .z = 0
+  };
+  graphene_matrix_t relative_transform;
+  graphene_matrix_init_translate (&relative_transform, &translation);
+  xrd_container_add_window (priv->wm_control_container,
+                            priv->button_reset,
+                            &relative_transform);
 
   gchar *sphere_str[] =  { "Sphere" };
   if (!xrd_client_add_button (self, &priv->button_sphere, 1, sphere_str,
@@ -1177,7 +1188,11 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_sphere_press_cb,
                               self))
     return FALSE;
-  xrd_container_add_window (priv->wm_control_container, priv->button_sphere);
+  translation.x += width;
+  graphene_matrix_init_translate (&relative_transform, &translation);
+  xrd_container_add_window (priv->wm_control_container,
+                            priv->button_sphere,
+                            &relative_transform);
 
   gchar *pinned_str[] =  { "Show", "pinned" };
   if (!xrd_client_add_button (self, &priv->pinned_button,
@@ -1186,7 +1201,12 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_pinned_press_cb,
                               self))
       return FALSE;
-  xrd_container_add_window (priv->wm_control_container, priv->pinned_button);
+  translation.x = - width / 2.;
+  translation.y -= height;
+  graphene_matrix_init_translate (&relative_transform, &translation);
+  xrd_container_add_window (priv->wm_control_container,
+                            priv->pinned_button,
+                            &relative_transform);
 
   gchar *select_str[] =  { "Select", "pinned" };
   if (!xrd_client_add_button (self, &priv->select_pinned_button,
@@ -1195,8 +1215,11 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_select_pinned_press_cb,
                               self))
       return FALSE;
+  translation.x += width;
+  graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,
-                            priv->select_pinned_button);
+                            priv->select_pinned_button,
+                            &relative_transform);
 
   xrd_client_add_container (self, priv->wm_control_container);
 

@@ -12,6 +12,11 @@
 #include "xrd-math.h"
 #include "graphene-ext.h"
 
+typedef struct {
+  XrdWindow *window;
+  graphene_matrix_t relative_transform;
+} ContainerWindow;
+
 struct _XrdContainer
 {
   GObject parent;
@@ -51,17 +56,30 @@ xrd_container_init (XrdContainer *self)
   self->visible = TRUE;
 }
 
+/**
+ * xrd_container_add_window:
+ * @self: The container
+ * @window: The window to add
+ * @relative_transform: the transform of the window's center relative to the
+ * container's center when XRD_CONTAINER_RELATIVE is used, ignored else (may
+ * be NULL then).
+ */
 void
 xrd_container_add_window (XrdContainer *self,
-                                 XrdWindow *window)
+                          XrdWindow *window,
+                          graphene_matrix_t *relative_transform)
 {
   self->speed = 0;
-  self->windows = g_slist_append (self->windows, window);
+  ContainerWindow *cw = g_malloc (sizeof (ContainerWindow));
+  cw->window = window;
+  if (relative_transform != NULL)
+    graphene_matrix_init_from_matrix (&cw->relative_transform,
+                                      relative_transform);
 
-  /* initial positioning not important, will be overriden by attachment */
-  graphene_matrix_t window_transform;
-  xrd_window_get_transformation (window, &window_transform);
-  graphene_matrix_init_from_matrix (&self->transform, &window_transform);
+  self->windows = g_slist_append (self->windows, cw);
+
+  /* initial positioning not important, will be overridden by attachment */
+  graphene_matrix_init_identity (&self->transform);
 
   if (self->visible)
     xrd_window_show (window);
@@ -75,10 +93,23 @@ xrd_container_set_distance (XrdContainer *self, float distance)
   self->distance = distance;
 }
 
+/**
+ * xrd_container_get_windows:
+ * @self: The container
+ * Returns: A list of #XrdWindow contained in this container.
+ * The list must be destroyed by the caller.
+ */
 GSList *
 xrd_container_get_windows (XrdContainer *self)
 {
-  return self->windows;
+  GSList *l = NULL;
+  for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
+    {
+      ContainerWindow *cw = cwl->data;
+      l = g_slist_append (l, cw->window);
+    }
+
+  return l;
 }
 
 float
@@ -134,9 +165,10 @@ _window_container_set_transformation (XrdContainer *self,
   float container_width = 0;
   float container_height = 0;
 
-  for (GSList *w = self->windows; w; w = w->next)
+  for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
     {
-      XrdWindow *window = w->data;
+      ContainerWindow *cw = cwl->data;
+      XrdWindow *window = cw->window;
       if (self->layout == XRD_CONTAINER_VERTICAL)
         {
           container_height += xrd_window_get_current_height_meters (window);
@@ -167,9 +199,10 @@ _window_container_set_transformation (XrdContainer *self,
   if (self->layout == XRD_CONTAINER_VERTICAL)
     {
       float y_offset = +container_height / 2.f;
-      for (GSList *w = self->windows; w; w = w->next)
+      for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
         {
-          XrdWindow *window = w->data;
+          ContainerWindow *cw = cwl->data;
+          XrdWindow *window = cw->window;
 
           float window_height = xrd_window_get_current_height_meters (window);
 
@@ -191,9 +224,10 @@ _window_container_set_transformation (XrdContainer *self,
   else if (self->layout == XRD_CONTAINER_HORIZONTAL)
     {
       float x_offset = -container_width / 2.f;
-      for (GSList *w = self->windows; w; w = w->next)
+      for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
         {
-          XrdWindow *window = w->data;
+          ContainerWindow *cw = cwl->data;
+          XrdWindow *window = cw->window;
 
           float window_width = xrd_window_get_current_width_meters (window);
 
@@ -209,6 +243,19 @@ _window_container_set_transformation (XrdContainer *self,
 
           x_offset += window_width;
 
+          xrd_window_set_transformation (window, &window_transform);
+        }
+    }
+  else if (self->layout == XRD_CONTAINER_RELATIVE)
+    {
+      for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
+        {
+          ContainerWindow *cw = cwl->data;
+          XrdWindow *window = cw->window;
+
+          graphene_matrix_t window_transform;
+          graphene_matrix_multiply (&cw->relative_transform, transform,
+                                    &window_transform);
           xrd_window_set_transformation (window, &window_transform);
         }
     }
@@ -458,30 +505,15 @@ xrd_container_set_layout (XrdContainer *self,
                           XrdContainerLayout layout)
 {
   self->layout = layout;
-  switch (layout)
-  {
-    case (XRD_CONTAINER_VERTICAL):
-    {
-      break;
-    }
-    case (XRD_CONTAINER_HORIZONTAL):
-    {
-      break;
-    }
-    case (XRD_CONTAINER_NO_LAYOUT):
-    {
-      g_print ("window container: no layout\n");
-      break;
-    }
-  }
 }
 
 void
 xrd_container_hide (XrdContainer *self)
 {
-  for (GSList *w = self->windows; w; w = w->next)
+  for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
     {
-      XrdWindow *window = w->data;
+      ContainerWindow *cw = cwl->data;
+      XrdWindow *window = cw->window;
       xrd_window_hide (window);
     }
   self->visible = FALSE;
@@ -490,9 +522,10 @@ xrd_container_hide (XrdContainer *self)
 void
 xrd_container_show (XrdContainer *self)
 {
-  for (GSList *w = self->windows; w; w = w->next)
+  for (GSList *cwl = self->windows; cwl; cwl = cwl->next)
     {
-      XrdWindow *window = w->data;
+      ContainerWindow *cw = cwl->data;
+      XrdWindow *window = cw->window;
       xrd_window_show (window);
     }
   self->visible = TRUE;
@@ -514,5 +547,6 @@ static void
 xrd_container_finalize (GObject *gobject)
 {
   XrdContainer *self = XRD_CONTAINER (gobject);
+  g_slist_free_full (self->windows, g_free);
   (void) self;
 }
