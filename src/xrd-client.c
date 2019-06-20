@@ -650,7 +650,10 @@ _action_hand_pose_cb (OpenVRAction            *action,
 {
   (void) action;
   if (!event->device_connected || !event->valid || !event->active)
-    return;
+    {
+      g_free (event);
+      return;
+    }
 
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   XrdController *controller = _lookup_controller (self,
@@ -664,7 +667,10 @@ _action_hand_pose_cb (OpenVRAction            *action,
 
 
   if (controller == NULL)
-    return;
+    {
+      g_free (event);
+      return;
+    }
 
   xrd_window_manager_update_pose (priv->manager, &event->pose, controller);
 
@@ -695,13 +701,19 @@ _action_hand_pose_hand_grip_cb (OpenVRAction    *action,
 {
   (void) action;
   if (!event->device_connected || !event->valid || !event->active)
-    return;
+    {
+      g_free (event);
+      return;
+    }
 
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
   if (controller == NULL)
-    return;
+    {
+      g_free (event);
+      return;
+    }
 
   xrd_controller_update_pose_hand_grip (controller, &event->pose);
   g_free (event);
