@@ -10,3 +10,4 @@ binding_resources = gnome.compile_resources(
 install_data('org.xrdesktop.gschema.xml', install_dir: join_paths(get_option('datadir'), 'glib-2.0', 'schemas'))
 meson.add_install_script('meson_post_install.py')
 
+subdir('icons')
