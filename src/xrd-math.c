@@ -53,10 +53,6 @@ xrd_math_get_frustum_angles (float *left, float *right,
   *right = RAD_TO_DEG (atanf (*right));
   *top = - RAD_TO_DEG (atanf (*top));
   *bottom = - RAD_TO_DEG (atanf (*bottom));
-
-  // TODO: check if flipping top and bottom is the right thing to do
-
-  //g_print ("Get angles %f %f %f %f\n", *left, *right, *top, *bottom);
 }
 
 /**
@@ -254,7 +250,7 @@ xrd_math_hmd_window_distance (XrdWindow *window)
 {
   graphene_matrix_t hmd_pose;
   if (!openvr_system_get_hmd_pose (&hmd_pose))
-    /* TODO: can't retry until we have a pose, will block the desktop */
+    // if we don't have a hmd pose, steamvr will not show anything anyway
     return 2.5;
 
 

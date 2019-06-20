@@ -407,10 +407,6 @@ xrd_overlay_window_finalize (GObject *gobject)
   if (parent != NULL)
     parent->window_data.child_window = NULL;
 
-  /* TODO: a child window should not exist without a parent window anyway,
-   * but it will be cleaned up already because the child window on the desktop
-   * will most likely close already. */
-
   XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (self->window_data.child_window);
   if (child)
     child->window_data.parent_window = NULL;

@@ -135,10 +135,7 @@ xrd_desktop_cursor_update (XrdDesktopCursor   *self,
   if (data->texture_width == 0 || data->texture_height == 0)
     return;
 
-  /* TODO: first we have to know the size of the cursor at the target  position
-   * so we can calculate the hotspot.
-   * Setting the size first flickers sometimes a bit.
-   * */
+  /* size needs to be set first, so the hotspot offset calculation works */
   xrd_desktop_cursor_update_apparent_size (XRD_DESKTOP_CURSOR (self),
                                            intersection);
 

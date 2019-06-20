@@ -138,7 +138,6 @@ _interpolate_cb (gpointer _transition)
     transition->from_scaling * (1.0f - transition->interpolate) +
     transition->to_scaling * transition->interpolate;
 
-  /* TODO interpolate scaling instead of width */
   g_object_set (G_OBJECT(window), "scale", (double) interpolated_scaling, NULL);
 
   transition->interpolate += 0.03f;
@@ -799,7 +798,6 @@ xrd_window_manager_show_pinned_only (XrdWindowManager *self,
   for (GSList *l = self->all_windows; l != NULL; l = l->next)
     {
       XrdWindow *window = (XrdWindow *) l->data;
-      /* TODO: O^2, but pinned_windows is usually small */
       gboolean to_show = TRUE;
       if (pinned_only)
         to_show = g_slist_find (self->pinned_windows, window) != NULL;

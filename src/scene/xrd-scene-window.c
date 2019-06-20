@@ -236,10 +236,6 @@ xrd_scene_window_finalize (GObject *gobject)
       parent_priv->window_data.child_window = NULL;
     }
 
-  /* TODO: a child window should not exist without a parent window anyway,
-   * but it will be cleaned up already because the child window on the desktop
-   * will most likely close already. */
-
   XrdSceneWindow *child = XRD_SCENE_WINDOW (priv->window_data.child_window);
   if (child)
     {

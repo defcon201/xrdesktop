@@ -491,13 +491,11 @@ xrd_client_finalize (GObject *gobject)
   g_object_unref (priv->manager);
   g_clear_object (&priv->wm_actions);
 
-  /* TODO check for controller unref */
+  /* hash table unref also destroysControllers */
   g_hash_table_unref (priv->controllers);
 
   g_clear_object (&priv->cursor);
-
-  /* TODO: should this be freed? */
-  // g_object_unref (priv->input_synth);
+  g_clear_object (&priv->input_synth);
 
   g_clear_object (&priv->context);
   g_clear_object (&priv->wm_control_container);
@@ -1267,12 +1265,11 @@ _action_show_keyboard_cb (OpenVRAction       *action,
       OpenVRContext *context = openvr_context_get_instance ();
       openvr_context_show_system_keyboard (context);
 
-      /* TODO: Perhaps there is a better way to get the window that should
-               receive keyboard input */
       guint64 controller_handle =
         xrd_input_synth_synthing_controller (priv->input_synth);
       XrdController *controller = _lookup_controller (self, controller_handle);
 
+      /* window hovered by the synthing controller receives input */
       priv->keyboard_window =
         xrd_controller_get_hover_state (controller)->window;
 
