@@ -292,7 +292,37 @@ xrd_button_set_text (XrdWindow    *button,
   uint32_t height = (uint32_t) (height_meter * ppm);
   unsigned char* image = g_malloc (sizeof(unsigned char) * 4 * width * height);
   cairo_surface_t* surface =
-    xrd_client_create_button_surface (image, width, height, label_count, label);
+    xrd_client_create_button_surface_text (image, width, height,
+                                           label_count, label);
+  GulkanTexture *texture =
+    gulkan_client_texture_new_from_cairo_surface (client,
+                                                  surface,
+                                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                                  upload_layout);
+
+  xrd_window_submit_texture (button, client, texture);
+
+  cairo_surface_destroy (surface);
+
+  g_free (image);
+
+  g_object_unref (texture);
+}
+
+void
+xrd_button_set_icon (XrdWindow    *button,
+                     GulkanClient *client,
+                     VkImageLayout upload_layout,
+                     gchar        *icon_url)
+{
+  float width_meter = xrd_window_get_current_width_meters (button);
+  float height_meter = xrd_window_get_current_height_meters (button);
+  float ppm = xrd_window_get_current_ppm (button);
+  uint32_t width = (uint32_t) (width_meter * ppm);
+  uint32_t height = (uint32_t) (height_meter * ppm);
+  unsigned char* image = g_malloc (sizeof(unsigned char) * 4 * width * height);
+  cairo_surface_t* surface =
+    xrd_client_create_button_surface_icon (image, width, height, icon_url);
   GulkanTexture *texture =
     gulkan_client_texture_new_from_cairo_surface (client,
                                                   surface,
@@ -319,13 +349,13 @@ xrd_client_show_pinned_only (XrdClient *self,
   VkImageLayout layout = xrd_client_get_upload_layout (self);
   if (pinned_only)
     {
-      gchar *all_str[] =  { "Show", "all" };
-      xrd_button_set_text (priv->pinned_button, client, layout, 2, all_str);
+      xrd_button_set_icon (priv->pinned_button, client, layout,
+                           "/icons/object-hidden-symbolic.svg");
     }
   else
     {
-      gchar *pinned_str[] =  { "Show", "pinned" };
-      xrd_button_set_text (priv->pinned_button, client, layout, 2, pinned_str);
+      xrd_button_set_icon (priv->pinned_button, client, layout,
+                           "/icons/object-visible-symbolic.svg");
     }
 }
 
@@ -1133,15 +1163,13 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   GulkanClient *client = xrd_client_get_uploader (self);
   if (priv->selection_mode)
     {
-      gchar *end_str[] =  { "Confirm" };
-      xrd_button_set_text (priv->select_pinned_button,
-                           client, layout, 1, end_str);
+      xrd_button_set_icon (priv->select_pinned_button, client, layout,
+                           "/icons/object-select-symbolic.svg");
     }
   else
     {
-      gchar *start_str[] =  { "Select", "pinned" };
-      xrd_button_set_text (priv->select_pinned_button,
-                           client, layout, 2, start_str);
+      xrd_button_set_icon (priv->select_pinned_button, client, layout,
+                           "/icons/view-pin-symbolic.svg");
     }
 
   g_free (event);
@@ -1167,6 +1195,12 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_reset_press_cb,
                               self))
     return FALSE;
+
+  GulkanClient *gc = xrd_client_get_uploader (self);
+  VkImageLayout layout = xrd_client_get_upload_layout (self);
+  xrd_button_set_icon (priv->button_reset, gc, layout,
+                       "/icons/edit-undo-symbolic.svg");
+
   float width = xrd_window_get_current_width_meters (priv->button_reset);
   float height = xrd_window_get_current_height_meters (priv->button_reset);
   graphene_point3d_t translation = {
@@ -1187,6 +1221,10 @@ _init_buttons (XrdClient *self)
                               self))
     return FALSE;
   translation.x += width;
+
+  xrd_button_set_icon (priv->button_sphere, gc, layout,
+                       "/icons/align-sphere-symbolic.svg");
+
   graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,
                             priv->button_sphere,
@@ -1199,6 +1237,10 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_pinned_press_cb,
                               self))
       return FALSE;
+
+  xrd_button_set_icon (priv->pinned_button, gc, layout,
+                       "/icons/object-visible-symbolic.svg");
+
   translation.x = - width / 2.f;
   translation.y -= height;
   graphene_matrix_init_translate (&relative_transform, &translation);
@@ -1213,6 +1255,10 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_select_pinned_press_cb,
                               self))
       return FALSE;
+
+  xrd_button_set_icon (priv->select_pinned_button, gc, layout,
+                       "/icons/view-pin-symbolic.svg");
+
   translation.x += width;
   graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,
@@ -1514,10 +1560,88 @@ xrd_client_get_desktop_cursor (XrdClient *self)
   return priv->cursor;
 }
 
+static GdkPixbuf *
+_load_cairo_surface (const gchar* name)
+{
+  GError * error = NULL;
+  GdkPixbuf *pixbuf = gdk_pixbuf_new_from_resource (name, &error);
+
+  if (error != NULL)
+    {
+      g_printerr ("Unable to read file: %s\n", error->message);
+      g_error_free (error);
+      return NULL;
+    }
+
+  return pixbuf;
+}
+
 cairo_surface_t*
-xrd_client_create_button_surface (unsigned char *image, uint32_t width,
-                                  uint32_t height, int lines,
-                                  gchar *const *text)
+xrd_client_create_button_surface_icon (unsigned char *image, uint32_t width,
+                                       uint32_t height, const gchar *icon_url)
+{
+  GdkPixbuf *icon_pixbuf = _load_cairo_surface (icon_url);
+  if (icon_pixbuf == NULL)
+    {
+      g_printerr ("Could not load icon %s.\n", icon_url);
+      return NULL;
+    }
+
+  cairo_surface_t *surface =
+    cairo_image_surface_create_for_data (image,
+                                         CAIRO_FORMAT_ARGB32,
+                                         (int) width, (int) height,
+                                         (int) width * 4);
+
+  cairo_t *cr = cairo_create (surface);
+
+  cairo_rectangle (cr, 0, 0, width, height);
+  cairo_set_source_rgba (cr, 1, 1, 1, 1);
+  cairo_fill (cr);
+
+  double r0;
+  if (width < height)
+    r0 = (double) width / 3.0;
+  else
+    r0 = (double) height / 3.0;
+
+  double radius = r0 * 4.0;
+  double r1 = r0 * 5.0;
+
+  double center_x = (double) width / 2.0;
+  double center_y = (double) height / 2.0;
+
+  double cx0 = center_x - r0 / 2.0;
+  double cy0 = center_y - r0;
+  double cx1 = center_x - r0;
+  double cy1 = center_y - r0;
+
+  cairo_pattern_t *pat = cairo_pattern_create_radial (cx0, cy0, r0,
+                                                      cx1, cy1, r1);
+  cairo_pattern_add_color_stop_rgba (pat, 0, .3, .3, .3, 1);
+  cairo_pattern_add_color_stop_rgba (pat, 1, 0, 0, 0, 1);
+  cairo_set_source (cr, pat);
+  cairo_arc (cr, center_x, center_y, radius, 0, 2 * M_PI);
+  cairo_fill (cr);
+  cairo_pattern_destroy (pat);
+
+  /* Draw icon with padding */
+  int padding = 100;
+  int icon_w = gdk_pixbuf_get_width (icon_pixbuf);
+  double scale = width / (double) (icon_w + 2 * padding);
+  cairo_scale (cr, scale, scale);
+  gdk_cairo_set_source_pixbuf (cr, icon_pixbuf, padding, padding);
+  cairo_paint (cr);
+
+  cairo_destroy (cr);
+
+  return surface;
+}
+
+cairo_surface_t*
+xrd_client_create_button_surface_text (unsigned char *image, uint32_t width,
+                                       uint32_t height, int lines,
+                                       gchar *const *text)
 {
   cairo_surface_t *surface =
     cairo_image_surface_create_for_data (image,

@@ -35,7 +35,8 @@ xrdesktop_sources = [
   'overlay/xrd-overlay-pointer.c',
   'overlay/xrd-overlay-client.c',
   'overlay/xrd-overlay-window.c',
-  binding_resources
+  binding_resources,
+  icon_resources
 ]
 
 xrdesktop_headers = [
