@@ -1189,20 +1189,21 @@ _init_buttons (XrdClient *self)
 
   graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
 
-  gchar *reset_str[] =  { "Reset" };
-  if (!xrd_client_add_button (self, &priv->button_reset, 1, reset_str,
+  gchar *sphere_str[] =  { "Sphere" };
+  if (!xrd_client_add_button (self, &priv->button_sphere, 1, sphere_str,
                               &position,
-                              (GCallback) _button_reset_press_cb,
+                              (GCallback) _button_sphere_press_cb,
                               self))
     return FALSE;
 
   GulkanClient *gc = xrd_client_get_uploader (self);
   VkImageLayout layout = xrd_client_get_upload_layout (self);
-  xrd_button_set_icon (priv->button_reset, gc, layout,
-                       "/icons/edit-undo-symbolic.svg");
 
-  float width = xrd_window_get_current_width_meters (priv->button_reset);
-  float height = xrd_window_get_current_height_meters (priv->button_reset);
+  xrd_button_set_icon (priv->button_sphere, gc, layout,
+                       "/icons/align-sphere-symbolic.svg");
+
+  float width = xrd_window_get_current_width_meters (priv->button_sphere);
+  float height = xrd_window_get_current_height_meters (priv->button_sphere);
   graphene_point3d_t translation = {
       .x = -width / 2.f,
       .y = height / 2.f,
@@ -1211,41 +1212,23 @@ _init_buttons (XrdClient *self)
   graphene_matrix_t relative_transform;
   graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,
-                            priv->button_reset,
-                            &relative_transform);
-
-  gchar *sphere_str[] =  { "Sphere" };
-  if (!xrd_client_add_button (self, &priv->button_sphere, 1, sphere_str,
-                              &position,
-                              (GCallback) _button_sphere_press_cb,
-                              self))
-    return FALSE;
-  translation.x += width;
-
-  xrd_button_set_icon (priv->button_sphere, gc, layout,
-                       "/icons/align-sphere-symbolic.svg");
-
-  graphene_matrix_init_translate (&relative_transform, &translation);
-  xrd_container_add_window (priv->wm_control_container,
                             priv->button_sphere,
                             &relative_transform);
 
-  gchar *pinned_str[] =  { "Show", "pinned" };
-  if (!xrd_client_add_button (self, &priv->pinned_button,
-                              2, pinned_str,
+  gchar *reset_str[] =  { "Reset" };
+  if (!xrd_client_add_button (self, &priv->button_reset, 1, reset_str,
                               &position,
-                              (GCallback) _button_pinned_press_cb,
+                              (GCallback) _button_reset_press_cb,
                               self))
-      return FALSE;
+    return FALSE;
 
-  xrd_button_set_icon (priv->pinned_button, gc, layout,
-                       "/icons/object-visible-symbolic.svg");
+  translation.x += width;
+  xrd_button_set_icon (priv->button_reset, gc, layout,
+                       "/icons/edit-undo-symbolic.svg");
 
-  translation.x = - width / 2.f;
-  translation.y -= height;
   graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,
-                            priv->pinned_button,
+                            priv->button_reset,
                             &relative_transform);
 
   gchar *select_str[] =  { "Select", "pinned" };
@@ -1254,15 +1237,34 @@ _init_buttons (XrdClient *self)
                               &position,
                               (GCallback) _button_select_pinned_press_cb,
                               self))
-      return FALSE;
+    return FALSE;
 
   xrd_button_set_icon (priv->select_pinned_button, gc, layout,
                        "/icons/view-pin-symbolic.svg");
 
-  translation.x += width;
+
+  translation.x = - width / 2.f;
+  translation.y -= height;
   graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,
                             priv->select_pinned_button,
+                            &relative_transform);
+
+  gchar *pinned_str[] =  { "Show", "pinned" };
+  if (!xrd_client_add_button (self, &priv->pinned_button,
+                              2, pinned_str,
+                              &position,
+                              (GCallback) _button_pinned_press_cb,
+                              self))
+    return FALSE;
+
+  xrd_button_set_icon (priv->pinned_button, gc, layout,
+                       "/icons/object-visible-symbolic.svg");
+
+  translation.x += width;
+  graphene_matrix_init_translate (&relative_transform, &translation);
+  xrd_container_add_window (priv->wm_control_container,
+                            priv->pinned_button,
                             &relative_transform);
 
   xrd_client_add_container (self, priv->wm_control_container);
