@@ -16,6 +16,8 @@ struct _XrdController
   XrdPointerTip *pointer_tip;
   HoverState hover_state;
   GrabState grab_state;
+
+  graphene_matrix_t pose_hand_grip;
 };
 
 G_DEFINE_TYPE (XrdController, xrd_controller, G_TYPE_OBJECT)
@@ -119,3 +121,18 @@ xrd_controller_reset_hover_state (XrdController *self)
   self->hover_state.distance = 1.0;
   graphene_matrix_init_identity (&self->hover_state.pose);
 }
+
+void
+xrd_controller_update_pose_hand_grip (XrdController *self,
+                                      graphene_matrix_t *pose)
+{
+  graphene_matrix_init_from_matrix (&self->pose_hand_grip, pose);
+}
+
+void
+xrd_controller_get_pose_hand_grip (XrdController *self,
+                                   graphene_matrix_t *pose)
+{
+  graphene_matrix_init_from_matrix (pose, &self->pose_hand_grip);
+}
+

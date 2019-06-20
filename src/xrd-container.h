@@ -14,6 +14,7 @@
 
 #include <glib-object.h>
 #include "xrd-window.h"
+#include "xrd-controller.h"
 
 G_BEGIN_DECLS
 
@@ -22,7 +23,8 @@ G_DECLARE_FINAL_TYPE (XrdContainer, xrd_container, XRD, CONTAINER, GObject)
 
 typedef enum {
   XRD_CONTAINER_ATTACHMENT_NONE,
-  XRD_CONTAINER_ATTACHMENT_HEAD
+  XRD_CONTAINER_ATTACHMENT_HEAD,
+  XRD_CONTAINER_ATTACHMENT_HAND
 } XrdContainerAttachment;
 
 typedef enum {
@@ -57,7 +59,8 @@ xrd_container_set_speed (XrdContainer *self,
 
 void
 xrd_container_set_attachment (XrdContainer *self,
-                              XrdContainerAttachment attachment);
+                              XrdContainerAttachment attachment,
+                              XrdController *controller);
 
 void
 xrd_container_set_layout (XrdContainer *self,

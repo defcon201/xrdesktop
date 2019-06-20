@@ -26,6 +26,7 @@ struct _XrdContainer
   float speed;
 
   graphene_matrix_t transform;
+  XrdController *controller;
 
   XrdContainerAttachment attachment;
   XrdContainerLayout layout;
@@ -54,6 +55,7 @@ xrd_container_init (XrdContainer *self)
   self->layout = XRD_CONTAINER_VERTICAL;
   self->attachment = XRD_CONTAINER_ATTACHMENT_NONE;
   self->visible = TRUE;
+  self->controller = NULL;
 }
 
 /**
@@ -460,6 +462,36 @@ _step_fov (XrdContainer *self)
   return TRUE;
 }
 
+static gboolean
+_step_hand (XrdContainer *self)
+{
+  if (!G_IS_OBJECT (self->controller))
+    {
+      /* controller is turned off */
+      self->controller = NULL;
+      return FALSE;
+    }
+
+
+  graphene_matrix_t container_transform;
+  /* hand_grip "lays" in xz plane, but window is in xy plane. */
+  graphene_matrix_init_rotate (&container_transform, -80,
+                               graphene_vec3_x_axis ());
+
+  graphene_point3d_t offset = { .x = .0f, .y = .033f, .z = -.033f };
+  graphene_matrix_translate (&container_transform, &offset);
+
+  graphene_matrix_t controller_pose;
+  xrd_controller_get_pose_hand_grip (self->controller, &controller_pose);
+
+  graphene_matrix_multiply (&container_transform,
+                            &controller_pose,
+                            &container_transform);
+
+  _window_container_set_transformation (self, &container_transform);
+  return TRUE;
+}
+
 /**
  * xrd_container_step:
  * Updates the container's position based on its attachment.
@@ -473,6 +505,10 @@ xrd_container_step (XrdContainer *self)
     {
       return _step_fov (self);
     }
+    case (XRD_CONTAINER_ATTACHMENT_HAND):
+    {
+      return _step_hand (self);
+    }
     case (XRD_CONTAINER_ATTACHMENT_NONE):
     {
       return TRUE;
@@ -481,15 +517,28 @@ xrd_container_step (XrdContainer *self)
   return FALSE;
 }
 
+/**
+ * xrd_container_set_attachment:
+ * @self: The container.
+ * @attachment: The attachment to set.
+ * @controller: A controller used for XRD_CONTAINER_ATTACHMENT_HAND. May be
+ * NULL for other attachments.
+ */
 void
 xrd_container_set_attachment (XrdContainer *self,
-                              XrdContainerAttachment attachment)
+                              XrdContainerAttachment attachment,
+                              XrdController *controller)
 {
   self->attachment = attachment;
+  self->controller = controller;
 
   switch (attachment)
   {
     case (XRD_CONTAINER_ATTACHMENT_HEAD):
+    {
+      break;
+    }
+    case (XRD_CONTAINER_ATTACHMENT_HAND):
     {
       break;
     }

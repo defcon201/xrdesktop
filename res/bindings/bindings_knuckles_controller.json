@@ -67,6 +67,14 @@
             {
                "output": "/actions/wm/in/hand_pose",
                "path": "/user/hand/left/pose/tip"
+            },
+            {
+               "output": "/actions/wm/in/hand_pose_hand_grip",
+               "path": "/user/hand/right/pose/handgrip"
+            },
+            {
+               "output": "/actions/wm/in/hand_pose_hand_grip",
+               "path": "/user/hand/left/pose/handgrip"
             }
          ],
          "haptics": [

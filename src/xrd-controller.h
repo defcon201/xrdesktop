@@ -72,6 +72,14 @@ xrd_controller_reset_grab_state (XrdController *self);
 void
 xrd_controller_reset_hover_state (XrdController *self);
 
+void
+xrd_controller_update_pose_hand_grip (XrdController *self,
+                                      graphene_matrix_t *pose);
+
+void
+xrd_controller_get_pose_hand_grip (XrdController *self,
+                                   graphene_matrix_t *pose);
+
 G_END_DECLS
 
 #endif /* XRD_CONTROLLER_H_ */

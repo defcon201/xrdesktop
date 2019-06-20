@@ -689,6 +689,26 @@ _action_hand_pose_cb (OpenVRAction            *action,
 }
 
 static void
+_action_hand_pose_hand_grip_cb (OpenVRAction    *action,
+                                OpenVRPoseEvent *event,
+                                XrdClient       *self)
+{
+  (void) action;
+  if (!event->device_connected || !event->valid || !event->active)
+    return;
+
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+
+  if (controller == NULL)
+    return;
+
+  xrd_controller_update_pose_hand_grip (controller, &event->pose);
+  g_free (event);
+}
+
+
+static void
 _perform_push_pull (XrdClient *self,
                     XrdController *controller,
                     float push_pull_strength)
@@ -831,7 +851,13 @@ _action_menu_cb (OpenVRAction        *action,
       if (xrd_container_is_visible (priv->wm_control_container))
         xrd_container_hide (priv->wm_control_container);
       else
-        xrd_container_show (priv->wm_control_container);
+        {
+          xrd_container_set_attachment(priv->wm_control_container,
+                                       XRD_CONTAINER_ATTACHMENT_HAND,
+                                       controller);
+          xrd_container_show (priv->wm_control_container);
+        }
+
     }
   g_free (event);
 }
@@ -1155,12 +1181,14 @@ _init_buttons (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  float w = 0.5f;
-  float h = 0.5f;
+  float w = 0.07f;
+  float h = 0.07f;
 
   priv->wm_control_container = xrd_container_new ();
+  xrd_container_hide (priv->wm_control_container);
   xrd_container_set_attachment (priv->wm_control_container,
-                                XRD_CONTAINER_ATTACHMENT_HEAD);
+                                XRD_CONTAINER_ATTACHMENT_HEAD,
+                                NULL);
   xrd_container_set_layout (priv->wm_control_container,
                             XRD_CONTAINER_RELATIVE);
   xrd_container_set_distance (priv->wm_control_container, 2.0f);
@@ -1696,6 +1724,9 @@ xrd_client_post_openvr_init (XrdClient *self)
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose",
                              (GCallback) _action_hand_pose_cb, self);
+  openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
+                             "/actions/wm/in/hand_pose_hand_grip",
+                             (GCallback) _action_hand_pose_hand_grip_cb, self);
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_DIGITAL,
                              "/actions/wm/in/grab_window",
                              (GCallback) _action_grab_cb, self);
