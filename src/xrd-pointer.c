@@ -68,6 +68,7 @@ xrd_pointer_init (XrdPointer *self)
   data->start_offset = -0.02f;
   data->default_length = 5.0f;
   data->length = data->default_length;
+  data->visible = TRUE;
 }
 
 void
@@ -167,6 +168,33 @@ xrd_pointer_get_intersection (XrdPointer      *self,
     return TRUE;
 
   return FALSE;
+}
+
+void
+xrd_pointer_show (XrdPointer *self)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  iface->show (self);
+
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  data->visible = TRUE;
+}
+
+void
+xrd_pointer_hide (XrdPointer *self)
+{
+  XrdPointerInterface* iface = XRD_POINTER_GET_IFACE (self);
+  iface->hide (self);
+
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  data->visible = FALSE;
+}
+
+gboolean
+xrd_pointer_is_visible (XrdPointer *self)
+{
+  XrdPointerData *data = xrd_pointer_get_data (self);
+  return data->visible;
 }
 
 void

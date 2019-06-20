@@ -26,6 +26,7 @@ typedef struct _XrdPointerData {
   float start_offset;
   float length;
   float default_length;
+  gboolean visible;
 } XrdPointerData;
 
 struct _XrdPointerInterface
@@ -54,6 +55,12 @@ struct _XrdPointerInterface
   void
   (*set_selected_window) (XrdPointer *pointer,
                           XrdWindow  *window);
+
+  void
+  (*show) (XrdPointer *self);
+
+  void
+  (*hide) (XrdPointer *self);
 };
 
 void
@@ -97,6 +104,15 @@ xrd_pointer_get_intersection (XrdPointer      *self,
 void
 xrd_pointer_set_selected_window (XrdPointer *self,
                                  XrdWindow  *window);
+
+void
+xrd_pointer_show (XrdPointer *self);
+
+void
+xrd_pointer_hide (XrdPointer *self);
+
+gboolean
+xrd_pointer_is_visible (XrdPointer *self);
 
 G_END_DECLS
 

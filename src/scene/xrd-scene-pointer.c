@@ -204,6 +204,22 @@ _set_selected_window (XrdPointer *pointer,
 }
 
 static void
+_show (XrdPointer *pointer)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  (void) self;
+  g_print ("Scene Pointer show STUB\n");
+}
+
+static void
+_hide (XrdPointer *pointer)
+{
+  XrdScenePointer *self = XRD_SCENE_POINTER (pointer);
+  (void) self;
+  g_print ("Scene Pointer hide STUB\n");
+}
+
+static void
 xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
@@ -212,5 +228,7 @@ xrd_scene_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
   iface->set_selected_window = _set_selected_window;
+  iface->show = _show;
+  iface->hide = _hide;
 }
 

@@ -134,6 +134,20 @@ _set_selected_window (XrdPointer *pointer,
 }
 
 static void
+_show (XrdPointer *pointer)
+{
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
+  openvr_overlay_show (OPENVR_OVERLAY (self));
+}
+
+static void
+_hide (XrdPointer *pointer)
+{
+  XrdOverlayPointer *self = XRD_OVERLAY_POINTER (pointer);
+  openvr_overlay_hide (OPENVR_OVERLAY (self));
+}
+
+static void
 xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
 {
   iface->move = _move;
@@ -142,4 +156,6 @@ xrd_overlay_pointer_pointer_interface_init (XrdPointerInterface *iface)
   iface->set_transformation = _set_transformation;
   iface->get_transformation = _get_transformation;
   iface->set_selected_window = _set_selected_window;
+  iface->show = _show;
+  iface->hide = _hide;
 }
