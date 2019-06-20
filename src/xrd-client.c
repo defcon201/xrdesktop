@@ -1170,8 +1170,8 @@ _init_buttons (XrdClient *self)
   float width = xrd_window_get_current_width_meters (priv->button_reset);
   float height = xrd_window_get_current_height_meters (priv->button_reset);
   graphene_point3d_t translation = {
-      .x = -width / 2.,
-      .y = height / 2.,
+      .x = -width / 2.f,
+      .y = height / 2.f,
       .z = 0
   };
   graphene_matrix_t relative_transform;
@@ -1199,7 +1199,7 @@ _init_buttons (XrdClient *self)
                               (GCallback) _button_pinned_press_cb,
                               self))
       return FALSE;
-  translation.x = - width / 2.;
+  translation.x = - width / 2.f;
   translation.y -= height;
   graphene_matrix_init_translate (&relative_transform, &translation);
   xrd_container_add_window (priv->wm_control_container,

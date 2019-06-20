@@ -75,6 +75,9 @@ xrd_container_show (XrdContainer *self);
 gboolean
 xrd_container_is_visible (XrdContainer *self);
 
+GSList *
+xrd_container_get_windows (XrdContainer *self);
+
 G_END_DECLS
 
 #endif /* xrd_container_H_ */
