@@ -177,6 +177,10 @@ _get_texture_size (XrdWindow *window)
   float height_meter = xrd_window_get_current_height_meters (window);
   float ppm = xrd_window_get_current_ppm (window);
 
+  // TODO: Global default ppm setting for interal textures
+  if (ppm == 0)
+    ppm = 450;
+
   XrdPixelSize size = {
     .width = (uint32_t) (width_meter * ppm),
     .height = (uint32_t) (height_meter * ppm)
@@ -196,6 +200,12 @@ _submit_cairo_surface (XrdWindow    *button,
                                                   surface,
                                                   VK_FORMAT_R8G8B8A8_UNORM,
                                                   upload_layout);
+
+  if (!texture)
+    {
+      g_printerr ("Could not create texture from cairo surface.\n");
+      return;
+    }
 
   xrd_window_submit_texture (button, client, texture);
 
@@ -217,6 +227,12 @@ xrd_button_set_text (XrdWindow    *button,
   cairo_surface_t* surface =
     _create_surface_text (image, dim.width, dim.height, label_count, label);
 
+  if (!surface)
+    {
+      g_printerr ("Could not create cairo surface.\n");
+      return;
+    }
+
   _submit_cairo_surface (button, client, upload_layout, surface);
 
   g_free (image);
@@ -228,7 +244,7 @@ void
 xrd_button_set_icon (XrdWindow    *button,
                      GulkanClient *client,
                      VkImageLayout upload_layout,
-                     gchar        *icon_url)
+                     const gchar  *url)
 {
 
   XrdPixelSize dim = _get_texture_size (button);
@@ -237,7 +253,13 @@ xrd_button_set_icon (XrdWindow    *button,
   unsigned char* image = g_malloc (size);
 
   cairo_surface_t* surface =
-    _create_surface_icon (image, dim.width, dim.height, icon_url);
+    _create_surface_icon (image, dim.width, dim.height, url);
+
+  if (!surface)
+    {
+      g_printerr ("Could not create cairo surface.\n");
+      return;
+    }
 
   _submit_cairo_surface (button, client, upload_layout, surface);
 

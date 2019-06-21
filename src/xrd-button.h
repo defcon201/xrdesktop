@@ -29,7 +29,7 @@ void
 xrd_button_set_icon (XrdWindow    *button,
                      GulkanClient *client,
                      VkImageLayout upload_layout,
-                     gchar        *icon_url);
+                     const gchar  *url);
 
 G_END_DECLS
 

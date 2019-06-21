@@ -231,11 +231,14 @@ _init_buttons (Example *self)
   };
 
   gchar *switch_str[] =  { "Switch", "Mode"};
-  xrd_client_add_button (self->client, &self->switch_button, 2,
-                         switch_str,
-                         &switch_pos,
-                         (GCallback) _button_switch_press_cb,
-                         self);
+  self->switch_button =
+    xrd_client_button_new_from_text (self->client, 0.5f, 0.5f, 2, switch_str);
+
+  if (!self->switch_button)
+    return;
+
+  xrd_client_add_button (self->client, self->switch_button, &switch_pos,
+                         (GCallback) _button_switch_press_cb, self);
 }
 
 static gboolean

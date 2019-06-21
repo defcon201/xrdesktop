@@ -255,11 +255,16 @@ _init_windows (Example *self)
     compensation ? "ON" : "OFF"
   };
   point.x += canvas_width_meter / 2.f + 0.5f / 2.f;
-  xrd_client_add_button (self->client, &self->toggle_button,
-                         2, toggle_string, &point,
-                         (GCallback) _toggle_press_cb,
-                         self);
 
+  self->toggle_button =
+    xrd_client_button_new_from_text (self->client, 0.5f, 0.5f,
+                                     2, toggle_string);
+
+  if (!self->toggle_button)
+    return FALSE;
+
+  xrd_client_add_button (self->client, self->toggle_button,
+                         &point, (GCallback) _toggle_press_cb, self);
 
   guint button_pixel_width;
   guint button_pixel_height;

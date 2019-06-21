@@ -82,11 +82,22 @@ void
 xrd_client_remove_window (XrdClient *self,
                           XrdWindow *window);
 
-gboolean
+XrdWindow*
+xrd_client_button_new_from_text (XrdClient *self,
+                                 float      width,
+                                 float      height,
+                                 int        label_count,
+                                 gchar    **label);
+
+XrdWindow*
+xrd_client_button_new_from_icon (XrdClient   *self,
+                                 float        width,
+                                 float        height,
+                                 const gchar *url);
+
+void
 xrd_client_add_button (XrdClient          *self,
-                       XrdWindow         **button,
-                       int                 label_count,
-                       gchar             **label,
+                       XrdWindow          *button,
                        graphene_point3d_t *position,
                        GCallback           press_callback,
                        gpointer            press_callback_data);
