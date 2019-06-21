@@ -456,6 +456,11 @@ _submit_texture (XrdWindow     *window,
   uint32_t w = gulkan_texture_get_width (texture);
   uint32_t h = gulkan_texture_get_height (texture);
 
+  g_object_set (window,
+                "texture-width", w,
+                "texture-height", h,
+                NULL);
+
   float aspect_ratio = (float) w / (float) h;
 
   if (priv->aspect_ratio != aspect_ratio)
