@@ -13,6 +13,7 @@
 #define XRD_INSIDE
 
 #include "xrd-version.h"
+#include "xrd-button.h"
 #include "xrd-client.h"
 #include "xrd-desktop-cursor.h"
 #include "xrd-container.h"

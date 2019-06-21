@@ -194,28 +194,6 @@ xrd_client_set_desktop_cursor (XrdClient        *self,
 XrdDesktopCursor*
 xrd_client_get_desktop_cursor (XrdClient *self);
 
-cairo_surface_t*
-xrd_client_create_button_surface_icon (unsigned char *image, uint32_t width,
-                                       uint32_t height, const gchar *icon_url);
-
-cairo_surface_t*
-xrd_client_create_button_surface_text (unsigned char *image, uint32_t width,
-                                       uint32_t height, int lines,
-                                       gchar *const *text);
-
-void
-xrd_button_set_text (XrdWindow    *button,
-                     GulkanClient *client,
-                     VkImageLayout upload_layout,
-                     int           label_count,
-                     gchar       **label);
-
-void
-xrd_button_set_icon (XrdWindow    *button,
-                     GulkanClient *client,
-                     VkImageLayout upload_layout,
-                     gchar        *icon_url);
-
 void
 xrd_client_set_upload_layout (XrdClient *self, VkImageLayout layout);
 
