@@ -61,6 +61,12 @@ xrd_client_remove_container (XrdClient *self,
                              XrdContainer *container);
 
 XrdWindow *
+xrd_client_window_new_from_meters (XrdClient *client,
+                                   const char* title,
+                                   float w,
+                                   float h);
+
+XrdWindow *
 xrd_client_window_new_from_ppm (XrdClient *client,
                                 const char* title,
                                 uint32_t w,

@@ -1437,6 +1437,25 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
 }
 
 XrdWindow *
+xrd_client_window_new_from_meters (XrdClient *client,
+                                   const char* title,
+                                   float w,
+                                   float h)
+{
+  XrdWindow *window;
+  if (XRD_IS_SCENE_CLIENT (client))
+    {
+      window = XRD_WINDOW (xrd_scene_window_new_from_meters (title, w, h));
+      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+    }
+  else
+    {
+      window = XRD_WINDOW (xrd_overlay_window_new_from_meters (title, w, h));
+    }
+  return window;
+}
+
+XrdWindow *
 xrd_client_window_new_from_ppm (XrdClient *client,
                                 const char* title,
                                 uint32_t w,
