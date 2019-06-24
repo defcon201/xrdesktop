@@ -321,6 +321,7 @@ xrd_client_show_pinned_only (XrdClient *self,
                              gboolean pinned_only)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  priv->pinned_only = pinned_only;
   xrd_window_manager_show_pinned_only (priv->manager, pinned_only);
 
   GulkanClient *client = xrd_client_get_uploader (self);
@@ -1150,8 +1151,7 @@ _button_pinned_press_cb (XrdWindow               *button,
   if (priv->selection_mode)
     return;
 
-  priv->pinned_only = !priv->pinned_only;
-  xrd_client_show_pinned_only (self, priv->pinned_only);
+  xrd_client_show_pinned_only (self, !priv->pinned_only);
   g_free (event);
 }
 
