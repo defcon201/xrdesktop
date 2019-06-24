@@ -86,7 +86,10 @@ static void
 xrd_client_finalize (GObject *gobject);
 
 gboolean
-_init_buttons (XrdClient *self);
+_init_buttons (XrdClient *self, XrdController *controller);
+
+static void
+_destroy_buttons (XrdClient *self);
 
 static void
 xrd_client_class_init (XrdClientClass *klass)
@@ -860,16 +863,10 @@ _action_menu_cb (OpenVRAction        *action,
       !xrd_controller_get_hover_state (controller)->window)
     {
       XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-      if (xrd_container_is_visible (priv->wm_control_container))
-        xrd_container_hide (priv->wm_control_container);
+      if (priv->wm_control_container)
+        _destroy_buttons (self);
       else
-        {
-          xrd_container_set_attachment(priv->wm_control_container,
-                                       XRD_CONTAINER_ATTACHMENT_HAND,
-                                       controller);
-          xrd_container_show (priv->wm_control_container);
-        }
-
+        _init_buttons (self, controller);
     }
   g_free (event);
 }
@@ -1189,18 +1186,33 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
 }
 
 gboolean
-_init_buttons (XrdClient *self)
+_init_buttons (XrdClient *self, XrdController *controller)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  float w = 0.07f;
-  float h = 0.07f;
+  /* Use head attached menu if less than 2 controllers are active.
+   * Controller attached requires more than 1 controller to use. */
+  int attach_controller = g_hash_table_size (priv->controllers) > 1;
+
+  float w;
+  float h;
+  if (attach_controller)
+    {
+      w = 0.07f;
+      h = 0.07f;
+    }
+  else
+    {
+      w = 0.25f;
+      h = 0.25f;
+    }
 
   priv->wm_control_container = xrd_container_new ();
-  xrd_container_hide (priv->wm_control_container);
   xrd_container_set_attachment (priv->wm_control_container,
-                                XRD_CONTAINER_ATTACHMENT_HEAD,
-                                NULL);
+                                attach_controller ?
+                                    XRD_CONTAINER_ATTACHMENT_HAND :
+                                    XRD_CONTAINER_ATTACHMENT_HEAD,
+                                controller);
   xrd_container_set_layout (priv->wm_control_container,
                             XRD_CONTAINER_RELATIVE);
   xrd_container_set_distance (priv->wm_control_container, 2.0f);
@@ -1279,6 +1291,25 @@ _init_buttons (XrdClient *self)
   xrd_client_add_container (self, priv->wm_control_container);
 
   return TRUE;
+}
+
+static void
+_destroy_buttons (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  xrd_client_remove_window (self, priv->button_sphere);
+  g_clear_object (&priv->button_sphere);
+  xrd_client_remove_window (self, priv->button_reset);
+  g_clear_object (&priv->button_reset);
+  xrd_client_remove_window (self, priv->pinned_button);
+  g_clear_object (&priv->pinned_button);
+  xrd_client_remove_window (self, priv->select_pinned_button);
+  g_clear_object (&priv->select_pinned_button);
+
+  xrd_window_manager_remove_container (priv->manager,
+                                       priv->wm_control_container);
+
+  g_clear_object (&priv->wm_control_container);
 }
 
 static void
@@ -1731,7 +1762,11 @@ xrd_client_post_openvr_init (XrdClient *self)
   g_signal_connect (priv->context, "quit-event",
                     (GCallback) _system_quit_cb, self);
 
-  _init_buttons (self);
+  priv->button_sphere = NULL;
+  priv->button_reset = NULL;
+  priv->pinned_button = NULL;
+  priv->select_pinned_button = NULL;
+  priv->wm_control_container = NULL;
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose",
