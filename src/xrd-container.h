@@ -45,6 +45,10 @@ xrd_container_add_window (XrdContainer *self,
                           graphene_matrix_t *relative_transform);
 
 void
+xrd_container_remove_window (XrdContainer *self,
+                             XrdWindow *window);
+
+void
 xrd_container_set_distance (XrdContainer *self, float distance);
 
 float

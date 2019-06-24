@@ -90,6 +90,20 @@ xrd_container_add_window (XrdContainer *self,
 }
 
 void
+xrd_container_remove_window (XrdContainer *self,
+                             XrdWindow *window)
+{
+  int index = g_slist_index (self->windows, window);
+  if (index != -1)
+    {
+      self->windows = g_slist_remove (self->windows, window);
+      self->windows = g_slist_remove (self->windows,
+                                      g_slist_nth_data (self->windows,
+                                                        (guint)index));
+    }
+}
+
+void
 xrd_container_set_distance (XrdContainer *self, float distance)
 {
   self->distance = distance;

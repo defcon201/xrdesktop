@@ -434,6 +434,12 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
 
   g_hash_table_remove (self->reset_transforms, window);
 
+  for (GSList *l = self->containers; l != NULL; l = l->next)
+    {
+      XrdContainer *wc = (XrdContainer *) l->data;
+      xrd_container_remove_window (wc, window);
+    }
+
   /* remove the window manager's reference to the window */
   g_object_unref (window);
 }
