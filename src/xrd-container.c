@@ -452,7 +452,7 @@ _step_fov (XrdContainer *self)
   float speed = xrd_container_get_speed (self);
   if (speed < angle_speed)
     {
-      speed += angle_speed / 10.f;
+      speed += angle_speed;
       angle_speed = speed;
     }
   else
