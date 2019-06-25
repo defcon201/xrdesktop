@@ -282,6 +282,14 @@ _window_container_set_transformation (XrdContainer *self,
 static gboolean
 _step_fov (XrdContainer *self)
 {
+  /* Containers outside fov_factor_outer * FOV size will be snapped to
+   * fov_factor_outer * FOV size.
+   *
+   * Containers between fov_factor_outer * FOV size and
+   * fov_factor_inner * FOV size will smoothly move in center direction */
+  const float fov_factor_outer = 0.6f;
+  const float fov_factor_inner = 0.25f;
+
   graphene_matrix_t hmd_pose;
   openvr_system_get_hmd_pose (&hmd_pose);
   graphene_matrix_t hmd_pose_inv;
@@ -299,15 +307,15 @@ _step_fov (XrdContainer *self)
   float left, right, top, bottom;
   xrd_math_get_frustum_angles (&left, &right, &top, &bottom);
 
-  float left_inner = left * 0.4f;
-  float right_inner = right * 0.4f;
-  float top_inner = top * 0.4f;
-  float bottom_inner = bottom * 0.4f;
+  float left_inner = left * fov_factor_inner;
+  float right_inner = right * fov_factor_inner;
+  float top_inner = top * fov_factor_inner;
+  float bottom_inner = bottom * fov_factor_inner;
 
-  float left_outer = left * 0.7f;
-  float right_outer = right * 0.7f;
-  float top_outer = top * 0.7f;
-  float bottom_outer = bottom * 0.7f;
+  float left_outer = left * fov_factor_outer;
+  float right_outer = right * fov_factor_outer;
+  float top_outer = top * fov_factor_outer;
+  float bottom_outer = bottom * fov_factor_outer;
 
   float radius = xrd_container_get_distance (self);
 
