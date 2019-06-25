@@ -44,6 +44,30 @@ typedef struct XrdControllerIndexEvent
   guint64 controller_handle;
 } XrdControllerIndexEvent;
 
+/** _XrdWindowState:
+ * copy of the state of a window carried over an overlay<->scene switch */
+struct XrdWindowState;
+typedef struct
+{
+  gpointer native;
+  gchar *title;
+  float scale;
+  float initial_width;
+  float initial_height;
+  uint32_t texture_width;
+  uint32_t texture_height;
+  graphene_matrix_t reset_transform;
+  gboolean pinned;
+
+  float current_width;
+  float current_height;
+  graphene_matrix_t transform;
+
+  gboolean is_draggable;
+  int child_index;
+  graphene_point_t child_offset_center;
+} XrdWindowState;
+
 G_BEGIN_DECLS
 
 #define XRD_TYPE_WINDOW xrd_window_get_type()

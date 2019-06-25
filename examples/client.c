@@ -161,8 +161,46 @@ _cleanup_client (Example *self);
 static gboolean
 perform_switch (Example *self)
 {
-  (void) self;
-  g_print ("Switch: STUB\n");
+  /* disconnect all event callbacks */
+  _cleanup_client (self);
+
+  /* gulkan textures become invalid in a new client instance */
+  GSList *windows = xrd_client_get_windows (self->client);
+  for (GSList *l = windows; l != NULL; l = l->next)
+    {
+      XrdWindow *window = l->data;
+      ExampleWindow *native = NULL;
+      g_object_get (window, "native", &native, NULL);
+      g_clear_object (&native->gulkan_texture);
+
+      /* This example uses a callback to submit textures to windows,
+       * this needs to be stopped before windows are being destroyed. */
+      g_source_remove (native->submit_source);
+      native->submit_source = 0;
+    }
+
+  self->client = xrd_client_switch_mode (self->client);
+
+  /* set up the example on the new client */
+  _init_client (self, self->client);
+
+  windows = xrd_client_get_windows (self->client);
+  for (GSList *l = windows; l != NULL; l = l->next)
+    {
+      XrdWindow *window = l->data;
+      ExampleWindow *native = NULL;
+      g_object_get (window, "native", &native, NULL);
+
+      /* Start submitting textures to the new windows.
+       * A desktop will have to find which new XrdWindow belongs to its native
+       * window, for example by comparing its native window pointer with the
+       * native property of the new XrdWindow. */
+      SubmitData *submitData = g_malloc (sizeof (SubmitData));
+      submitData->self = self;
+      submitData->window = window;
+      native->submit_source =
+        g_timeout_add (16, _submit_texture_cb, submitData);
+    }
   return FALSE;
 }
 
@@ -175,7 +213,6 @@ _button_switch_press_cb (XrdWindow               *window,
   (void) window;
   Example *self = _self;
 
-  g_print ("switch mode\n");
   /* Don't clean up bere because the callback will return.
    * Instead do the cleanup and switch on the next mainloop iteration. */
   g_timeout_add (0, G_SOURCE_FUNC (perform_switch), self);

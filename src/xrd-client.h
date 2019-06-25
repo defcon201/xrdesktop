@@ -241,6 +241,9 @@ xrd_client_is_hovered (XrdClient *self,
 GSList *
 xrd_client_get_windows (XrdClient *self);
 
+struct _XrdClient *
+xrd_client_switch_mode (XrdClient *self);
+
 G_END_DECLS
 
 #endif /* XRD_CLIENT_H_ */

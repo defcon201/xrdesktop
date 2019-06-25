@@ -814,3 +814,52 @@ xrd_window_manager_show_pinned_only (XrdWindowManager *self,
         xrd_window_hide (window);
     }
 }
+
+void
+xrd_window_manager_save_state (XrdWindowManager *self,
+                               XrdWindowState *state,
+                               int window_count)
+{
+  GSList *windows = xrd_window_manager_get_windows (self);
+
+  for (int i = 0; i < window_count; i++)
+    {
+      state[i].child_index = -1;
+      XrdWindow *window = g_slist_nth_data (windows, (guint)i);
+
+      state[i].pinned = xrd_window_manager_is_pinned (self, window);
+
+      graphene_matrix_t *reset_transform =
+        g_hash_table_lookup (self->reset_transforms, window);
+      graphene_matrix_init_from_matrix (&state[i].reset_transform,
+                                        reset_transform);
+
+      XrdWindowData *data = xrd_window_get_data (window);
+
+      /* Window state is saved in the order windows were added to the manager.
+       * So the reference to a child window is just an index in this array. */
+      if (data->child_window)
+        {
+          state[i].child_index = g_slist_index (windows, data->child_window);
+          graphene_point_init_from_point (&state[i].child_offset_center,
+                                          &data->child_offset_center);
+        }
+
+      /* Window with parent window is child and is not draggable */
+      state[i].is_draggable = data->parent_window == NULL;
+
+      g_object_get (window,
+                    "native", &state[i].native,
+                    "title", &state[i].title,
+                    "scale", &state[i].scale,
+                    "initial-width-meters", &state[i].initial_width,
+                    "initial-height-meters", &state[i].initial_height,
+                    "texture-width", &state[i].texture_width,
+                    "texture-height", &state[i].texture_height,
+                    NULL);
+
+      state[i].current_width = xrd_window_get_current_width_meters (window);
+      state[i].current_height = xrd_window_get_current_height_meters (window);
+      xrd_window_get_transformation_no_scale (window, &state[i].transform);
+    }
+}

@@ -133,6 +133,11 @@ xrd_window_manager_show_pinned_only (XrdWindowManager *self,
 GSList *
 xrd_window_manager_get_buttons (XrdWindowManager *self);
 
+void
+xrd_window_manager_save_state (XrdWindowManager *self,
+                               XrdWindowState *state,
+                               int window_count);
+
 G_END_DECLS
 
 #endif /* XRD_WINDOW_MANAGER_H_ */

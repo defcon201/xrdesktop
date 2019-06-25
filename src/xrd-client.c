@@ -18,6 +18,7 @@
 #include "xrd-controller.h"
 
 #include "xrd-scene-client.h"
+#include "xrd-overlay-client.h"
 
 #include "xrd-container.h"
 
@@ -491,6 +492,9 @@ xrd_client_finalize (GObject *gobject)
 {
   XrdClient *self = XRD_CLIENT (gobject);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  if (priv->wm_control_container)
+    _destroy_buttons (self);
 
   if (priv->poll_runtime_event_source_id > 0)
     g_source_remove (priv->poll_runtime_event_source_id);
@@ -1885,4 +1889,111 @@ xrd_client_is_hovered (XrdClient *self,
   g_list_free (controllers);
   return FALSE;
 }
+
+static XrdClient *
+_replace_client (XrdClient *self)
+{
+  XrdClient *ret = NULL;
+  gboolean to_scene = XRD_IS_OVERLAY_CLIENT (self);
+  if (to_scene)
+    {
+      g_object_unref (self);
+      ret = XRD_CLIENT (xrd_scene_client_new ());
+      if (XRD_IS_SCENE_CLIENT (ret))
+        xrd_scene_client_initialize (XRD_SCENE_CLIENT (ret));
+    }
+  else
+    {
+      g_object_unref (self);
+      ret = XRD_CLIENT (xrd_overlay_client_new ());
+    }
+
+  return ret;
+}
+
+/** xrd_client_switch_mode:
+ * @self: current #XrdClient to be destroyed.
+ * Returns: A new #XrdClient of the opposite mode than the passed one.
+ *
+ * References to gulkan, openvr-glib and xrdesktop objects (like #XrdWindow)
+ * will be invalid after calling this function.
+ *
+ * xrd_client_switch_mode() replaces each #XrdWindow with an appropriate new
+ * one, preserving its transformation matrix, scaling, pinned status, etc.
+ * For details about preserved state, see #_XrdWindowState.
+ *
+ * The caller is responsible for reconnecting callbacks to #XrdClient signals.
+ * The caller is responsible to not use references to any previous #XrdWindow.
+ * The caller may use xrd_client_get_windows() to get the list of new windows
+ * and may use the "native" property to recognize each window.
+ */
+struct _XrdClient *
+xrd_client_switch_mode (XrdClient *self)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  gboolean show_only_pinned = priv->pinned_only;
+
+  XrdWindowManager *manager = xrd_client_get_manager (self);
+  int window_count =
+    (int)g_slist_length (xrd_window_manager_get_windows (manager));
+
+  XrdWindowState *state = g_malloc (sizeof (XrdWindowState) *
+                                    (guint)window_count);
+
+  xrd_window_manager_save_state (manager, state, window_count);
+
+  XrdClient *ret = _replace_client (self);
+  manager = xrd_client_get_manager (ret);
+
+  for (int i = 0; i < window_count; i++)
+    {
+      XrdWindow *window =
+        xrd_client_window_new_from_meters (ret,
+                                           state[i].title,
+                                           state[i].current_width,
+                                           state[i].current_height);
+
+      g_object_set (window,
+                    "native", state[i].native,
+                    "scale", (double)state[i].scale,
+                    "initial-width-meters", (double)state[i].initial_width,
+                    "initial-height-meters", (double)state[i].initial_height,
+                    "texture-width", state[i].texture_width,
+                    "texture-height", state[i].texture_height,
+                    NULL);
+
+      /* xrd_client_add_window saves the reset transform */
+      xrd_window_set_transformation (window, &state[i].reset_transform);
+      xrd_client_add_window (ret, window, state[i].is_draggable);
+
+      xrd_window_set_transformation (window, &state[i].transform);
+      xrd_window_manager_set_pin (manager, window, state[i].pinned);
+    }
+
+  /* Only after all windows are recreated do we search for child windows */
+  GSList *windows = xrd_window_manager_get_windows (manager);
+  for (int i = 0; i < window_count; i++)
+    {
+      XrdWindow *window = g_slist_nth_data (windows, (guint)i);
+      if (state[i].child_index >= 0)
+        {
+          int child_index = state[i].child_index;
+
+          XrdWindow *child_window =
+            g_slist_nth_data (windows, (guint)child_index);
+
+          xrd_window_add_child (window, child_window,
+                                &state[i].child_offset_center);
+          xrd_window_set_transformation (child_window,
+                                         &state[child_index].transform);
+        }
+    }
+
+  xrd_client_show_pinned_only (ret, show_only_pinned);
+
+  g_free (state);
+  return ret;
+}
+
 
