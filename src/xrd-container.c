@@ -600,6 +600,34 @@ xrd_container_is_visible (XrdContainer *self)
   return self->visible;
 }
 
+/**
+ * xrd_container_center_view:
+ * @self: The container.
+ * @distance: The distance from the HMD the container should have.
+ *
+ * Places the container in the center of the FOV at the given distance.
+ */
+void
+xrd_container_center_view (XrdContainer *self, float distance)
+{
+  graphene_matrix_t hmd_transform;
+  openvr_system_get_hmd_pose (&hmd_transform);
+
+  graphene_point3d_t distance_point = {
+      .x = 0,
+      .y = 0,
+      .z = -distance
+  };
+
+  graphene_matrix_t container_transform;
+  graphene_matrix_init_translate (&container_transform, &distance_point);
+
+  graphene_matrix_multiply (&container_transform, &hmd_transform,
+                            &container_transform);
+
+  _window_container_set_transformation (self, &container_transform);
+}
+
 XrdContainer *
 xrd_container_new (void)
 {

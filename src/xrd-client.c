@@ -1219,7 +1219,6 @@ _init_buttons (XrdClient *self, XrdController *controller)
                                 controller);
   xrd_container_set_layout (priv->wm_control_container,
                             XRD_CONTAINER_RELATIVE);
-  xrd_container_set_distance (priv->wm_control_container, 2.0f);
 
   graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
 
@@ -1293,6 +1292,14 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             &relative_transform);
 
   xrd_client_add_container (self, priv->wm_control_container);
+
+  if (!attach_controller)
+    {
+      const float distance = 2.0f;
+      xrd_container_center_view (priv->wm_control_container,
+                                 distance);
+      xrd_container_set_distance (priv->wm_control_container, distance);
+    }
 
   return TRUE;
 }

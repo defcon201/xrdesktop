@@ -85,6 +85,9 @@ xrd_container_is_visible (XrdContainer *self);
 GSList *
 xrd_container_get_windows (XrdContainer *self);
 
+void
+xrd_container_center_view (XrdContainer *self, float distance);
+
 G_END_DECLS
 
 #endif /* xrd_container_H_ */
