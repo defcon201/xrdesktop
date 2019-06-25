@@ -79,6 +79,8 @@ typedef struct _XrdClientPrivate
   GHashTable *controllers;
 
   XrdContainer *wm_control_container;
+
+  gint64 last_poll_timestamp;
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -641,6 +643,7 @@ xrd_client_poll_input_events (XrdClient *self)
 
   xrd_window_manager_poll_window_events (priv->manager);
 
+  priv->last_poll_timestamp = g_get_monotonic_time ();
   return TRUE;
 }
 
@@ -731,7 +734,8 @@ _action_hand_pose_hand_grip_cb (OpenVRAction    *action,
 static void
 _perform_push_pull (XrdClient *self,
                     XrdController *controller,
-                    float push_pull_strength)
+                    float push_pull_strength,
+                    float ms_since_last_poll)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
@@ -739,10 +743,12 @@ _perform_push_pull (XrdClient *self,
 
   float new_dist =
     hover_state->distance +
-    (float) priv->scroll_to_push_ratio *
+
     hover_state->distance *
+    (float) priv->scroll_to_push_ratio *
     push_pull_strength *
-    (priv->poll_input_rate_ms / 1000.f);
+
+    (ms_since_last_poll / 1000.f);
 
   if (new_dist < WINDOW_MIN_DIST || new_dist > WINDOW_MAX_DIST)
     return;
@@ -767,6 +773,9 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
       g_free (event);
       return;
     }
+
+  float ms_since_last_poll =
+    (g_get_monotonic_time () - priv->last_poll_timestamp) / 1000.f;
 
   GrabState *grab_state = xrd_controller_get_grab_state (controller);
 
@@ -798,10 +807,11 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
     {
       double factor = x_state * priv->scroll_to_scale_ratio;
       xrd_window_manager_scale (priv->manager, grab_state, (float) factor,
-                                priv->poll_input_rate_ms);
+                                ms_since_last_poll);
     }
   else if (grab_state->push_pull_scale_lock == LOCKED_PUSHPULL)
-    _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state));
+    _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state),
+                        ms_since_last_poll);
 
   g_free (event);
 }
@@ -821,11 +831,15 @@ _action_push_pull_cb (OpenVRAction        *action,
       return;
     }
 
+  float ms_since_last_poll =
+    (g_get_monotonic_time () - priv->last_poll_timestamp) / 1000.f;
+
   GrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   double y_state = (double) graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
-    _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state));
+    _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state),
+                        ms_since_last_poll);
 
   g_free (event);
 }
@@ -1726,6 +1740,8 @@ xrd_client_init (XrdClient *self)
 
   priv->context = openvr_context_get_instance ();
   priv->manager = xrd_window_manager_new ();
+
+  priv->last_poll_timestamp = g_get_monotonic_time ();
 
   OpenVRContext *context = openvr_context_get_instance ();
 
