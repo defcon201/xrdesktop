@@ -897,6 +897,7 @@ typedef struct OrientationTransition
   graphene_quaternion_t from_neg;
   graphene_quaternion_t to;
   float interpolate;
+  gint64 last_timestamp;
 } OrientationTransition;
 
 static gboolean
@@ -916,7 +917,14 @@ _interpolate_orientation_cb (gpointer _transition)
                              transition->interpolate,
                              &grab_state->window_transformed_rotation_neg);
 
-  transition->interpolate += 0.07f;
+  gint64 now = g_get_monotonic_time ();
+  float ms_since_last = (now - transition->last_timestamp) / 1000.f;
+  transition->last_timestamp = now;
+
+  /* in seconds */
+  const float transition_duration = 0.2f;
+
+  transition->interpolate += ms_since_last / 1000.f / transition_duration;
 
   if (transition->interpolate > 1)
     {
@@ -952,6 +960,7 @@ _action_reset_orientation_cb (OpenVRAction       *action,
 
   /* TODO: Check if animation is already in progress */
 
+  transition->last_timestamp = g_get_monotonic_time ();
   transition->interpolate = 0.;
   transition->grab_state = grab_state;
 
