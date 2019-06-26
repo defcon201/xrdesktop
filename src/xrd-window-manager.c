@@ -314,7 +314,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
               return FALSE;
             }
 
-          xrd_window_get_transformation (window, &transition->from);
+          xrd_window_get_transformation_no_scale (window, &transition->from);
 
           g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
