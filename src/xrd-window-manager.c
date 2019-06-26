@@ -127,16 +127,19 @@ _interpolate_cb (gpointer _transition)
 
   XrdWindow *window = transition->window;
 
+  float interpolation_curve =
+    - (float)pow ((double)transition->interpolate - 1.0, 4) + 1;
+
   graphene_matrix_t interpolated;
   graphene_matrix_interpolate_simple (&transition->from,
                                       &transition->to,
-                                       transition->interpolate,
+                                       interpolation_curve,
                                       &interpolated);
   xrd_window_set_transformation (window, &interpolated);
 
   float interpolated_scaling =
-    transition->from_scaling * (1.0f - transition->interpolate) +
-    transition->to_scaling * transition->interpolate;
+    transition->from_scaling * (1.0f - interpolation_curve) +
+    transition->to_scaling * interpolation_curve;
 
   g_object_set (G_OBJECT(window), "scale", (double) interpolated_scaling, NULL);
 
