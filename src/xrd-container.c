@@ -22,8 +22,6 @@ struct _XrdContainer
   GObject parent;
   GSList *windows;
   float distance;
-  /* TODO: inertia */
-  float speed;
 
   graphene_matrix_t transform;
   XrdController *controller;
@@ -31,6 +29,8 @@ struct _XrdContainer
   XrdContainerAttachment attachment;
   XrdContainerLayout layout;
   gboolean visible;
+
+  gint64 last_step_timestamp;
 };
 
 G_DEFINE_TYPE (XrdContainer, xrd_container, G_TYPE_OBJECT)
@@ -51,11 +51,11 @@ xrd_container_init (XrdContainer *self)
 {
   self->windows = NULL;
   self->distance = 0;
-  self->speed = 0;
   self->layout = XRD_CONTAINER_VERTICAL;
   self->attachment = XRD_CONTAINER_ATTACHMENT_NONE;
   self->visible = TRUE;
   self->controller = NULL;
+  self->last_step_timestamp = g_get_monotonic_time ();
 }
 
 /**
@@ -71,7 +71,6 @@ xrd_container_add_window (XrdContainer *self,
                           XrdWindow *window,
                           graphene_matrix_t *relative_transform)
 {
-  self->speed = 0;
   ContainerWindow *cw = g_malloc (sizeof (ContainerWindow));
   cw->window = window;
   if (relative_transform != NULL)
@@ -132,19 +131,6 @@ float
 xrd_container_get_distance (XrdContainer *self)
 {
   return self->distance;
-}
-
-float
-xrd_container_get_speed (XrdContainer *self)
-{
-  return self->speed;
-}
-
-void
-xrd_container_set_speed (XrdContainer *self,
-                         float speed)
-{
-  self->speed = speed;
 }
 
 static void
@@ -407,7 +393,6 @@ _step_fov (XrdContainer *self)
       graphene_vec2_init (&velocity,
                           inclination - intersection_azimuth_inclination.y,
                           azimuth - intersection_azimuth_inclination.x);
-      xrd_container_set_speed (self, graphene_vec2_length (&velocity));
 
       //g_print ("Snap window to view frustum edge!\n");
       return TRUE;
@@ -435,28 +420,16 @@ _step_fov (XrdContainer *self)
   float azimuth_diff = azimuth - intersection_azimuth_inclination.x;
   float inclination_diff = inclination - intersection_azimuth_inclination.y;
 
-  /* To avoid sudden jumps in velocity:
-   * Window starts with velocity 0.
-   * The vertical and horizontal difference to the target angles is the
-   * direction.
-   * Speed_factor is the fraction of the difference angles to decrease this
-   * frame, i.e. a velocity for this frame time.
-   * Use this velocity, if the window already is moving that fast.
-   * If not, then increase the window's speed with 1/10 of that speed.*/
+  float ms_since_last_step =
+    (g_get_monotonic_time () - self->last_step_timestamp) / 1000.f;
+
+  /* Container moves by a fixed fraction of the distance from current point
+   * to target point, i.e. on a linear deceleration curve. */
   graphene_vec2_t angle_velocity;
   graphene_vec2_init (&angle_velocity, azimuth_diff, inclination_diff);
-  float angle_distance = graphene_vec2_length (&angle_velocity);
-  float distance_speed_factor = 0.05f;
-  float angle_speed = angle_distance * distance_speed_factor;
-
-  float speed = xrd_container_get_speed (self);
-  if (speed < angle_speed)
-    {
-      speed += angle_speed;
-      angle_speed = speed;
-    }
-  else
-      speed = angle_speed;
+  float remaining_angle_distance = graphene_vec2_length (&angle_velocity);
+  float distance_speed_factor = ms_since_last_step / 1000.f * 7.f;
+  float angle_speed = remaining_angle_distance * distance_speed_factor;
 
 
   graphene_vec2_normalize (&angle_velocity, &angle_velocity);
@@ -521,22 +494,28 @@ _step_hand (XrdContainer *self)
 gboolean
 xrd_container_step (XrdContainer *self)
 {
+  gboolean ret = FALSE;
   switch (self->attachment)
   {
     case (XRD_CONTAINER_ATTACHMENT_HEAD):
     {
-      return _step_fov (self);
+      ret = _step_fov (self);
+      break;
     }
     case (XRD_CONTAINER_ATTACHMENT_HAND):
     {
-      return _step_hand (self);
+      ret = _step_hand (self);
+      break;
     }
     case (XRD_CONTAINER_ATTACHMENT_NONE):
     {
-      return TRUE;
+      ret = TRUE;
+      break;
     }
   }
-  return FALSE;
+
+  self->last_step_timestamp = g_get_monotonic_time ();
+  return ret;
 }
 
 /**

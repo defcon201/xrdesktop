@@ -54,13 +54,6 @@ xrd_container_set_distance (XrdContainer *self, float distance);
 float
 xrd_container_get_distance (XrdContainer *self);
 
-float
-xrd_container_get_speed (XrdContainer *self);
-
-void
-xrd_container_set_speed (XrdContainer *self,
-                         float speed);
-
 void
 xrd_container_set_attachment (XrdContainer *self,
                               XrdContainerAttachment attachment,
