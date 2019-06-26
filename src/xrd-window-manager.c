@@ -140,7 +140,14 @@ _interpolate_cb (gpointer _transition)
 
   g_object_set (G_OBJECT(window), "scale", (double) interpolated_scaling, NULL);
 
-  transition->interpolate += 0.03f;
+  gint64 now = g_get_monotonic_time ();
+  float ms_since_last = (now - transition->last_timestamp) / 1000.f;
+  transition->last_timestamp = now;
+
+  /* in seconds */
+  const float transition_duration = 0.75;
+
+  transition->interpolate += ms_since_last / 1000.f / transition_duration;
 
   if (transition->interpolate > 1)
     {
@@ -179,6 +186,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
       XrdWindow *window = (XrdWindow *) l->data;
 
       TransformTransition *transition = g_malloc (sizeof *transition);
+      transition->last_timestamp = g_get_monotonic_time ();
 
       graphene_matrix_t *transform =
         g_hash_table_lookup (self->reset_transforms, window);
@@ -271,6 +279,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
       for (float phi = phi_start; phi < phi_end + 0.01f; phi += phi_step)
         {
           TransformTransition *transition = g_malloc (sizeof *transition);
+          transition->last_timestamp = g_get_monotonic_time ();
 
           float const x = sinf (theta) * cosf (phi);
           float const y = cosf (theta);

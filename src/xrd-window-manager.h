@@ -40,6 +40,7 @@ typedef struct TransformTransition
   float from_scaling;
   float to_scaling;
   float interpolate;
+  gint64 last_timestamp;
 } TransformTransition;
 
 typedef enum
