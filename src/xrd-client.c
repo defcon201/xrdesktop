@@ -915,7 +915,7 @@ _interpolate_orientation_cb (gpointer _transition)
   graphene_quaternion_slerp (&transition->from_neg,
                              &transition->to,
                              transition->interpolate,
-                             &grab_state->window_transformed_rotation_neg);
+                             &grab_state->inverse_controller_rotation);
 
   gint64 now = g_get_monotonic_time ();
   float ms_since_last = (now - transition->last_timestamp) / 1000.f;
@@ -928,7 +928,7 @@ _interpolate_orientation_cb (gpointer _transition)
 
   if (transition->interpolate > 1)
     {
-      graphene_quaternion_init_identity (&grab_state->window_transformed_rotation_neg);
+      graphene_quaternion_init_identity (&grab_state->inverse_controller_rotation);
       graphene_quaternion_init_identity (&grab_state->window_rotation);
       g_free (transition);
       return FALSE;
@@ -968,7 +968,7 @@ _action_reset_orientation_cb (OpenVRAction       *action,
   graphene_quaternion_init_from_quaternion (&transition->from,
                                             &grab_state->window_rotation);
   graphene_quaternion_init_from_quaternion (&transition->from_neg,
-                                            &grab_state->window_transformed_rotation_neg);
+                                            &grab_state->inverse_controller_rotation);
 
   g_timeout_add (10, _interpolate_orientation_cb, transition);
 

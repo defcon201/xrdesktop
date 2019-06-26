@@ -575,46 +575,55 @@ _drag_window (XrdWindowManager  *self,
   graphene_point3d_init (&distance_translation_point,
                          0.f, 0.f, -hover_state->distance);
 
-  graphene_matrix_t transformation_matrix;
-  graphene_matrix_init_identity (&transformation_matrix);
-
-  /* first translate the overlay so that the grab point is the origin */
-  graphene_matrix_translate (&transformation_matrix,
-                             &grab_state->offset_translation_point);
-
+  /* Build a new transform for pointer tip in event->pose.
+   * Pointer tip is at intersection, in the plane of the window,
+   * so we can reuse the tip rotation for the window rotation. */
   XrdGrabEvent *event = g_malloc (sizeof (XrdGrabEvent));
   event->controller_handle = xrd_controller_get_handle (controller);
   graphene_matrix_init_identity (&event->pose);
 
-  /* then apply the rotation that the overlay had when it was grabbed */
+  /* restore original rotation of the tip */
   graphene_matrix_rotate_quaternion (&event->pose,
                                      &grab_state->window_rotation);
 
-  /* reverse the rotation induced by the controller pose when it was grabbed */
+  /* Later the current controller rotation is applied to the overlay, so to
+   * keep the later controller rotations relative to the initial controller
+   * rotation, rotate the window in the opposite direction of the initial
+   * controller rotation.
+   * This will initially result in the same window rotation so the window does
+   * not change its rotation when being grabbed, and changing the controllers
+   * position later will rotate the window with the "diff" of the controller
+   * rotation to the initial controller rotation. */
   graphene_matrix_rotate_quaternion (
-      &event->pose, &grab_state->window_transformed_rotation_neg);
+      &event->pose, &grab_state->inverse_controller_rotation);
 
   /* then translate the overlay to the controller ray distance */
   graphene_matrix_translate (&event->pose, &distance_translation_point);
 
-  /*
-   * rotate the translated overlay. Because the original controller rotation has
-   * been subtracted, this will only add the diff to the original rotation
-   */
+  /* Rotate the translated overlay to where the controller is pointing. */
   graphene_matrix_rotate_quaternion (&event->pose,
                                      &controller_rotation);
 
-  /* and finally move the whole thing so the controller is the origin */
+  /* Calculation was done for controller in (0,0,0), just move it with
+   * controller's offset to real (0,0,0) */
   graphene_matrix_translate (&event->pose, &controller_translation_point);
 
-  /* Apply pointer tip transform to overlay */
+
+
+  graphene_matrix_t transformation_matrix;
+  graphene_matrix_init_identity (&transformation_matrix);
+
+  /* translate such that the grab point is pivot point. */
+  graphene_matrix_translate (&transformation_matrix,
+                             &grab_state->grab_offset);
+
+  /* window has the same rotation as the tip we calculated in event->pose */
   graphene_matrix_multiply (&transformation_matrix,
                             &event->pose,
                             &transformation_matrix);
 
-
   xrd_window_set_transformation (grab_state->window,
-                                        &transformation_matrix);
+                                 &transformation_matrix);
 
   xrd_window_emit_grab (grab_state->window, event);
 
@@ -654,31 +663,14 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
                          0.f, 0.f, +hover_state->distance);
 
   graphene_point3d_init (
-      &grab_state->offset_translation_point,
+      &grab_state->grab_offset,
       -hover_state->intersection_2d.x,
       -hover_state->intersection_2d.y,
       0.f);
 
-  /* Calculate the inverse of the overlay rotatation that is induced by the
-   * controller dragging the overlay in an arc to its current location when it
-   * is grabbed. Multiplying this inverse rotation to the rotation of the
-   * overlay will subtract the initial rotation induced by the controller pose
-   * when the overlay was grabbed.
-   */
-  graphene_matrix_t target_transformation_matrix;
-  graphene_matrix_init_identity (&target_transformation_matrix);
-  graphene_matrix_translate (&target_transformation_matrix,
-                             &distance_translation_point);
-  graphene_matrix_rotate_quaternion (&target_transformation_matrix,
-                                     &controller_rotation);
-  graphene_matrix_translate (&target_transformation_matrix,
-                             &negative_distance_translation_point);
-  graphene_quaternion_t transformed_rotation;
-  graphene_quaternion_init_from_matrix (&transformed_rotation,
-                                        &target_transformation_matrix);
   graphene_quaternion_invert (
-      &transformed_rotation,
-      &grab_state->window_transformed_rotation_neg);
+      &controller_rotation,
+      &grab_state->inverse_controller_rotation);
 }
 
 /* checks if a float is in the range specified when the property was created */
@@ -723,9 +715,9 @@ xrd_window_manager_scale (XrdWindowManager *self,
       return;
 
   /* Grab point is relative to overlay center so we can just scale it */
-  graphene_point3d_scale (&grab_state->offset_translation_point,
+  graphene_point3d_scale (&grab_state->grab_offset,
                           1 + factor * (update_rate_ms / 1000.f),
-                          &grab_state->offset_translation_point);
+                          &grab_state->grab_offset);
 
   g_object_set (G_OBJECT(grab_state->window),
                 "scale", (double) new_factor, NULL);

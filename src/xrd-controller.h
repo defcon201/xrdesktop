@@ -36,10 +36,13 @@ typedef struct HoverState
 typedef struct GrabState
 {
   XrdWindow    *window;
+
+  /* window rotation, controller rotation, offset at the moment the window
+   * was grabbed, enables keeping transform when grabbing a window.  */
   graphene_quaternion_t window_rotation;
-  /* the rotation induced by the overlay being moved on the controller arc */
-  graphene_quaternion_t window_transformed_rotation_neg;
-  graphene_point3d_t offset_translation_point;
+  graphene_quaternion_t inverse_controller_rotation;
+  graphene_point3d_t grab_offset;
+
   PushPullScaleLock push_pull_scale_lock;
 } GrabState;
 

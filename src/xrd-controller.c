@@ -106,9 +106,9 @@ void
 xrd_controller_reset_grab_state (XrdController *self)
 {
   self->grab_state.window = NULL;
-  graphene_point3d_init (&self->grab_state.offset_translation_point, 0, 0, 0);
+  graphene_point3d_init (&self->grab_state.grab_offset, 0, 0, 0);
   graphene_quaternion_init_identity (
-    &self->grab_state.window_transformed_rotation_neg);
+    &self->grab_state.inverse_controller_rotation);
   graphene_quaternion_init_identity (&self->grab_state.window_rotation);
   self->grab_state.push_pull_scale_lock = LOCKED_NONE;
 }
