@@ -473,7 +473,7 @@ _step_hand (XrdContainer *self)
   graphene_matrix_init_rotate (&container_transform, -80,
                                graphene_vec3_x_axis ());
 
-  graphene_point3d_t offset = { .x = .0f, .y = .033f, .z = -.033f };
+  graphene_point3d_t offset = { .x = .0f, .y = .050f, .z = -.033f };
   graphene_matrix_translate (&container_transform, &offset);
 
   graphene_matrix_t controller_pose;
