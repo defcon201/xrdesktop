@@ -411,6 +411,12 @@ xrd_client_get_synth_hovered (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
+  if (!priv->input_synth)
+    {
+      g_print ("Error: No window hovered because synth is NULL\n");
+      return NULL;
+    }
+
   guint64 controller_handle =
     xrd_input_synth_synthing_controller (priv->input_synth);
   XrdController *controller = _lookup_controller (self, controller_handle);
