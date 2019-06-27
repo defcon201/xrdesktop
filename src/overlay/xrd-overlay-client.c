@@ -93,7 +93,8 @@ xrd_overlay_client_finalize (GObject *gobject)
   G_OBJECT_CLASS (xrd_overlay_client_parent_class)->finalize (gobject);
 
   /* Uploader needs to be freed after context! */
-  g_object_unref (self->gc);
+  if (self->gc)
+    g_object_unref (self->gc);
 }
 
 static GulkanClient *
