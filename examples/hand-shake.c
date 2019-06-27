@@ -215,10 +215,12 @@ _init_windows (Example *self)
                                            VK_FORMAT_R8G8B8A8_UNORM,
                                            upload_layout, true);
 
+  float ppm = (float) canvas_width / canvas_width_meter;
   self->canvas =
     XRD_WINDOW (xrd_overlay_window_new_from_meters ("Canvas",
                                                     canvas_width_meter,
-                                                    canvas_height_meter));
+                                                    canvas_height_meter,
+                                                    ppm));
 
   xrd_client_add_window (self->client, self->canvas, FALSE);
 
@@ -237,7 +239,7 @@ _init_windows (Example *self)
 
 
   self->tutorial_label =
-    XRD_WINDOW (xrd_overlay_window_new_from_ppm ("Tutorial", 400, 256, 450));
+    XRD_WINDOW (xrd_overlay_window_new_from_pixels ("Tutorial", 400, 256, 450));
 
   gchar *tutorial_string[] = {
     "Press A or B below",
@@ -257,7 +259,7 @@ _init_windows (Example *self)
   point.x += canvas_width_meter / 2.f + 0.5f / 2.f;
 
   self->toggle_button =
-    xrd_client_button_new_from_text (self->client, 0.5f, 0.5f,
+    xrd_client_button_new_from_text (self->client, 0.5f, 0.5f, 450.0f,
                                      2, toggle_string);
 
   if (!self->toggle_button)
@@ -275,10 +277,10 @@ _init_windows (Example *self)
   g_object_get (self->toggle_button, "texture-height",
                 &button_pixel_height, NULL);
   self->result_label =
-    XRD_WINDOW (xrd_overlay_window_new_from_ppm ("Result",
-                                                 button_pixel_width,
-                                                 button_pixel_height,
-                                                 button_ppm));
+    XRD_WINDOW (xrd_overlay_window_new_from_pixels ("Result",
+                                                    button_pixel_width,
+                                                    button_pixel_height,
+                                                    button_ppm));
 
   gchar *result_string[] = {
     "Shake:",

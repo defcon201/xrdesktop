@@ -62,10 +62,10 @@ main ()
 
   float ppm = texture_width / 0.25f;
 
-  XrdOverlayWindow *window = xrd_overlay_window_new_from_ppm ("win.",
-                                                              texture_width,
-                                                              texture_height,
-                                                              ppm);
+  XrdOverlayWindow *window = xrd_overlay_window_new_from_pixels ("win.",
+                                                                 texture_width,
+                                                                 texture_height,
+                                                                 ppm);
 
   xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE);
 

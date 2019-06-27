@@ -222,6 +222,7 @@ XrdWindow*
 xrd_client_button_new_from_text (XrdClient *self,
                                  float      width,
                                  float      height,
+                                 float      ppm,
                                  int        label_count,
                                  gchar    **label)
 {
@@ -234,7 +235,8 @@ xrd_client_button_new_from_text (XrdClient *self,
     }
 
   XrdWindow *button =
-    xrd_client_window_new_from_meters (self, full_label->str, width, height);
+    xrd_client_window_new_from_meters (self, full_label->str,
+                                       width, height, ppm);
 
   g_string_free (full_label, FALSE);
 
@@ -256,10 +258,11 @@ XrdWindow*
 xrd_client_button_new_from_icon (XrdClient   *self,
                                  float        width,
                                  float        height,
+                                 float        ppm,
                                  const gchar *url)
 {
-  XrdWindow *button =
-    xrd_client_window_new_from_meters (self, url, width, height);
+  XrdWindow *button = xrd_client_window_new_from_meters (self, url,
+                                                         width, height, ppm);
 
   if (button == NULL)
     {
@@ -1229,15 +1232,18 @@ _init_buttons (XrdClient *self, XrdController *controller)
 
   float w;
   float h;
+  float ppm;
   if (attach_controller)
     {
       w = 0.07f;
       h = 0.07f;
+      ppm = 1500.0;
     }
   else
     {
       w = 0.25f;
       h = 0.25f;
+      ppm = 450.0;
     }
 
   priv->wm_control_container = xrd_container_new ();
@@ -1252,7 +1258,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
   graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
 
   priv->button_sphere =
-    xrd_client_button_new_from_icon (self, w, h,
+    xrd_client_button_new_from_icon (self, w, h, ppm,
                                      "/icons/align-sphere-symbolic.svg");
   if (!priv->button_sphere)
     return FALSE;
@@ -1274,7 +1280,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             &relative_transform);
 
   priv->button_reset =
-    xrd_client_button_new_from_icon (self, w, h,
+    xrd_client_button_new_from_icon (self, w, h, ppm,
                                      "/icons/edit-undo-symbolic.svg");
   if (!priv->button_reset)
     return FALSE;
@@ -1290,7 +1296,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             &relative_transform);
 
   priv->select_pinned_button =
-    xrd_client_button_new_from_icon (self, w, h,
+    xrd_client_button_new_from_icon (self, w, h, ppm,
                                      "/icons/view-pin-symbolic.svg");
   if (!priv->select_pinned_button)
     return FALSE;
@@ -1306,7 +1312,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             &relative_transform);
 
   priv->pinned_button =
-    xrd_client_button_new_from_icon (self, w, h,
+    xrd_client_button_new_from_icon (self, w, h, ppm,
                                      "/icons/object-visible-symbolic.svg");
   if (!priv->pinned_button)
     return FALSE;
@@ -1575,40 +1581,72 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
 }
 
 XrdWindow *
-xrd_client_window_new_from_meters (XrdClient *client,
-                                   const char* title,
-                                   float w,
-                                   float h)
+xrd_client_window_new_from_meters (XrdClient  *client,
+                                   const char *title,
+                                   float       width,
+                                   float       height,
+                                   float       ppm)
 {
   XrdWindow *window;
   if (XRD_IS_SCENE_CLIENT (client))
     {
-      window = XRD_WINDOW (xrd_scene_window_new_from_meters (title, w, h));
+      window = XRD_WINDOW (xrd_scene_window_new_from_meters (title, width,
+                                                             height, ppm));
       xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
     }
   else
     {
-      window = XRD_WINDOW (xrd_overlay_window_new_from_meters (title, w, h));
+      window = XRD_WINDOW (xrd_overlay_window_new_from_meters (title, width,
+                                                               height, ppm));
     }
   return window;
 }
 
 XrdWindow *
-xrd_client_window_new_from_ppm (XrdClient *client,
-                                const char* title,
-                                uint32_t w,
-                                uint32_t h,
-                                float ppm)
+xrd_client_window_new_from_pixels (XrdClient  *client,
+                                   const char *title,
+                                   uint32_t    width,
+                                   uint32_t    height,
+                                   float       ppm)
 {
   XrdWindow *window;
   if (XRD_IS_SCENE_CLIENT (client))
     {
-      window = XRD_WINDOW (xrd_scene_window_new_from_ppm (title, w, h, ppm));
+      window = XRD_WINDOW (xrd_scene_window_new_from_pixels (title, width,
+                                                             height, ppm));
       xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
     }
   else
     {
-      window = XRD_WINDOW (xrd_overlay_window_new_from_ppm (title, w, h, ppm));
+      window = XRD_WINDOW (xrd_overlay_window_new_from_pixels (title, width,
+                                                               height, ppm));
+    }
+  return window;
+}
+
+XrdWindow *
+xrd_client_window_new_from_native (XrdClient   *client,
+                                   const gchar *title,
+                                   gpointer     native,
+                                   uint32_t     width_pixels,
+                                   uint32_t     height_pixels,
+                                   float        ppm)
+{
+  XrdWindow *window;
+  if (XRD_IS_SCENE_CLIENT (client))
+    {
+      window = XRD_WINDOW (xrd_scene_window_new_from_native (title, native,
+                                                             width_pixels,
+                                                             height_pixels,
+                                                             ppm));
+      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+    }
+  else
+    {
+      window = XRD_WINDOW (xrd_overlay_window_new_from_native (title, native,
+                                                               width_pixels,
+                                                               height_pixels,
+                                                               ppm));
     }
   return window;
 }
@@ -1986,11 +2024,13 @@ xrd_client_switch_mode (XrdClient *self)
 
   for (int i = 0; i < window_count; i++)
     {
+      float ppm = (float) state[i].texture_width / state[i].initial_width;
       XrdWindow *window =
         xrd_client_window_new_from_meters (ret,
                                            state[i].title,
                                            state[i].current_width,
-                                           state[i].current_height);
+                                           state[i].current_height,
+                                           ppm);
 
       g_object_set (window,
                     "native", state[i].native,

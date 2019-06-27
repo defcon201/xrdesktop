@@ -135,8 +135,8 @@ _add_window (Example *self,
   float ppm = texture_width / width;
 
   XrdWindow *window =
-    xrd_client_window_new_from_ppm (self->client, title,
-                                    texture_width, texture_height, ppm);
+    xrd_client_window_new_from_pixels (self->client, title,
+                                       texture_width, texture_height, ppm);
 
   ExampleWindow *native = g_malloc (sizeof (ExampleWindow));
   native->gulkan_texture = NULL;
@@ -269,7 +269,8 @@ _init_buttons (Example *self)
 
   gchar *switch_str[] =  { "Switch", "Mode"};
   self->switch_button =
-    xrd_client_button_new_from_text (self->client, 0.5f, 0.5f, 2, switch_str);
+    xrd_client_button_new_from_text (self->client, 0.5f, 0.5f, 450.0f,
+                                     2, switch_str);
 
   if (!self->switch_button)
     return;

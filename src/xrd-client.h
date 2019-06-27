@@ -61,17 +61,29 @@ xrd_client_remove_container (XrdClient *self,
                              XrdContainer *container);
 
 XrdWindow *
-xrd_client_window_new_from_meters (XrdClient *client,
-                                   const char* title,
-                                   float w,
-                                   float h);
+xrd_client_window_new (XrdClient *client);
 
 XrdWindow *
-xrd_client_window_new_from_ppm (XrdClient *client,
-                                const char* title,
-                                uint32_t w,
-                                uint32_t h,
-                                float ppm);
+xrd_client_window_new_from_meters (XrdClient  *client,
+                                   const char *title,
+                                   float       width,
+                                   float       height,
+                                   float       ppm);
+
+XrdWindow *
+xrd_client_window_new_from_pixels (XrdClient  *client,
+                                   const char *title,
+                                   uint32_t    width,
+                                   uint32_t    height,
+                                   float       ppm);
+
+XrdWindow *
+xrd_client_window_new_from_native (XrdClient   *client,
+                                   const gchar *title,
+                                   gpointer     native,
+                                   uint32_t     width_pixels,
+                                   uint32_t     height_pixels,
+                                   float        ppm);
 
 void
 xrd_client_add_window (XrdClient *self,
@@ -86,6 +98,7 @@ XrdWindow*
 xrd_client_button_new_from_text (XrdClient *self,
                                  float      width,
                                  float      height,
+                                 float      ppm,
                                  int        label_count,
                                  gchar    **label);
 
@@ -93,6 +106,7 @@ XrdWindow*
 xrd_client_button_new_from_icon (XrdClient   *self,
                                  float        width,
                                  float        height,
+                                 float        ppm,
                                  const gchar *url);
 
 void

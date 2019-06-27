@@ -68,10 +68,10 @@ _test_scene_client ()
 
   float ppm = texture_width / 0.25f;
 
-  XrdSceneWindow *window = xrd_scene_window_new_from_ppm ("win.",
-                                                          texture_width,
-                                                          texture_height,
-                                                          ppm);
+  XrdSceneWindow *window = xrd_scene_window_new_from_pixels ("win.",
+                                                             texture_width,
+                                                             texture_height,
+                                                             ppm);
   xrd_scene_window_initialize (window);
 
   g_print("calling xrd_window_submit_texture\n");

@@ -167,29 +167,32 @@ xrd_scene_window_new (const gchar *title)
 
 XrdSceneWindow *
 xrd_scene_window_new_from_meters (const gchar *title,
-                                  float        width_meters,
-                                  float        height_meters)
+                                  float        width,
+                                  float        height,
+                                  float        ppm)
 {
   XrdSceneWindow *window = xrd_scene_window_new (title);
   g_object_set (window,
-                "initial-width-meters", (double) width_meters,
-                "initial-height-meters", (double) height_meters,
+                "texture-width", (uint32_t) (width * ppm),
+                "texture-height", (uint32_t) (height * ppm),
+                "initial-width-meters", (double) width,
+                "initial-height-meters", (double) height,
                 NULL);
   return window;
 }
 
 XrdSceneWindow *
-xrd_scene_window_new_from_ppm (const gchar *title,
-                               uint32_t     width_pixels,
-                               uint32_t     height_pixels,
-                               float        ppm)
+xrd_scene_window_new_from_pixels (const gchar *title,
+                                  uint32_t     width,
+                                  uint32_t     height,
+                                  float        ppm)
 {
   XrdSceneWindow *window = xrd_scene_window_new (title);
   g_object_set (window,
-                "texture-width", width_pixels,
-                "texture-height", height_pixels,
-                "initial-width-meters", (double) width_pixels / (double) ppm,
-                "initial-height-meters", (double) height_pixels / (double) ppm,
+                "texture-width", width,
+                "texture-height", height,
+                "initial-width-meters", (double) width / (double) ppm,
+                "initial-height-meters", (double) height / (double) ppm,
                 NULL);
   return window;
 }
@@ -201,10 +204,10 @@ xrd_scene_window_new_from_native (const gchar *title,
                                   uint32_t     height_pixels,
                                   float        ppm)
 {
-  XrdSceneWindow *window = xrd_scene_window_new_from_ppm (title,
-                                                          width_pixels,
-                                                          height_pixels,
-                                                          ppm);
+  XrdSceneWindow *window = xrd_scene_window_new_from_pixels (title,
+                                                             width_pixels,
+                                                             height_pixels,
+                                                             ppm);
   g_object_set (window, "native", native, NULL);
   return window;
 }
