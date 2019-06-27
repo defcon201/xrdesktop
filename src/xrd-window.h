@@ -46,7 +46,6 @@ typedef struct XrdControllerIndexEvent
 
 /** _XrdWindowState:
  * copy of the state of a window carried over an overlay<->scene switch */
-struct XrdWindowState;
 typedef struct
 {
   gpointer native;
