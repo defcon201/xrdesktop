@@ -67,6 +67,14 @@
             {
                "output": "/actions/wm/in/hand_pose",
                "path": "/user/hand/left/pose/raw"
+            },
+            {
+               "output": "/actions/wm/in/hand_pose_hand_grip",
+               "path": "/user/hand/right/pose/handgrip"
+            },
+            {
+               "output": "/actions/wm/in/hand_pose_hand_grip",
+               "path": "/user/hand/left/pose/handgrip"
             }
          ],
          "haptics": [
@@ -108,6 +116,15 @@
                }
             },
             {
+               "path": "/user/hand/right/input/application_menu",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/menu"
+                  }
+               }
+            },
+            {
                "path": "/user/hand/left/input/grip",
                "mode": "button",
                "inputs": {
@@ -140,6 +157,15 @@
                "inputs": {
                   "position": {
                      "output": "/actions/wm/in/push_pull_scale"
+                  }
+               }
+            },
+            {
+               "path": "/user/hand/left/input/application_menu",
+               "mode": "button",
+               "inputs": {
+                  "click": {
+                     "output": "/actions/wm/in/menu"
                   }
                }
             },
