@@ -1796,11 +1796,9 @@ xrd_client_init (XrdClient *self)
 
   priv->last_poll_timestamp = g_get_monotonic_time ();
 
-  OpenVRContext *context = openvr_context_get_instance ();
-
-  g_signal_connect (context, "device-activate-event",
+  g_signal_connect (priv->context, "device-activate-event",
                     (GCallback) _device_activate_cb, self);
-  g_signal_connect (context, "device-deactivate-event",
+  g_signal_connect (priv->context, "device-deactivate-event",
                     (GCallback) _device_deactivate_cb, self);
 }
 
