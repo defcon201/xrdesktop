@@ -509,10 +509,15 @@ _init_example (Example *self, XrdClient *client)
 }
 
 static gboolean overlay = FALSE;
+static gboolean automatic = FALSE;
 
 static GOptionEntry entries[] =
 {
-  { "overlay", 'o', 0, G_OPTION_ARG_NONE, &overlay, "Launch overlay client by default.", NULL },
+  { "overlay", 'o', 0, G_OPTION_ARG_NONE, &overlay,
+      "Launch overlay client by default.", NULL },
+  { "auto", 'a', 0, G_OPTION_ARG_NONE, &automatic,
+      "Launch overlay client if another scene app is already running,\n"
+      "else launch scene client.", NULL },
 };
 
 int
@@ -535,11 +540,34 @@ main (int argc, char *argv[])
     .child_window_pixbuf = load_gdk_pixbuf ("/res/cat.jpg"),
   };
 
+
+  gboolean scene_available = !openvr_context_is_another_scene_running ();
+
   XrdClient *client;
-  if (overlay)
-    client = XRD_CLIENT (xrd_overlay_client_new ());
+  if (automatic)
+    {
+      if (scene_available)
+        client = XRD_CLIENT (xrd_scene_client_new ());
+      else
+        client = XRD_CLIENT (xrd_overlay_client_new ());
+    }
   else
-    client = XRD_CLIENT (xrd_scene_client_new ());
+    {
+      if (overlay)
+        client = XRD_CLIENT (xrd_overlay_client_new ());
+      else
+        {
+          if (scene_available)
+              client = XRD_CLIENT (xrd_scene_client_new ());
+          else
+            {
+              g_print ("Not starting xrdesktop in scene mode, because another "
+                       "scene app is already running\n");
+              return 1;
+            }
+        }
+    }
+
 
   if (!_init_example (&self, client))
     return 1;
