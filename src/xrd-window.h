@@ -56,6 +56,7 @@ typedef struct
   uint32_t texture_width;
   uint32_t texture_height;
   graphene_matrix_t reset_transform;
+  float reset_scale;
   gboolean pinned;
 
   float current_width;
@@ -94,6 +95,9 @@ typedef struct XrdWindowData
   XrdWindow *parent_window;
 
   graphene_point_t child_offset_center;
+
+  graphene_matrix_t reset_transform;
+  float reset_scale;
 
   /* cache of the currently rendered texture */
   GulkanTexture *texture;
@@ -290,6 +294,16 @@ xrd_window_get_aspect_ratio (XrdWindow *self);
 
 void
 xrd_window_set_color (XrdWindow *self, const graphene_vec3_t *color);
+
+void
+xrd_window_set_reset_transformation (XrdWindow *self,
+                                     graphene_matrix_t *transform,
+                                     float scale);
+
+void
+xrd_window_get_reset_transformation (XrdWindow *self,
+                                     graphene_matrix_t *transform,
+                                     float *scale);
 
 G_END_DECLS
 

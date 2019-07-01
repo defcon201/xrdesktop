@@ -234,9 +234,6 @@ _init_windows (Example *self)
   graphene_matrix_t transform;
   graphene_matrix_init_translate (&transform, &point);
   xrd_window_set_transformation (self->canvas, &transform);
-  xrd_window_manager_save_reset_transform (
-    xrd_client_get_manager (self->client), self->canvas);
-
 
   self->tutorial_label =
     XRD_WINDOW (xrd_overlay_window_new_from_pixels ("Tutorial", 400, 256, 450));

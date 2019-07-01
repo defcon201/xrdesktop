@@ -156,6 +156,16 @@ xrd_scene_window_init (XrdSceneWindow *self)
   priv->aspect_ratio = 1.0;
   priv->window_data.texture = NULL;
   priv->shading_buffer = gulkan_uniform_buffer_new ();
+
+  priv->window_data.child_window = NULL;
+  priv->window_data.parent_window = NULL;
+  priv->window_data.native = NULL;
+  priv->window_data.texture_width = 0;
+  priv->window_data.texture_height = 0;
+  priv->window_data.texture = NULL;
+  priv->window_data.selected = FALSE;
+  priv->window_data.reset_scale = 1.0f;
+  graphene_matrix_init_identity (&priv->window_data.reset_transform);
 }
 
 XrdSceneWindow *

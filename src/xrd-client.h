@@ -119,10 +119,6 @@ xrd_client_add_button (XrdClient          *self,
 XrdWindow *
 xrd_client_get_keyboard_window (XrdClient *self);
 
-void
-xrd_client_save_reset_transform (XrdClient *self,
-                                 XrdWindow *window);
-
 GulkanClient *
 xrd_client_get_uploader (XrdClient *self);
 

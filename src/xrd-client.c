@@ -544,21 +544,6 @@ xrd_client_get_manager (XrdClient *self)
 }
 
 /**
- * xrd_client_save_reset_transform:
- * @self: The #XrdClient
- * @window: The #XrdWindow to save the current transform for. The reset
- * functionality of #XrdWindowManager will reset the transform of this window
- * to the transform the window has when this function is called.
- */
-void
-xrd_client_save_reset_transform (XrdClient *self,
-                                 XrdWindow *window)
-{
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  xrd_window_manager_save_reset_transform (priv->manager, window);
-}
-
-/**
  * xrd_client_remove_window:
  * @self: The #XrdClient
  * @window: The #XrdWindow to remove.
@@ -2039,11 +2024,12 @@ xrd_client_switch_mode (XrdClient *self)
                     "texture-height", state[i].texture_height,
                     NULL);
 
-      /* xrd_client_add_window saves the reset transform */
-      xrd_window_set_transformation (window, &state[i].reset_transform);
+
       xrd_client_add_window (ret, window, state[i].is_draggable);
 
       xrd_window_set_transformation (window, &state[i].transform);
+      xrd_window_set_reset_transformation (window, &state[i].reset_transform,
+                                           state[i].reset_scale);
       xrd_window_manager_set_pin (manager, window, state[i].pinned);
     }
 

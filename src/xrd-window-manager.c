@@ -35,9 +35,6 @@ struct _XrdWindowManager
   GSList *pinned_windows;
 
   gboolean controls_shown;
-
-  GHashTable *reset_transforms;
-  GHashTable *reset_scalings;
 };
 
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
@@ -67,12 +64,6 @@ xrd_window_manager_class_init (XrdWindowManagerClass *klass)
 }
 
 static void
-_free_matrix_cb (gpointer m)
-{
-  graphene_matrix_free ((graphene_matrix_t*) m);
-}
-
-static void
 xrd_window_manager_init (XrdWindowManager *self)
 {
   self->all_windows = NULL;
@@ -82,11 +73,6 @@ xrd_window_manager_init (XrdWindowManager *self)
   self->managed_windows = NULL;
   self->destroy_windows = NULL;
   self->hoverable_windows = NULL;
-
-  self->reset_transforms = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                  NULL, _free_matrix_cb);
-  self->reset_scalings = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                NULL, g_free);
 
   /* TODO: possible steamvr issue: When input poll rate is high and buttons are
    * immediately hidden after creation, they may not reappear on show().
@@ -104,9 +90,6 @@ static void
 xrd_window_manager_finalize (GObject *gobject)
 {
   XrdWindowManager *self = XRD_WINDOW_MANAGER (gobject);
-
-  g_hash_table_unref (self->reset_transforms);
-  g_hash_table_unref (self->reset_scalings);
 
   /* remove the window manager's reference to all windows */
   g_slist_free_full (self->all_windows, g_object_unref);
@@ -191,23 +174,22 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
       TransformTransition *transition = g_malloc (sizeof *transition);
       transition->last_timestamp = g_get_monotonic_time ();
 
-      graphene_matrix_t *transform =
-        g_hash_table_lookup (self->reset_transforms, window);
+      XrdWindowData *data = xrd_window_get_data (window);
 
       xrd_window_get_transformation_no_scale (window, &transition->from);
 
-      float *scaling = g_hash_table_lookup (self->reset_scalings, window);
-      transition->to_scaling = *scaling;
+      transition->to_scaling = data->reset_scale;
 
       g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
-      if (!graphene_matrix_equals (&transition->from, transform))
+      if (!graphene_matrix_equals (&transition->from, &data->reset_transform))
         {
           transition->interpolate = 0;
           transition->window = window;
           g_object_ref (window);
 
-          graphene_matrix_init_from_matrix (&transition->to, transform);
+          graphene_matrix_init_from_matrix (&transition->to,
+                                            &data->reset_transform);
 
           g_timeout_add (20, _interpolate_cb, transition);
         }
@@ -326,8 +308,9 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
               graphene_matrix_init_from_matrix (&transition->to, &transform);
 
-              float *scaling = g_hash_table_lookup (self->reset_scalings, window);
-              transition->to_scaling = *scaling;
+              XrdWindowData *data = xrd_window_get_data (window);
+
+              transition->to_scaling = data->reset_scale;
 
               g_timeout_add (20, _interpolate_cb, transition);
             }
@@ -343,18 +326,6 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
     }
 
   return TRUE;
-}
-
-void
-xrd_window_manager_save_reset_transform (XrdWindowManager *self,
-                                         XrdWindow *window)
-{
-  graphene_matrix_t *transform =
-    g_hash_table_lookup (self->reset_transforms, window);
-  xrd_window_get_transformation_no_scale (window, transform);
-
-  float *scaling = g_hash_table_lookup (self->reset_scalings, window);
-  g_object_get (G_OBJECT(window), "scale", scaling, NULL);
 }
 
 void
@@ -404,15 +375,6 @@ xrd_window_manager_add_window (XrdWindowManager *self,
   if (flags & XRD_WINDOW_HOVERABLE)
     self->hoverable_windows = g_slist_append (self->hoverable_windows, window);
 
-  /* Register reset position */
-  graphene_matrix_t *transform = graphene_matrix_alloc ();
-  xrd_window_get_transformation_no_scale (window, transform);
-  g_hash_table_insert (self->reset_transforms, window, transform);
-
-  float *scaling = (float*) g_malloc (sizeof (float));
-  g_object_get (G_OBJECT(window), "scale", scaling, NULL);
-  g_hash_table_insert (self->reset_scalings, window, scaling);
-
   /* keep the window referenced as long as the window manages this window */
   g_object_ref (window);
 }
@@ -443,8 +405,6 @@ xrd_window_manager_remove_window (XrdWindowManager *self,
   self->draggable_windows = g_slist_remove (self->draggable_windows, window);
   self->managed_windows = g_slist_remove (self->managed_windows, window);
   self->hoverable_windows = g_slist_remove (self->hoverable_windows, window);
-
-  g_hash_table_remove (self->reset_transforms, window);
 
   for (GSList *l = self->containers; l != NULL; l = l->next)
     {
@@ -833,12 +793,10 @@ xrd_window_manager_save_state (XrdWindowManager *self,
 
       state[i].pinned = xrd_window_manager_is_pinned (self, window);
 
-      graphene_matrix_t *reset_transform =
-        g_hash_table_lookup (self->reset_transforms, window);
-      graphene_matrix_init_from_matrix (&state[i].reset_transform,
-                                        reset_transform);
-
       XrdWindowData *data = xrd_window_get_data (window);
+
+      xrd_window_get_reset_transformation (window, &state[i].reset_transform,
+                                           &state[i].reset_scale);
 
       /* Window state is saved in the order windows were added to the manager.
        * So the reference to a child window is just an index in this array. */

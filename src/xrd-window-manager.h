@@ -101,10 +101,6 @@ xrd_window_manager_update_pose (XrdWindowManager *self,
                                 XrdController *controller);
 
 void
-xrd_window_manager_save_reset_transform (XrdWindowManager *self,
-                                         XrdWindow *window);
-
-void
 xrd_window_manager_poll_window_events (XrdWindowManager *self);
 
 GrabState *

@@ -296,6 +296,8 @@ xrd_overlay_window_init (XrdOverlayWindow *self)
   self->window_data.texture_height = 0;
   self->window_data.texture = NULL;
   self->window_data.selected = FALSE;
+  self->window_data.reset_scale = 1.0f;
+  graphene_matrix_init_identity (&self->window_data.reset_transform);
 }
 
 /** xrd_overlay_window_new:

@@ -314,8 +314,7 @@ _init_windows (Example *self)
           graphene_matrix_init_translate (&transform, &point);
           xrd_window_set_transformation (window, &transform);
 
-          XrdWindowManager *manager = xrd_client_get_manager (self->client);
-          xrd_window_manager_save_reset_transform (manager, window);
+          xrd_window_set_reset_transformation (window, NULL, 0);
 
           if (col == 0 && row == 0)
             {
