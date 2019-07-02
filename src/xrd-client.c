@@ -50,12 +50,11 @@ typedef struct _XrdClientPrivate
 
   XrdWindow *button_reset;
   XrdWindow *button_sphere;
+  XrdWindow *button_pinned_only;
+  XrdWindow *button_selection_mode;
 
   gboolean pinned_only;
-  XrdWindow *pinned_button;
-
   gboolean selection_mode;
-  XrdWindow *select_pinned_button;
 
   XrdWindow *keyboard_window;
 
@@ -345,12 +344,12 @@ xrd_client_show_pinned_only (XrdClient *self,
   VkImageLayout layout = xrd_client_get_upload_layout (self);
   if (pinned_only)
     {
-      xrd_button_set_icon (priv->pinned_button, client, layout,
+      xrd_button_set_icon (priv->button_pinned_only, client, layout,
                            "/icons/object-hidden-symbolic.svg");
     }
   else
     {
-      xrd_button_set_icon (priv->pinned_button, client, layout,
+      xrd_button_set_icon (priv->button_pinned_only, client, layout,
                            "/icons/object-visible-symbolic.svg");
     }
 }
@@ -1203,12 +1202,12 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   GulkanClient *client = xrd_client_get_uploader (self);
   if (priv->selection_mode)
     {
-      xrd_button_set_icon (priv->select_pinned_button, client, layout,
+      xrd_button_set_icon (priv->button_selection_mode, client, layout,
                            "/icons/object-select-symbolic.svg");
     }
   else
     {
-      xrd_button_set_icon (priv->select_pinned_button, client, layout,
+      xrd_button_set_icon (priv->button_selection_mode, client, layout,
                            "/icons/view-pin-symbolic.svg");
     }
 
@@ -1265,7 +1264,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
       ppm = 450.0;
     }
 
-  float rows = 2;
+  float rows = 3;
   float columns = 2;
 
   priv->wm_control_container = xrd_container_new ();
@@ -1310,43 +1309,43 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             priv->button_reset,
                             &relative_transform);
 
-  priv->select_pinned_button =
+  priv->button_selection_mode =
     xrd_client_button_new_from_icon (self, w, h, ppm,
                                      "/icons/view-pin-symbolic.svg");
-  if (!priv->select_pinned_button)
+  if (!priv->button_selection_mode)
     return FALSE;
 
-  xrd_client_add_button (self, priv->select_pinned_button, &position,
+  xrd_client_add_button (self, priv->button_selection_mode, &position,
                          (GCallback) _button_select_pinned_press_cb, self);
 
   _grid_position (w, h, rows, columns, 1, 0, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
-                            priv->select_pinned_button,
+                            priv->button_selection_mode,
                             &relative_transform);
 
 
   if (priv->pinned_only)
     {
-      priv->pinned_button =
+      priv->button_pinned_only =
         xrd_client_button_new_from_icon (self, w, h, ppm,
                                          "/icons/object-hidden-symbolic.svg");
     }
   else
     {
-      priv->pinned_button =
+      priv->button_pinned_only =
         xrd_client_button_new_from_icon (self, w, h, ppm,
                                          "/icons/object-visible-symbolic.svg");
 
     }
-  if (!priv->pinned_button)
+  if (!priv->button_pinned_only)
     return FALSE;
 
-  xrd_client_add_button (self, priv->pinned_button, &position,
+  xrd_client_add_button (self, priv->button_pinned_only, &position,
                          (GCallback) _button_pinned_press_cb, self);
 
   _grid_position (w, h, rows, columns, 1, 1, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
-                            priv->pinned_button,
+                            priv->button_pinned_only,
                             &relative_transform);
 
   xrd_client_add_container (self, priv->wm_control_container);
@@ -1370,10 +1369,10 @@ _destroy_buttons (XrdClient *self)
   g_clear_object (&priv->button_sphere);
   xrd_client_remove_window (self, priv->button_reset);
   g_clear_object (&priv->button_reset);
-  xrd_client_remove_window (self, priv->pinned_button);
-  g_clear_object (&priv->pinned_button);
-  xrd_client_remove_window (self, priv->select_pinned_button);
-  g_clear_object (&priv->select_pinned_button);
+  xrd_client_remove_window (self, priv->button_pinned_only);
+  g_clear_object (&priv->button_pinned_only);
+  xrd_client_remove_window (self, priv->button_selection_mode);
+  g_clear_object (&priv->button_selection_mode);
 
   xrd_window_manager_remove_container (priv->manager,
                                        priv->wm_control_container);
@@ -1865,8 +1864,8 @@ xrd_client_post_openvr_init (XrdClient *self)
 
   priv->button_sphere = NULL;
   priv->button_reset = NULL;
-  priv->pinned_button = NULL;
-  priv->select_pinned_button = NULL;
+  priv->button_pinned_only = NULL;
+  priv->button_selection_mode = NULL;
   priv->wm_control_container = NULL;
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
