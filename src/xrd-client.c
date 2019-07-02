@@ -1305,9 +1305,20 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             priv->select_pinned_button,
                             &relative_transform);
 
-  priv->pinned_button =
-    xrd_client_button_new_from_icon (self, w, h, ppm,
-                                     "/icons/object-visible-symbolic.svg");
+
+  if (priv->pinned_only)
+    {
+      priv->pinned_button =
+        xrd_client_button_new_from_icon (self, w, h, ppm,
+                                         "/icons/object-hidden-symbolic.svg");
+    }
+  else
+    {
+      priv->pinned_button =
+        xrd_client_button_new_from_icon (self, w, h, ppm,
+                                         "/icons/object-visible-symbolic.svg");
+
+    }
   if (!priv->pinned_button)
     return FALSE;
 
