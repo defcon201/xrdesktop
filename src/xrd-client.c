@@ -1215,6 +1215,31 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   g_free (event);
 }
 
+static void
+_grid_position (float widget_width,
+                float widget_height,
+                float grid_rows,
+                float grid_columns,
+                float row,
+                float column,
+                graphene_matrix_t *relative_transform)
+{
+  float grid_width = grid_columns * widget_width;
+  float grid_height = grid_rows * widget_height;
+
+  float y_offset = grid_height / 2.f -
+                   widget_height * row -
+                   widget_height / 2.f;
+
+  float x_offset = - grid_width / 2.f +
+                   widget_width * column +
+                   widget_width / 2.f;
+
+  graphene_point3d_t position;
+  graphene_point3d_init (&position, x_offset, y_offset, 0);
+  graphene_matrix_init_translate (relative_transform, &position);
+}
+
 gboolean
 _init_buttons (XrdClient *self, XrdController *controller)
 {
@@ -1240,6 +1265,9 @@ _init_buttons (XrdClient *self, XrdController *controller)
       ppm = 450.0;
     }
 
+  float rows = 2;
+  float columns = 2;
+
   priv->wm_control_container = xrd_container_new ();
   xrd_container_set_attachment (priv->wm_control_container,
                                 attach_controller ?
@@ -1249,7 +1277,10 @@ _init_buttons (XrdClient *self, XrdController *controller)
   xrd_container_set_layout (priv->wm_control_container,
                             XRD_CONTAINER_RELATIVE);
 
+  /* position where button is initially created doesn't matter. */
   graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
+
+  graphene_matrix_t relative_transform;
 
   priv->button_sphere =
     xrd_client_button_new_from_icon (self, w, h, ppm,
@@ -1260,15 +1291,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
   xrd_client_add_button (self, priv->button_sphere, &position,
                          (GCallback) _button_sphere_press_cb, self);
 
-  float width = xrd_window_get_current_width_meters (priv->button_sphere);
-  float height = xrd_window_get_current_height_meters (priv->button_sphere);
-  graphene_point3d_t translation = {
-      .x = -width / 2.f,
-      .y = height / 2.f,
-      .z = 0
-  };
-  graphene_matrix_t relative_transform;
-  graphene_matrix_init_translate (&relative_transform, &translation);
+  _grid_position (w, h, rows, columns, 0, 0, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
                             priv->button_sphere,
                             &relative_transform);
@@ -1282,9 +1305,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
   xrd_client_add_button (self, priv->button_reset, &position,
                          (GCallback) _button_reset_press_cb, self);
 
-  translation.x += width;
-
-  graphene_matrix_init_translate (&relative_transform, &translation);
+  _grid_position (w, h, rows, columns, 0, 1, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
                             priv->button_reset,
                             &relative_transform);
@@ -1298,9 +1319,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
   xrd_client_add_button (self, priv->select_pinned_button, &position,
                          (GCallback) _button_select_pinned_press_cb, self);
 
-  translation.x = - width / 2.f;
-  translation.y -= height;
-  graphene_matrix_init_translate (&relative_transform, &translation);
+  _grid_position (w, h, rows, columns, 1, 0, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
                             priv->select_pinned_button,
                             &relative_transform);
@@ -1325,8 +1344,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
   xrd_client_add_button (self, priv->pinned_button, &position,
                          (GCallback) _button_pinned_press_cb, self);
 
-  translation.x += width;
-  graphene_matrix_init_translate (&relative_transform, &translation);
+  _grid_position (w, h, rows, columns, 1, 1, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
                             priv->pinned_button,
                             &relative_transform);
