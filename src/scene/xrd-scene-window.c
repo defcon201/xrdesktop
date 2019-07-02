@@ -157,6 +157,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
   priv->window_data.texture = NULL;
   priv->shading_buffer = gulkan_uniform_buffer_new ();
 
+  priv->window_data.title = NULL;
   priv->window_data.child_window = NULL;
   priv->window_data.parent_window = NULL;
   priv->window_data.native = NULL;

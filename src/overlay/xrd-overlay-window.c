@@ -289,6 +289,7 @@ _poll_event (XrdWindow *window)
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
+  self->window_data.title = NULL;
   self->window_data.child_window = NULL;
   self->window_data.parent_window = NULL;
   self->window_data.native = NULL;
