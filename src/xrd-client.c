@@ -199,7 +199,7 @@ xrd_client_add_window (XrdClient *self,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   if (priv->pinned_only &&
       !(flags & XRD_WINDOW_MANAGER_BUTTON) &&
-      !xrd_window_manager_is_pinned (manager, window))
+      !xrd_window_is_pinned (window))
     {
       xrd_window_hide (window);
     }
@@ -319,7 +319,7 @@ xrd_client_set_pin (XrdClient *self,
                     gboolean pin)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  xrd_window_manager_set_pin (priv->manager, win, pin);
+  xrd_window_set_pin (win, pin, priv->pinned_only);
 }
 
 void
@@ -328,7 +328,18 @@ xrd_client_show_pinned_only (XrdClient *self,
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   priv->pinned_only = pinned_only;
-  xrd_window_manager_show_pinned_only (priv->manager, pinned_only);
+
+  GSList *windows = xrd_window_manager_get_windows (priv->manager);
+
+  for (GSList *l = windows; l != NULL; l = l->next)
+    {
+      XrdWindow *window = (XrdWindow *) l->data;
+      gboolean pinned = xrd_window_is_pinned (window);
+      if (!pinned_only || (pinned_only && pinned))
+        xrd_window_show (window);
+      else
+        xrd_window_hide (window);
+    }
 
   GulkanClient *client = xrd_client_get_uploader (self);
   VkImageLayout layout = xrd_client_get_upload_layout (self);
@@ -982,15 +993,17 @@ _window_grab_start_cb (XrdWindow               *window,
   XrdController *controller = _lookup_controller (self,
                                                   event->controller_handle);
 
-  /* don't grab if this window is already grabbed */
   if (priv->selection_mode)
     {
-      gboolean pinned = xrd_window_manager_is_pinned (priv->manager, window);
-      xrd_window_manager_set_pin (priv->manager, window, !pinned);
+      gboolean pinned = xrd_window_is_pinned (window);
+      /* in selection mode, windows are always visible */
+      xrd_window_set_pin (window, !pinned, FALSE);
       _mark_windows_for_selection_mode (self);
+      g_free (event);
       return;
     }
 
+  /* don't grab if this window is already grabbed */
   if (xrd_client_is_grabbed (self, window))
     {
       g_free (event);
@@ -1036,7 +1049,7 @@ _mark_windows_for_selection_mode (XrdClient *self)
         {
           XrdWindow *win = l->data;
 
-          if (xrd_window_manager_is_pinned (manager, win))
+          if (xrd_window_is_pinned (win))
             xrd_window_select (win);
           else
             xrd_window_deselect (win);
@@ -1052,10 +1065,6 @@ _mark_windows_for_selection_mode (XrdClient *self)
           XrdWindow *win = l->data;
 
           xrd_window_end_selection (win);
-
-          if (priv->pinned_only &&
-              !xrd_window_manager_is_pinned (manager, win))
-            xrd_window_hide (win);
         }
     }
 }
@@ -2030,7 +2039,8 @@ xrd_client_switch_mode (XrdClient *self)
       xrd_window_set_transformation (window, &state[i].transform);
       xrd_window_set_reset_transformation (window, &state[i].reset_transform,
                                            state[i].reset_scale);
-      xrd_window_manager_set_pin (manager, window, state[i].pinned);
+
+      xrd_window_set_pin (window, state[i].pinned, show_only_pinned);
     }
 
   /* Only after all windows are recreated do we search for child windows */

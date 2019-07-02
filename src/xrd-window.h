@@ -99,6 +99,8 @@ typedef struct XrdWindowData
   graphene_matrix_t reset_transform;
   float reset_scale;
 
+  gboolean pinned;
+
   /* cache of the currently rendered texture */
   GulkanTexture *texture;
 } XrdWindowData;
@@ -304,6 +306,14 @@ void
 xrd_window_get_reset_transformation (XrdWindow *self,
                                      graphene_matrix_t *transform,
                                      float *scale);
+
+void
+xrd_window_set_pin (XrdWindow *self,
+                    gboolean pinned,
+                    gboolean hide_unpinned);
+
+gboolean
+xrd_window_is_pinned (XrdWindow *self);
 
 G_END_DECLS
 

@@ -714,3 +714,40 @@ xrd_window_get_reset_transformation (XrdWindow *self,
 
   *scale = data->reset_scale;
 }
+
+/**
+ * xrd_window_set_pin:
+ * @self: The #XrdWindow
+ * @pinned: The pin status to set this window to
+ * @hide_unpinned: If true, the window will be hidden if it is unpinned, and
+ * shown if it is pinned. This corresponds to the "show only pinned windows"
+ * mode set up in #XrdClient.
+ * If false, windows are always shown.
+ * Note that @hide_unpinned only determines initial visibility, and does not
+ * keep track of further mode changes.
+ */
+void
+xrd_window_set_pin (XrdWindow *self,
+                    gboolean pinned,
+                    gboolean hide_unpinned)
+{
+  XrdWindowData *data = xrd_window_get_data (self);
+  if (hide_unpinned)
+    {
+      if (pinned)
+        xrd_window_show (self);
+      else
+        xrd_window_hide (self);
+    }
+  else
+    xrd_window_show (self);
+
+  data->pinned = pinned;
+}
+
+gboolean
+xrd_window_is_pinned (XrdWindow *self)
+{
+  XrdWindowData *data = xrd_window_get_data (self);
+  return data->pinned;
+}

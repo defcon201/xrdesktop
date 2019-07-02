@@ -32,8 +32,6 @@ struct _XrdWindowManager
   /* XRD_WINDOW_MANAGER_BUTTON */
   GSList *buttons;
 
-  GSList *pinned_windows;
-
   gboolean controls_shown;
 };
 
@@ -68,7 +66,6 @@ xrd_window_manager_init (XrdWindowManager *self)
 {
   self->all_windows = NULL;
   self->buttons = NULL;
-  self->pinned_windows = NULL;
   self->draggable_windows = NULL;
   self->managed_windows = NULL;
   self->destroy_windows = NULL;
@@ -95,7 +92,6 @@ xrd_window_manager_finalize (GObject *gobject)
   g_slist_free_full (self->all_windows, g_object_unref);
   g_slist_free_full (self->buttons, g_object_unref);
 
-  g_slist_free (self->pinned_windows);
   g_slist_free (self->hoverable_windows);
   g_slist_free (self->containers);
   g_slist_free (self->draggable_windows);
@@ -728,27 +724,6 @@ xrd_window_manager_update_pose (XrdWindowManager  *self,
     _test_hover (self, pose, controller);
 }
 
-void
-xrd_window_manager_set_pin (XrdWindowManager *self,
-                            XrdWindow *win,
-                            gboolean pin)
-{
-  if (pin)
-    {
-      if (g_slist_find (self->pinned_windows, win) == NULL)
-        self->pinned_windows = g_slist_append (self->pinned_windows, win);
-    }
-  else
-      self->pinned_windows = g_slist_remove (self->pinned_windows, win);
-}
-
-gboolean
-xrd_window_manager_is_pinned (XrdWindowManager *self,
-                              XrdWindow *win)
-{
-  return g_slist_find (self->pinned_windows, win) != NULL;
-}
-
 GSList *
 xrd_window_manager_get_windows (XrdWindowManager *self)
 {
@@ -759,24 +734,6 @@ GSList *
 xrd_window_manager_get_buttons (XrdWindowManager *self)
 {
   return self->buttons;
-}
-
-void
-xrd_window_manager_show_pinned_only (XrdWindowManager *self,
-                                     gboolean pinned_only)
-{
-  for (GSList *l = self->all_windows; l != NULL; l = l->next)
-    {
-      XrdWindow *window = (XrdWindow *) l->data;
-      gboolean to_show = TRUE;
-      if (pinned_only)
-        to_show = g_slist_find (self->pinned_windows, window) != NULL;
-
-      if (to_show)
-        xrd_window_show (window);
-      else
-        xrd_window_hide (window);
-    }
 }
 
 void
@@ -791,9 +748,9 @@ xrd_window_manager_save_state (XrdWindowManager *self,
       state[i].child_index = -1;
       XrdWindow *window = g_slist_nth_data (windows, (guint)i);
 
-      state[i].pinned = xrd_window_manager_is_pinned (self, window);
-
       XrdWindowData *data = xrd_window_get_data (window);
+
+      state[i].pinned = data->pinned;
 
       xrd_window_get_reset_transformation (window, &state[i].reset_transform,
                                            &state[i].reset_scale);
