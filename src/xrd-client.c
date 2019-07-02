@@ -1979,6 +1979,54 @@ _replace_client (XrdClient *self)
   return ret;
 }
 
+static void
+_save_window_states (XrdClient *self,
+                     XrdWindowState *state,
+                     int window_count)
+{
+  XrdWindowManager *manager = xrd_client_get_manager (self);
+  GSList *windows = xrd_window_manager_get_windows (manager);
+
+  for (int i = 0; i < window_count; i++)
+    {
+      state[i].child_index = -1;
+      XrdWindow *window = g_slist_nth_data (windows, (guint)i);
+
+      XrdWindowData *data = xrd_window_get_data (window);
+
+      state[i].pinned = data->pinned;
+
+      xrd_window_get_reset_transformation (window, &state[i].reset_transform,
+                                           &state[i].reset_scale);
+
+      /* Window state is saved in the order windows were added to the client.
+       * So the reference to a child window is just an index in this array. */
+      if (data->child_window)
+        {
+          state[i].child_index = g_slist_index (windows, data->child_window);
+          graphene_point_init_from_point (&state[i].child_offset_center,
+                                          &data->child_offset_center);
+        }
+
+      /* Window with parent window is child and is not draggable */
+      state[i].is_draggable = data->parent_window == NULL;
+
+      g_object_get (window,
+                    "native", &state[i].native,
+                    "title", &state[i].title,
+                    "scale", &state[i].scale,
+                    "initial-width-meters", &state[i].initial_width,
+                    "initial-height-meters", &state[i].initial_height,
+                    "texture-width", &state[i].texture_width,
+                    "texture-height", &state[i].texture_height,
+                    NULL);
+
+      state[i].current_width = xrd_window_get_current_width_meters (window);
+      state[i].current_height = xrd_window_get_current_height_meters (window);
+      xrd_window_get_transformation_no_scale (window, &state[i].transform);
+    }
+}
+
 /** xrd_client_switch_mode:
  * @self: current #XrdClient to be destroyed.
  * Returns: A new #XrdClient of the opposite mode than the passed one.
@@ -2009,7 +2057,7 @@ xrd_client_switch_mode (XrdClient *self)
   XrdWindowState *state = g_malloc (sizeof (XrdWindowState) *
                                     (guint)window_count);
 
-  xrd_window_manager_save_state (manager, state, window_count);
+  _save_window_states (self, state, window_count);
 
   XrdClient *ret = _replace_client (self);
   manager = xrd_client_get_manager (ret);
