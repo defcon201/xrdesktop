@@ -83,6 +83,16 @@
       </description>
     </key>
 
+    <key name='always-show-overlay-pointer' type='b'>
+      <default>true</default>
+      <summary>Whether to show the pointer when not pointing at a window in overlay mode.</summary>
+      <description>
+        In Overlay mode xrdesktop is displaying on top of a VR application.
+        It can be annoying to show the pointer and pointer tip when not pointing at a window,
+        especially in games that render their own pointer already.
+      </description>
+    </key>
+
     <key name='pointer-tip-resolution' type='(ii)'>
       <default>(64,64)</default>
       <summary>The pixel resolution of the pointer tip.</summary>

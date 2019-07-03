@@ -82,6 +82,8 @@ typedef struct _XrdClientPrivate
   XrdContainer *wm_control_container;
 
   gint64 last_poll_timestamp;
+
+  gboolean always_show_overlay_pointer;
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -1114,6 +1116,13 @@ _window_hover_end_cb (XrdWindow               *window,
   xrd_pointer_tip_set_active (xrd_controller_get_pointer_tip (controller),
                               active);
 
+  if (!priv->always_show_overlay_pointer &&
+      !active && XRD_IS_OVERLAY_CLIENT (self))
+    {
+      xrd_pointer_hide (xrd_controller_get_pointer (controller));
+      xrd_pointer_tip_hide (xrd_controller_get_pointer_tip (controller));
+    }
+
   XrdInputSynth *input_synth = xrd_client_get_input_synth (self);
   xrd_input_synth_reset_press_state (input_synth);
 
@@ -1546,6 +1555,14 @@ _window_hover_start_cb (XrdWindow               *window,
   xrd_pointer_tip_set_active (xrd_controller_get_pointer_tip (controller),
                               TRUE);
 
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  /* not necessary for scene because there pointer is always shown. */
+  if (!priv->always_show_overlay_pointer && !XRD_IS_SCENE_CLIENT (self))
+    {
+      xrd_pointer_show (xrd_controller_get_pointer (controller));
+      xrd_pointer_tip_show (xrd_controller_get_pointer_tip (controller));
+    }
+
   g_free (event);
 }
 
@@ -1815,6 +1832,12 @@ _device_activate_cb (OpenVRContext          *context,
 
   if (g_hash_table_size (priv->controllers) == 1)
     xrd_input_synth_hand_off_to_controller (priv->input_synth, handle);
+
+  if (!priv->always_show_overlay_pointer && XRD_IS_OVERLAY_CLIENT (self))
+    {
+       xrd_pointer_hide (xrd_controller_get_pointer (controller));
+       xrd_pointer_tip_hide (xrd_controller_get_pointer_tip (controller));
+    }
 }
 
 static void
@@ -1846,6 +1869,45 @@ _device_deactivate_cb (OpenVRContext          *context,
 }
 
 static void
+_update_show_overlay_pointer (GSettings *settings, gchar *key, gpointer _data)
+{
+  XrdClient *self = _data;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  gboolean val = g_settings_get_boolean (settings, key);
+  priv->always_show_overlay_pointer = val;
+
+  if (XRD_IS_SCENE_CLIENT (self))
+    return;
+
+  GHashTable *controller_table = xrd_client_get_controllers (self);
+  GList *controllers = g_hash_table_get_values (controller_table);
+  if (val)
+    {
+      for (GList *l = controllers; l; l = l->next)
+        {
+          XrdController *controller = l->data;
+          xrd_pointer_show (xrd_controller_get_pointer (controller));
+          xrd_pointer_tip_show (xrd_controller_get_pointer_tip (controller));
+        }
+    }
+  else
+    {
+      for (GList *l = controllers; l; l = l->next)
+        {
+          XrdController *controller = l->data;
+          if (xrd_controller_get_hover_state (controller)->window == NULL)
+            {
+              xrd_pointer_hide (xrd_controller_get_pointer (controller));
+              xrd_pointer_tip_hide (
+                xrd_controller_get_pointer_tip (controller));
+            }
+        }
+    }
+  g_list_free (controllers);
+}
+
+static void
 xrd_client_init (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
@@ -1861,6 +1923,9 @@ xrd_client_init (XrdClient *self)
                                   &priv->scroll_to_scale_ratio);
   xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "analog-threshold", &priv->analog_threshold);
+  xrd_settings_connect_and_apply (G_CALLBACK (_update_show_overlay_pointer),
+                                  "always-show-overlay-pointer", self);
+
 
   priv->poll_runtime_event_source_id = 0;
   priv->poll_input_source_id = 0;
