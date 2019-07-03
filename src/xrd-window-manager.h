@@ -52,6 +52,12 @@ typedef enum
   XRD_WINDOW_MANAGER_BUTTON      = 1 << 4,
 } XrdWindowFlags;
 
+typedef enum
+{
+  XRD_HOVER_MODE_EVERYTHING,
+  XRD_HOVER_MODE_BUTTONS
+} XrdHoverMode;
+
 XrdWindowManager *xrd_window_manager_new (void);
 
 void
@@ -116,6 +122,13 @@ xrd_window_manager_get_windows (XrdWindowManager *self);
 
 GSList *
 xrd_window_manager_get_buttons (XrdWindowManager *self);
+
+void
+xrd_window_manager_set_hover_mode (XrdWindowManager *self,
+                                   XrdHoverMode mode);
+
+XrdHoverMode
+xrd_window_manager_get_hover_mode (XrdWindowManager *self);
 
 G_END_DECLS
 

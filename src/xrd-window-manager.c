@@ -33,6 +33,8 @@ struct _XrdWindowManager
   GSList *buttons;
 
   gboolean controls_shown;
+
+  XrdHoverMode hover_mode;
 };
 
 G_DEFINE_TYPE (XrdWindowManager, xrd_window_manager, G_TYPE_OBJECT)
@@ -70,6 +72,7 @@ xrd_window_manager_init (XrdWindowManager *self)
   self->managed_windows = NULL;
   self->destroy_windows = NULL;
   self->hoverable_windows = NULL;
+  self->hover_mode = XRD_HOVER_MODE_EVERYTHING;
 
   /* TODO: possible steamvr issue: When input poll rate is high and buttons are
    * immediately hidden after creation, they may not reappear on show().
@@ -431,6 +434,10 @@ _test_hover (XrdWindowManager  *self,
       if (!xrd_window_is_visible (window))
         continue;
 
+      if (self->hover_mode == XRD_HOVER_MODE_BUTTONS)
+        if (g_slist_find (self->buttons, window) == NULL)
+          continue;
+
       graphene_point3d_t intersection_point;
       if (xrd_window_intersects (window, pointer, pose, &intersection_point))
         {
@@ -736,3 +743,15 @@ xrd_window_manager_get_buttons (XrdWindowManager *self)
   return self->buttons;
 }
 
+void
+xrd_window_manager_set_hover_mode (XrdWindowManager *self,
+                                   XrdHoverMode mode)
+{
+  self->hover_mode = mode;
+}
+
+XrdHoverMode
+xrd_window_manager_get_hover_mode (XrdWindowManager *self)
+{
+  return self->hover_mode;
+}

@@ -7,5 +7,7 @@
     <file>object-select-symbolic.svg</file>
     <file>object-visible-symbolic.svg</file>
     <file>view-pin-symbolic.svg</file>
+    <file>input-mouse-symbolic.svg</file>
+    <file>input-no-mouse-symbolic.svg</file>
   </gresource>
 </gresources>

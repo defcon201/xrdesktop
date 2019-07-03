@@ -52,9 +52,11 @@ typedef struct _XrdClientPrivate
   XrdWindow *button_sphere;
   XrdWindow *button_pinned_only;
   XrdWindow *button_selection_mode;
+  XrdWindow *button_ignore_input;
 
   gboolean pinned_only;
   gboolean selection_mode;
+  gboolean ignore_input;
 
   XrdWindow *keyboard_window;
 
@@ -1215,6 +1217,39 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
 }
 
 static void
+_button_ignore_input_press_cb (XrdWindow               *button,
+                               XrdControllerIndexEvent *event,
+                               gpointer                 _self)
+{
+  (void) event;
+  (void) button;
+  XrdClient *self = _self;
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  priv->ignore_input = !priv->ignore_input;
+
+  xrd_window_manager_set_hover_mode (priv->manager,
+                                     priv->ignore_input ?
+                                         XRD_HOVER_MODE_BUTTONS :
+                                         XRD_HOVER_MODE_EVERYTHING);
+
+  VkImageLayout layout = xrd_client_get_upload_layout (self);
+  GulkanClient *client = xrd_client_get_uploader (self);
+  if (priv->ignore_input)
+    {
+      xrd_button_set_icon (priv->button_ignore_input, client, layout,
+                           "/icons/input-no-mouse-symbolic.svg");
+    }
+  else
+    {
+      xrd_button_set_icon (priv->button_ignore_input, client, layout,
+                           "/icons/input-mouse-symbolic.svg");
+    }
+
+  g_free (event);
+}
+
+static void
 _grid_position (float widget_width,
                 float widget_height,
                 float grid_rows,
@@ -1323,7 +1358,6 @@ _init_buttons (XrdClient *self, XrdController *controller)
                             priv->button_selection_mode,
                             &relative_transform);
 
-
   if (priv->pinned_only)
     {
       priv->button_pinned_only =
@@ -1350,6 +1384,30 @@ _init_buttons (XrdClient *self, XrdController *controller)
 
   xrd_client_add_container (self, priv->wm_control_container);
 
+
+  if (priv->ignore_input)
+    {
+      priv->button_ignore_input =
+        xrd_client_button_new_from_icon (self, w, h, ppm,
+                                         "/icons/input-no-mouse-symbolic.svg");
+    }
+  else
+    {
+      priv->button_ignore_input =
+        xrd_client_button_new_from_icon (self, w, h, ppm,
+                                         "/icons/input-mouse-symbolic.svg");
+    }
+  if (!priv->button_ignore_input)
+    return FALSE;
+
+  xrd_client_add_button (self, priv->button_ignore_input, &position,
+                         (GCallback) _button_ignore_input_press_cb, self);
+
+  _grid_position (w, h, rows, columns, 2, 0, &relative_transform);
+  xrd_container_add_window (priv->wm_control_container,
+                            priv->button_ignore_input,
+                            &relative_transform);
+
   if (!attach_controller)
     {
       const float distance = 2.0f;
@@ -1373,6 +1431,8 @@ _destroy_buttons (XrdClient *self)
   g_clear_object (&priv->button_pinned_only);
   xrd_client_remove_window (self, priv->button_selection_mode);
   g_clear_object (&priv->button_selection_mode);
+  xrd_client_remove_window (self, priv->button_ignore_input);
+  g_clear_object (&priv->button_ignore_input);
 
   xrd_window_manager_remove_container (priv->manager,
                                        priv->wm_control_container);
@@ -1809,6 +1869,7 @@ xrd_client_init (XrdClient *self)
   priv->keyboard_close_signal = 0;
   priv->pinned_only = FALSE;
   priv->selection_mode = FALSE;
+  priv->ignore_input = FALSE;
   priv->wm_actions = NULL;
   priv->cursor = NULL;
   priv->wm_control_container = NULL;
@@ -1866,6 +1927,7 @@ xrd_client_post_openvr_init (XrdClient *self)
   priv->button_reset = NULL;
   priv->button_pinned_only = NULL;
   priv->button_selection_mode = NULL;
+  priv->button_ignore_input = NULL;
   priv->wm_control_container = NULL;
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
@@ -2077,8 +2139,10 @@ xrd_client_switch_mode (XrdClient *self)
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   gboolean show_only_pinned = priv->pinned_only;
+  gboolean ignore_input = priv->ignore_input;
 
   XrdWindowManager *manager = xrd_client_get_manager (self);
+
   int window_count =
     (int)g_slist_length (xrd_window_manager_get_windows (manager));
 
@@ -2089,6 +2153,7 @@ xrd_client_switch_mode (XrdClient *self)
 
   XrdClient *ret = _replace_client (self);
   manager = xrd_client_get_manager (ret);
+  priv = xrd_client_get_instance_private (ret);
 
   for (int i = 0; i < window_count; i++)
     {
@@ -2139,6 +2204,11 @@ xrd_client_switch_mode (XrdClient *self)
     }
 
   xrd_client_show_pinned_only (ret, show_only_pinned);
+
+  priv->ignore_input = ignore_input;
+  xrd_window_manager_set_hover_mode (manager, ignore_input ?
+                                         XRD_HOVER_MODE_BUTTONS :
+                                         XRD_HOVER_MODE_EVERYTHING);
 
   g_free (state);
   return ret;
