@@ -92,7 +92,6 @@ configure_file(
   input: 'xrd-version.h.in',
   output: 'xrd-version.h',
   configuration: version_conf,
-  install: true,
   install_dir: join_paths(get_option('includedir'), api_path)
 )
 
