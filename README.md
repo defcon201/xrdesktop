@@ -41,10 +41,15 @@ $ ninja -C build test
 
 Don't run tests that require a running XR runtime.
 ```
-meson test -C build/ --no-suite xr
+meson test -C build/ --no-suite xrdesktop:xr
 ```
 
 Don't run tests that require a running XR runtime or the installed package.
+```
+meson test -C build/ --no-suite xrdesktop:xr --no-suite xrdesktop:post-install
+```
+
+Since meson `0.46` the project name can be omitted from the test suite:
 ```
 meson test -C build/ --no-suite xr --no-suite post-install
 ```
