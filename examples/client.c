@@ -159,8 +159,9 @@ static void
 _cleanup_client (Example *self);
 
 static gboolean
-perform_switch (Example *self)
+perform_switch (gpointer data)
 {
+  Example *self = data;
   /* disconnect all event callbacks */
   _cleanup_client (self);
 
@@ -215,7 +216,7 @@ _button_switch_press_cb (XrdWindow               *window,
 
   /* Don't clean up bere because the callback will return.
    * Instead do the cleanup and switch on the next mainloop iteration. */
-  g_timeout_add (0, G_SOURCE_FUNC (perform_switch), self);
+  g_timeout_add (0, perform_switch, self);
   g_free (event);
 }
 
@@ -428,13 +429,13 @@ _request_quit_cb (XrdClient *client,
     {
       g_print ("Quit event: Process quit\n");
       if (XRD_IS_OVERLAY_CLIENT (self->client))
-        g_timeout_add (0, G_SOURCE_FUNC (perform_switch), self);
+        g_timeout_add (0, perform_switch, self);
     } break;
     case VR_QUIT_APPLICATION_TRANSITION:
     {
       g_print ("Quit event: Application transition\n");
       if (XRD_IS_SCENE_CLIENT (self->client))
-        g_timeout_add (0, G_SOURCE_FUNC (perform_switch), self);
+        g_timeout_add (0, perform_switch, self);
     } break;
   }
 }
