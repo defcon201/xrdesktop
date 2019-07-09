@@ -153,6 +153,7 @@ _update_active_color (GSettings *settings, gchar *key, gpointer _data)
   double r, g, b;
   g_variant_get (var, "(ddd)", &r, &g, &b);
   graphene_point3d_init (&s->active_color, (float) r, (float) g, (float) b);
+  g_variant_unref (var);
 
   if (data->active)
     {
@@ -170,6 +171,8 @@ _update_passive_color (GSettings *settings, gchar *key, gpointer _data)
 
   double r, g, b;
   g_variant_get (var, "(ddd)", &r, &g, &b);
+  g_variant_unref (var);
+
   graphene_point3d_init (&s->passive_color, (float) r, (float) g, (float) b);
 
   if (!data->active)
@@ -208,6 +211,8 @@ _update_texture_res (GSettings *settings, gchar *key, gpointer _data)
 
   GVariant *texture_res = g_settings_get_value (settings, key);
   g_variant_get (texture_res, "(ii)", &s->texture_width, &s->texture_height);
+
+  g_variant_unref (texture_res);
 
   _init_texture (data->tip);
 }

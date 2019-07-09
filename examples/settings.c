@@ -36,6 +36,8 @@ int main (int argc, char **argv)
                g_variant_get_type_string (val),
                k,
                g_variant_print (val, TRUE));
+
+      g_variant_unref (val);
     }
 
   /*
