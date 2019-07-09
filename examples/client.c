@@ -530,8 +530,10 @@ main (int argc, char *argv[])
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
       g_print ("Wrong parameters: %s\n", error->message);
+      g_option_context_free (context);
       exit (1);
     }
+  g_option_context_free (context);
 
   Example self = {
     .loop = g_main_loop_new (NULL, FALSE),
