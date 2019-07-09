@@ -32,6 +32,18 @@ Run the overlay client.
 $ ./build/examples/client -o
 ```
 
+To run the client example without xrdesktop being installed, you need to
+build the glib schemas in `res`
+```
+$ glib-compile-schemas res/
+```
+
+And add the `GSETTINGS_SCHEMA_DIR`
+```
+$ GSETTINGS_SCHEMA_DIR=res/ ./build/examples/client
+```
+
+
 #### Run the tests
 
 Run all tests
