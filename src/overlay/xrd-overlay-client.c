@@ -68,7 +68,7 @@ xrd_overlay_client_new (void)
       return NULL;
     }
 
-  self->gc = openvr_compositor_gulkan_client_new (true);
+  self->gc = openvr_compositor_gulkan_client_new ();
   if (!self->gc)
     {
       g_printerr ("Unable to initialize Vulkan!\n");

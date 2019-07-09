@@ -12,8 +12,6 @@
 #include <gulkan.h>
 #include <openvr-glib.h>
 
-static bool use_validation = true;
-
 typedef struct VertexDataScene
 {
   graphene_point3d_t position;
@@ -543,8 +541,7 @@ _init_vulkan (XrdSceneRenderer *self)
 bool
 xrd_scene_renderer_init_vulkan_simple (XrdSceneRenderer *self)
 {
-  gulkan_client_init_vulkan (GULKAN_CLIENT (self),
-                             NULL, NULL, use_validation);
+  gulkan_client_init_vulkan (GULKAN_CLIENT (self), NULL, NULL);
 
   if (!_init_vulkan (self))
     return false;
@@ -555,8 +552,7 @@ xrd_scene_renderer_init_vulkan_simple (XrdSceneRenderer *self)
 bool
 xrd_scene_renderer_init_vulkan_openvr (XrdSceneRenderer *self)
 {
-  if (!openvr_compositor_gulkan_client_init (GULKAN_CLIENT (self),
-                                             use_validation))
+  if (!openvr_compositor_gulkan_client_init (GULKAN_CLIENT (self)))
     return false;
 
   if (!_init_vulkan (self))
