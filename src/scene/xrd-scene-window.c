@@ -263,6 +263,8 @@ xrd_scene_window_finalize (GObject *gobject)
 
   g_object_unref (priv->shading_buffer);
 
+  g_string_free (priv->window_data.title, TRUE);
+
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
 
