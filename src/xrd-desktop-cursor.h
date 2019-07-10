@@ -23,8 +23,7 @@ G_BEGIN_DECLS
 G_DECLARE_INTERFACE (XrdDesktopCursor, xrd_desktop_cursor,
                      XRD, DESKTOP_CURSOR, GObject)
 
-typedef struct _XrdDesktopCursorData
-{
+typedef struct {
   XrdDesktopCursor *cursor;
 
   gboolean keep_apparent_size;

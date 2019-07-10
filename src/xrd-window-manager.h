@@ -26,14 +26,12 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (XrdWindowManager, xrd_window_manager, XRD,
                       WINDOW_MANAGER, GObject)
 
-typedef struct XrdNoHoverEvent
-{
+typedef struct {
   graphene_matrix_t pose;
   guint64 controller_handle;
 } XrdNoHoverEvent;
 
-typedef struct TransformTransition
-{
+typedef struct {
   XrdWindow *window;
   graphene_matrix_t from;
   graphene_matrix_t to;
@@ -41,7 +39,7 @@ typedef struct TransformTransition
   float to_scaling;
   float interpolate;
   gint64 last_timestamp;
-} TransformTransition;
+} XrdTransformTransition;
 
 /**
  * XrdWindowFlags:
@@ -108,7 +106,7 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
 
 void
 xrd_window_manager_scale (XrdWindowManager *self,
-                          GrabState *grab_state,
+                          XrdGrabState *grab_state,
                           float factor,
                           float update_rate_ms);
 
@@ -128,11 +126,11 @@ xrd_window_manager_update_pose (XrdWindowManager *self,
 void
 xrd_window_manager_poll_window_events (XrdWindowManager *self);
 
-GrabState *
+XrdGrabState *
 xrd_window_manager_get_grab_state (XrdWindowManager *self,
                                    XrdController *controller);
 
-HoverState *
+XrdHoverState *
 xrd_window_manager_get_hover_state (XrdWindowManager *self,
                                     XrdController *controller);
 

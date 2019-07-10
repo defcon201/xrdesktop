@@ -22,7 +22,7 @@ G_BEGIN_DECLS
 #define XRD_TYPE_POINTER xrd_pointer_get_type()
 G_DECLARE_INTERFACE (XrdPointer, xrd_pointer, XRD, POINTER, GObject)
 
-typedef struct _XrdPointerData {
+typedef struct {
   float start_offset;
   float length;
   float default_length;

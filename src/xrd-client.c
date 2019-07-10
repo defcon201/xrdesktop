@@ -748,7 +748,7 @@ _perform_push_pull (XrdClient *self,
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  HoverState *hover_state = xrd_controller_get_hover_state (controller);
+  XrdHoverState *hover_state = xrd_controller_get_hover_state (controller);
 
   float new_dist =
     hover_state->distance +
@@ -786,7 +786,7 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   float ms_since_last_poll =
     (g_get_monotonic_time () - priv->last_poll_timestamp) / 1000.f;
 
-  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   double x_state = (double) graphene_vec3_get_x (&event->state);
   double y_state = (double) graphene_vec3_get_y (&event->state);
@@ -843,7 +843,7 @@ _action_push_pull_cb (OpenVRAction        *action,
   float ms_since_last_poll =
     (g_get_monotonic_time () - priv->last_poll_timestamp) / 1000.f;
 
-  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   double y_state = (double) graphene_vec3_get_y (&event->state);
   if (grab_state->window && fabs (y_state) > priv->analog_threshold)
@@ -899,22 +899,22 @@ _action_menu_cb (OpenVRAction        *action,
   g_free (event);
 }
 
-typedef struct OrientationTransition
-{
-  GrabState *grab_state;
+typedef struct {
+  XrdGrabState *grab_state;
   graphene_quaternion_t from;
   graphene_quaternion_t from_neg;
   graphene_quaternion_t to;
   float interpolate;
   gint64 last_timestamp;
-} OrientationTransition;
+} XrdOrientationTransition;
 
 static gboolean
 _interpolate_orientation_cb (gpointer _transition)
 {
-  OrientationTransition *transition = (OrientationTransition *) _transition;
+  XrdOrientationTransition *transition =
+    (XrdOrientationTransition*) _transition;
 
-  GrabState *grab_state = transition->grab_state;
+  XrdGrabState *grab_state = transition->grab_state;
 
   graphene_quaternion_slerp (&transition->from,
                              &transition->to,
@@ -961,11 +961,12 @@ _action_reset_orientation_cb (OpenVRAction       *action,
   if (controller == NULL)
     return;
 
-  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
   if (grab_state->window == NULL)
     return;
 
-  OrientationTransition *transition = g_malloc (sizeof (OrientationTransition));
+  XrdOrientationTransition *transition =
+    g_malloc (sizeof (XrdOrientationTransition));
 
   /* TODO: Check if animation is already in progress */
 

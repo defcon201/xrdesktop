@@ -34,7 +34,7 @@ G_DECLARE_FINAL_TYPE (XrdInputSynth, xrd_input_synth, XRD, INPUT_SYNTH, GObject)
  *
  * A 2D mouse click event.
  **/
-typedef struct XrdClickEvent {
+typedef struct {
   XrdWindow        *window;
   graphene_point_t *position;
   int               button;
@@ -54,7 +54,7 @@ typedef struct XrdClickEvent {
  * does not appear frozen, but don't actually synthesize mouse move events.
  *
  **/
-typedef struct XrdMoveCursorEvent {
+typedef struct {
   XrdWindow *window;
   graphene_point_t *position;
   gboolean ignore;

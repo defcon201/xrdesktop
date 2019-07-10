@@ -12,11 +12,10 @@
 #include <gulkan.h>
 #include <openvr-glib.h>
 
-typedef struct VertexDataScene
-{
+typedef struct {
   graphene_point3d_t position;
   graphene_point_t   uv;
-} VertexDataScene;
+} XrdSceneVertex;
 
 struct _XrdSceneRenderer
 {
@@ -243,7 +242,7 @@ _init_pipeline_cache (XrdSceneRenderer *self)
   return true;
 }
 
-typedef struct __attribute__((__packed__)) PipelineConfig {
+typedef struct __attribute__((__packed__)) {
   VkPrimitiveTopology                           topology;
   uint32_t                                      stride;
   const VkVertexInputAttributeDescription      *attribs;
@@ -251,19 +250,19 @@ typedef struct __attribute__((__packed__)) PipelineConfig {
   const VkPipelineDepthStencilStateCreateInfo  *depth_stencil_state;
   const VkPipelineColorBlendAttachmentState    *blend_attachments;
   const VkPipelineRasterizationStateCreateInfo *rasterization_state;
-} PipelineConfig;
+} XrdPipelineConfig;
 
 static bool
 _init_graphics_pipelines (XrdSceneRenderer *self)
 {
-  PipelineConfig config[PIPELINE_COUNT] = {
+  XrdPipelineConfig config[PIPELINE_COUNT] = {
     // PIPELINE_WINDOWS
     {
       .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-      .stride = sizeof (VertexDataScene),
+      .stride = sizeof (XrdSceneVertex),
       .attribs = (VkVertexInputAttributeDescription []) {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-        {1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (VertexDataScene, uv)},
+        {1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (XrdSceneVertex, uv)},
       },
       .attrib_count = 2,
       .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {
@@ -287,10 +286,10 @@ _init_graphics_pipelines (XrdSceneRenderer *self)
     // PIPELINE_TIP
     {
       .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-      .stride = sizeof (VertexDataScene),
+      .stride = sizeof (XrdSceneVertex),
       .attribs = (VkVertexInputAttributeDescription []) {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-        {1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (VertexDataScene, uv)},
+        {1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof (XrdSceneVertex, uv)},
       },
       .attrib_count = 2,
       .depth_stencil_state = &(VkPipelineDepthStencilStateCreateInfo) {

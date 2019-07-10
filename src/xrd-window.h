@@ -19,35 +19,30 @@
 
 #include "xrd-pointer.h"
 
-typedef struct XrdPixelSize
-{
+typedef struct {
   uint32_t width;
   uint32_t height;
 } XrdPixelSize;
 
-typedef struct XrdHoverEvent
-{
+typedef struct {
   graphene_point3d_t point;
   graphene_matrix_t  pose;
   float              distance;
   guint64            controller_handle;
 } XrdHoverEvent;
 
-typedef struct XrdGrabEvent
-{
+typedef struct {
   graphene_matrix_t  pose;
   guint64            controller_handle;
 } XrdGrabEvent;
 
-typedef struct XrdControllerIndexEvent
-{
+typedef struct {
   guint64 controller_handle;
 } XrdControllerIndexEvent;
 
 /** _XrdWindowState:
  * copy of the state of a window carried over an overlay<->scene switch */
-typedef struct
-{
+typedef struct {
   gpointer native;
   gchar *title;
   float scale;
@@ -73,8 +68,7 @@ G_BEGIN_DECLS
 #define XRD_TYPE_WINDOW xrd_window_get_type()
 G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
 
-typedef struct XrdWindowData
-{
+typedef struct {
   GObject parent;
   gpointer native;
 

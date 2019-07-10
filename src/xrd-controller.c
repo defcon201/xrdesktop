@@ -14,8 +14,8 @@ struct _XrdController
   guint64 controller_handle;
   XrdPointer *pointer_ray;
   XrdPointerTip *pointer_tip;
-  HoverState hover_state;
-  GrabState grab_state;
+  XrdHoverState hover_state;
+  XrdGrabState grab_state;
 
   graphene_matrix_t pose_hand_grip;
 };
@@ -90,13 +90,13 @@ xrd_controller_get_handle (XrdController *self)
   return self->controller_handle;
 }
 
-HoverState *
+XrdHoverState *
 xrd_controller_get_hover_state (XrdController *self)
 {
   return &self->hover_state;
 }
 
-GrabState *
+XrdGrabState *
 xrd_controller_get_grab_state (XrdController *self)
 {
   return &self->grab_state;

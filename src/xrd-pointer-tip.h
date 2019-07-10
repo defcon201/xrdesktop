@@ -33,15 +33,13 @@ G_DECLARE_INTERFACE (XrdPointerTip, xrd_pointer_tip, XRD, POINTER_TIP, GObject)
  */
 #define XRD_TIP_APPARENT_SIZE_DISTANCE 3.0f
 
-typedef struct XrdPointerTipAnimation
-{
+typedef struct {
   XrdPointerTip *tip;
   float progress;
   guint callback_id;
 } XrdPointerTipAnimation;
 
-typedef struct _XrdPointerTipSettings
-{
+typedef struct {
   gboolean keep_apparent_size;
   float width_meters;
 
@@ -54,8 +52,7 @@ typedef struct _XrdPointerTipSettings
   int texture_height;
 } XrdPointerTipSettings;
 
-typedef struct _XrdPointerTipData
-{
+typedef struct {
   XrdPointerTip *tip;
 
   gboolean active;

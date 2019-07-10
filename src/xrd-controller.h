@@ -36,16 +36,14 @@ typedef enum {
   XRD_TRANSFORM_LOCK_SCALE
 } XrdTransformLock;
 
-typedef struct HoverState
-{
+typedef struct {
   XrdWindow        *window;
   graphene_matrix_t pose;
   float             distance;
   graphene_point_t  intersection_2d;
-} HoverState;
+} XrdHoverState;
 
-typedef struct GrabState
-{
+typedef struct {
   XrdWindow    *window;
 
   /* window rotation, controller rotation, offset at the moment the window
@@ -55,7 +53,7 @@ typedef struct GrabState
   graphene_point3d_t grab_offset;
 
   XrdTransformLock transform_lock;
-} GrabState;
+} XrdGrabState;
 
 XrdController *xrd_controller_new (guint64 controller_handle);
 
@@ -74,10 +72,10 @@ xrd_controller_set_pointer_tip (XrdController *self, XrdPointerTip *tip);
 guint64
 xrd_controller_get_handle (XrdController *self);
 
-HoverState *
+XrdHoverState *
 xrd_controller_get_hover_state (XrdController *self);
 
-GrabState *
+XrdGrabState *
 xrd_controller_get_grab_state (XrdController *self);
 
 void

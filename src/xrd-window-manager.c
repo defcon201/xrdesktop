@@ -105,7 +105,7 @@ xrd_window_manager_finalize (GObject *gobject)
 static gboolean
 _interpolate_cb (gpointer _transition)
 {
-  TransformTransition *transition = (TransformTransition *) _transition;
+  XrdTransformTransition *transition = (XrdTransformTransition *) _transition;
 
   XrdWindow *window = transition->window;
 
@@ -170,7 +170,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
     {
       XrdWindow *window = (XrdWindow *) l->data;
 
-      TransformTransition *transition = g_malloc (sizeof *transition);
+      XrdTransformTransition *transition = g_malloc (sizeof *transition);
       transition->last_timestamp = g_get_monotonic_time ();
 
       XrdWindowData *data = xrd_window_get_data (window);
@@ -262,7 +262,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
     {
       for (float phi = phi_start; phi < phi_end + 0.01f; phi += phi_step)
         {
-          TransformTransition *transition = g_malloc (sizeof *transition);
+          XrdTransformTransition *transition = g_malloc (sizeof *transition);
           transition->last_timestamp = g_get_monotonic_time ();
 
           float const x = sinf (theta) * cosf (phi);
@@ -454,7 +454,7 @@ _test_hover (XrdWindowManager  *self,
         }
     }
 
-  HoverState *hover_state = xrd_controller_get_hover_state (controller);
+  XrdHoverState *hover_state = xrd_controller_get_hover_state (controller);
 
   xrd_pointer_set_selected_window (pointer, closest);
 
@@ -526,8 +526,8 @@ _drag_window (XrdWindowManager  *self,
               XrdController     *controller)
 {
   (void) self;
-  HoverState *hover_state = xrd_controller_get_hover_state (controller);
-  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  XrdHoverState *hover_state = xrd_controller_get_hover_state (controller);
+  XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   graphene_point3d_t controller_translation_point;
   graphene_matrix_get_translation_point3d (pose, &controller_translation_point);
@@ -598,8 +598,8 @@ void
 xrd_window_manager_drag_start (XrdWindowManager *self,
                                XrdController    *controller)
 {
-  HoverState *hover_state = xrd_controller_get_hover_state (controller);
-  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  XrdHoverState *hover_state = xrd_controller_get_hover_state (controller);
+  XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   if (!_is_in_list (self->draggable_windows, hover_state->window))
     return;
@@ -660,7 +660,7 @@ _valid_float_prop (GObject *object, const gchar *prop, float value)
  */
 void
 xrd_window_manager_scale (XrdWindowManager *self,
-                          GrabState        *grab_state,
+                          XrdGrabState     *grab_state,
                           float             factor,
                           float             update_rate_ms)
 {
@@ -691,7 +691,7 @@ xrd_window_manager_check_grab (XrdWindowManager *self,
                                XrdController    *controller)
 {
   (void) self;
-  HoverState *hover_state = xrd_controller_get_hover_state (controller);
+  XrdHoverState *hover_state = xrd_controller_get_hover_state (controller);
 
   if (hover_state->window == NULL)
     return;
@@ -707,7 +707,7 @@ xrd_window_manager_check_release (XrdWindowManager *self,
                                   XrdController    *controller)
 {
   (void) self;
-  GrabState *grab_state = xrd_controller_get_grab_state (controller);
+  XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   if (grab_state->window == NULL)
     return;

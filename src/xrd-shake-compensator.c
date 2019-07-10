@@ -9,12 +9,6 @@
 #include "graphene-ext.h"
 #include "xrd-settings.h"
 
-typedef struct
-{
-  int x;
-  int y;
-} PixelPos;
-
 struct _XrdShakeCompensator
 {
   GObject parent;
