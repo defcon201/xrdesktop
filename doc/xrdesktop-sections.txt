@@ -203,6 +203,7 @@ XrdScenePointer
 xrd_scene_pointer_new
 xrd_scene_pointer_initialize
 xrd_scene_pointer_render
+xrd_scene_pointer_set_selected_window
 XRD_TYPE_SCENE_POINTER
 </SECTION>
 
@@ -382,7 +383,6 @@ xrd_pointer_move
 xrd_pointer_reset_length
 xrd_pointer_set_length
 xrd_pointer_set_selected_window
-_set_selected_window
 xrd_pointer_set_transformation
 xrd_pointer_show
 XRD_TYPE_POINTER
