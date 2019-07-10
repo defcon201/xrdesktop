@@ -21,12 +21,31 @@ G_BEGIN_DECLS
 #define XRD_TYPE_CONTAINER xrd_container_get_type()
 G_DECLARE_FINAL_TYPE (XrdContainer, xrd_container, XRD, CONTAINER, GObject)
 
+/**
+ * XrdContainerAttachment:
+ * @XRD_CONTAINER_ATTACHMENT_NONE: The #XrdContainer is not attached.
+ * @XRD_CONTAINER_ATTACHMENT_HEAD: The container is tracking the head.
+ * @XRD_CONTAINER_ATTACHMENT_HAND: The container is tracking a hand.
+ *
+ * Enum that defines if the container is moving with user input.
+ *
+ **/
 typedef enum {
   XRD_CONTAINER_ATTACHMENT_NONE,
   XRD_CONTAINER_ATTACHMENT_HEAD,
   XRD_CONTAINER_ATTACHMENT_HAND
 } XrdContainerAttachment;
 
+/**
+ * XrdContainerLayout:
+ * @XRD_CONTAINER_NO_LAYOUT: No layout is set.
+ * @XRD_CONTAINER_HORIZONTAL: A horizontal linear layout.
+ * @XRD_CONTAINER_VERTICAL: A vertical linear layout.
+ * @XRD_CONTAINER_RELATIVE: A relative layout.
+ *
+ * Defines how the children of a #XrdContainer are layed out.
+ *
+ **/
 typedef enum {
   XRD_CONTAINER_NO_LAYOUT,
   XRD_CONTAINER_HORIZONTAL,
