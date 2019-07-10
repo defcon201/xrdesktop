@@ -43,15 +43,34 @@ typedef struct TransformTransition
   gint64 last_timestamp;
 } TransformTransition;
 
+/**
+ * XrdWindowFlags:
+ * @XRD_WINDOW_HOVERABLE: Set if hover events should be generated.
+ * @XRD_WINDOW_DRAGGABLE: Set if the window should be draggable.
+ * @XRD_WINDOW_MANAGED: Set if window should be manipulated by window manager auto alignment.
+ * @XRD_WINDOW_DESTROY_WITH_PARENT: Set if window should be destroyed with the window manager.
+ * @XRD_WINDOW_BUTTON: Set if window is a button.
+ *
+ * Flags for the window manager.
+ *
+ **/
 typedef enum
 {
   XRD_WINDOW_HOVERABLE           = 1 << 0,
   XRD_WINDOW_DRAGGABLE           = 1 << 1,
   XRD_WINDOW_MANAGED             = 1 << 2,
   XRD_WINDOW_DESTROY_WITH_PARENT = 1 << 3,
-  XRD_WINDOW_MANAGER_BUTTON      = 1 << 4,
+  XRD_WINDOW_BUTTON              = 1 << 4,
 } XrdWindowFlags;
 
+/**
+ * XrdHoverMode:
+ * @XRD_HOVER_MODE_EVERYTHING: Buttons and windows should receive events.
+ * @XRD_HOVER_MODE_BUTTONS: Only buttons should receive events.
+ *
+ * A mode where input events can be ignored for certain widgets.
+ *
+ **/
 typedef enum
 {
   XRD_HOVER_MODE_EVERYTHING,

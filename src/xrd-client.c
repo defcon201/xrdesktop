@@ -201,7 +201,7 @@ xrd_client_add_window (XrdClient *self,
   xrd_window_manager_add_window (manager, window, flags);
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   if (priv->pinned_only &&
-      !(flags & XRD_WINDOW_MANAGER_BUTTON) &&
+      !(flags & XRD_WINDOW_BUTTON) &&
       !xrd_window_is_pinned (window))
     {
       xrd_window_hide (window);
@@ -309,7 +309,7 @@ xrd_client_add_button (XrdClient          *self,
                                  button,
                                  XRD_WINDOW_HOVERABLE |
                                  XRD_WINDOW_DESTROY_WITH_PARENT |
-                                 XRD_WINDOW_MANAGER_BUTTON);
+                                 XRD_WINDOW_BUTTON);
 
   g_signal_connect (button, "grab-start-event",
                     (GCallback) press_callback, press_callback_data);

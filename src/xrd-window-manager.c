@@ -26,10 +26,10 @@ struct _XrdWindowManager
   GSList *destroy_windows;
   GSList *containers;
 
-  /* all windows except XRD_WINDOW_MANAGER_BUTTON */
+  /* all windows except XRD_WINDOW_BUTTON */
   GSList *all_windows;
 
-  /* XRD_WINDOW_MANAGER_BUTTON */
+  /* XRD_WINDOW_BUTTON */
   GSList *buttons;
 
   gboolean controls_shown;
@@ -347,7 +347,7 @@ xrd_window_manager_add_window (XrdWindowManager *self,
                                XrdWindowFlags flags)
 {
   /* any window must be either in all_windows or buttons */
-  if (flags & XRD_WINDOW_MANAGER_BUTTON)
+  if (flags & XRD_WINDOW_BUTTON)
     {
       self->buttons = g_slist_append (self->buttons, window);
       if (!self->controls_shown)
