@@ -652,7 +652,7 @@ _valid_float_prop (GObject *object, const gchar *prop, float value)
 /**
  * xrd_window_manager_scale:
  * @self: The #XrdWindowManager
- * @grab_state: The #GrabState to scale
+ * @grab_state: The #XrdGrabState to scale
  * @factor: Scale factor
  * @update_rate_ms: The update rate in ms
  *
