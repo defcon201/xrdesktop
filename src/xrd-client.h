@@ -29,6 +29,16 @@ G_BEGIN_DECLS
 #define XRD_TYPE_CLIENT xrd_client_get_type()
 G_DECLARE_DERIVABLE_TYPE (XrdClient, xrd_client, XRD, CLIENT, GObject)
 
+/**
+ * XrdClientClass:
+ * @parent: The object class structure needs to be the first
+ *   element in the widget class structure in order for the class mechanism
+ *   to work correctly. This allows a XrdClientClass pointer to be cast to
+ *   a GObjectClass pointer.
+ * @add_button: Create a label button.
+ * @get_uploader: Get a #GulkanClient from the #XrdClient.
+ * @init_controller: Initialize a #XrdController.
+ */
 struct _XrdClientClass
 {
   GObjectClass parent;

@@ -22,6 +22,13 @@ G_BEGIN_DECLS
 G_DECLARE_DERIVABLE_TYPE (XrdOverlayModel, xrd_overlay_model, XRD,
                           OVERLAY_MODEL, OpenVROverlay)
 
+/**
+ * XrdOverlayModelClass:
+ * @parent: The object class structure needs to be the first
+ *   element in the widget class structure in order for the class mechanism
+ *   to work correctly. This allows a XrdOverlayModelClass pointer to be cast to
+ *   a OpenVROverlayClass pointer.
+ */
 struct _XrdOverlayModelClass
 {
   OpenVROverlayClass parent;

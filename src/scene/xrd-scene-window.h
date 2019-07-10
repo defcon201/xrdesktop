@@ -27,6 +27,13 @@ G_BEGIN_DECLS
 G_DECLARE_DERIVABLE_TYPE (XrdSceneWindow, xrd_scene_window,
                           XRD, SCENE_WINDOW, XrdSceneObject)
 
+/**
+ * XrdSceneWindowClass:
+ * @parent: The object class structure needs to be the first
+ *   element in the widget class structure in order for the class mechanism
+ *   to work correctly. This allows a XrdSceneWindowClass pointer to be cast to
+ *   a XrdSceneObjectClass pointer.
+ */
 struct _XrdSceneWindowClass
 {
   XrdSceneObjectClass parent;
