@@ -273,7 +273,6 @@ xrd_window_get_initial_ppm (XrdWindow *self)
 /**
  * xrd_window_get_current_width_meters:
  * @self: The #XrdWindow
- * @meters: The current width of the #XrdWindow in meters.
  *
  * Returns: The current world space width of the window in meters.
  */
@@ -294,9 +293,8 @@ xrd_window_get_current_width_meters (XrdWindow *self)
 /**
  * xrd_window_get_current_height_meters:
  * @self: The #XrdWindow
- * @meters: The current height of the #XrdWindow in meter.
  *
- * Returns: The current world space height of the window in meter.
+ * Returns: The current world space height of the window in meters.
  */
 float
 xrd_window_get_current_height_meters (XrdWindow *self)
@@ -355,7 +353,7 @@ xrd_window_intersects (XrdWindow          *self,
 /**
  * xrd_window_get_intersection_2d_pixels:
  * @self: The #XrdWindow
- * @intersection_point: A #graphene_point3d_t intersection point in meters.
+ * @intersection_3d: A #graphene_point3d_t intersection point in meters.
  * @intersection_pixels: Intersection in window coordinates with the origin at top/left in pixels.
  */
 

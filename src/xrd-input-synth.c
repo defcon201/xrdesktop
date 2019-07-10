@@ -406,7 +406,7 @@ xrd_input_synth_synthing_controller (XrdInputSynth *self)
 /**
  * xrd_input_synth_hand_off_to_controller:
  * @self: The #XrdInputSynth
- * @controller_index: The index of the controller that will be used for input
+ * @controller_handle: The index of the controller that will be used for input
  * synth.
  */
 void

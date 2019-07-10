@@ -215,6 +215,7 @@ xrd_client_add_window (XrdClient *self,
  * @self: The #XrdClient
  * @width: Width in meters.
  * @height: Height in meters.
+ * @ppm: Density in pixels per meter
  * @label_count: The number of text lines given in @label
  * @label: One or more lines of text that will be displayed on the button.
  *
@@ -2182,9 +2183,9 @@ _save_window_states (XrdClient *self,
     }
 }
 
-/** xrd_client_switch_mode:
+/**
+ * xrd_client_switch_mode:
  * @self: current #XrdClient to be destroyed.
- * Returns: A new #XrdClient of the opposite mode than the passed one.
  *
  * References to gulkan, openvr-glib and xrdesktop objects (like #XrdWindow)
  * will be invalid after calling this function.
@@ -2197,6 +2198,8 @@ _save_window_states (XrdClient *self,
  * The caller is responsible to not use references to any previous #XrdWindow.
  * The caller may use xrd_client_get_windows() to get the list of new windows
  * and may use the "native" property to recognize each window.
+ *
+ * Returns: A new #XrdClient of the opposite mode than the passed one.
  */
 struct _XrdClient *
 xrd_client_switch_mode (XrdClient *self)

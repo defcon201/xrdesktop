@@ -489,7 +489,11 @@ _step_hand (XrdContainer *self)
 
 /**
  * xrd_container_step:
+ * @self: The #XrdContainer
+ *
  * Updates the container's position based on its attachment.
+ *
+ * Returns: A #gboolean if that is %TRUE the step was successful.
  */
 gboolean
 xrd_container_step (XrdContainer *self)
