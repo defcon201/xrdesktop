@@ -24,19 +24,39 @@ G_BEGIN_DECLS
 #define XRD_TYPE_INPUT_SYNTH xrd_input_synth_get_type()
 G_DECLARE_FINAL_TYPE (XrdInputSynth, xrd_input_synth, XRD, INPUT_SYNTH, GObject)
 
+/**
+ * XrdClickEvent:
+ * @window: The #XrdWindow that was clicked.
+ * @position: A #graphene_point_t 2D screen position for the click.
+ * @button: The #int identifier of the mouse button.
+ * @state: A #gboolean that is %TRUE when pressed and %FALSE when released.
+ * @controller_handle: A #guint64 with the OpenVR handle to the controller.
+ *
+ * A 2D mouse click event.
+ **/
 typedef struct XrdClickEvent {
-  XrdWindow *window;
+  XrdWindow        *window;
   graphene_point_t *position;
   int               button;
   gboolean          state;
   guint64           controller_handle;
 } XrdClickEvent;
 
+/**
+ * XrdMoveCursorEvent:
+ * @window: The #XrdWindow on which the cursor was moved.
+ * @position: A #graphene_point_t with the current 2D screen position.
+ * @ignore: A #gboolean wheather the synthesis should be ignored.
+ *
+ * A 2D mouse move event.
+ *
+ * Ignoring this events means only updating the cursor position in VR so it
+ * does not appear frozen, but don't actually synthesize mouse move events.
+ *
+ **/
 typedef struct XrdMoveCursorEvent {
   XrdWindow *window;
   graphene_point_t *position;
-  /* Ignoring this events means only updating the cursor position in VR so it
-   * does not appear frozen, but don't actually synthesize mouse move events. */
   gboolean ignore;
 } XrdMoveCursorEvent;
 
