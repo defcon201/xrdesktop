@@ -67,7 +67,7 @@ main ()
                                                                  texture_height,
                                                                  ppm);
 
-  xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE);
+  xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE, NULL);
 
   xrd_window_submit_texture (XRD_WINDOW (window), gc, texture);
 

@@ -77,7 +77,7 @@ _test_scene_client ()
   g_print("calling xrd_window_submit_texture\n");
   xrd_window_submit_texture (XRD_WINDOW (window), gc, texture);
 
-  xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE);
+  xrd_client_add_window (XRD_CLIENT (client), XRD_WINDOW (window), TRUE, NULL);
 
   GulkanDevice *device = gulkan_client_get_device (gc);
   gulkan_device_wait_idle (device);

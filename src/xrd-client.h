@@ -98,7 +98,12 @@ xrd_client_window_new_from_native (XrdClient   *client,
 void
 xrd_client_add_window (XrdClient *self,
                        XrdWindow *window,
-                       gboolean   draggable);
+                       gboolean   draggable,
+                       gpointer   lookup_key);
+
+XrdWindow *
+xrd_client_lookup_window (XrdClient *self,
+                          gpointer key);
 
 void
 xrd_client_remove_window (XrdClient *self,

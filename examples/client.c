@@ -18,9 +18,6 @@ typedef struct Example
   GMainLoop *loop;
   XrdClient *client;
 
-  /* always good to keep a list (or mapping to XrdWindow) around */
-  GSList *windows;
-
   XrdWindow *switch_button;
 
   GulkanTexture *cursor_texture;
@@ -33,31 +30,54 @@ typedef struct Example
 
   GdkPixbuf *window_pixbuf;
   GdkPixbuf *child_window_pixbuf;
+
+  /* A real window manager will have a function like
+   * _desktop_window_process_frame when updating a window's contents.
+   * In this example, this is simulated by calling the window
+   * update function for each desktop window in a imer. */
+  GSList *desktop_window_list;
+  gint64 desktop_window_manager_update_loop;
 } Example;
 
-/* Placeholder for a wrapper around a native window that will be stored in a
- * XrdWindow's "native" property.
- *
- * Store various window specific data here. For example useful:
- * - Reference to the native window the XrdWindow mirrors.
- * - Cache of the GulkanTexture to avoid allocating a new one every frame.
- * - with external memory: cache of the GL texture shared with GulkanTexture.
- * - Initial state of a native window, to restore when exiting VR mirror mode.
- */
-typedef struct ExampleWindow
+
+
+
+/* Placeholder struct for a real desktop window manager's window struct.
+ * Examples are KWin::EffectWindow (kwin plugin) and MetaWindow (gnome) */
+typedef struct DesktopWindow
 {
-  /* Instead of a window, this example uses a pixbuf as source for textures  */
   GdkPixbuf *pixbuf;
+  gchar *title;
+} DesktopWindow;
 
-  GulkanTexture *gulkan_texture;
-  guint submit_source;
-} ExampleWindow;
+/* In a real desktop window manager, the wm creates window structs, not us. */
+static DesktopWindow *
+_create_desktop_window (Example *self,
+                        gchar *title,
+                        GdkPixbuf *pixbuf)
+{
+  DesktopWindow *desktop_window = g_malloc (sizeof (DesktopWindow));
+  desktop_window->pixbuf = pixbuf;
+  desktop_window->title = title;
+  self->desktop_window_list =
+    g_slist_append (self->desktop_window_list, desktop_window);
+  return desktop_window;
+}
 
-/* Helper for the _submit_texture_cb callback specific to this example. */
-typedef struct SubmitData {
-  Example *self;
-  XrdWindow *window;
-} SubmitData;
+static gboolean
+_desktop_window_process_frame (Example *self, DesktopWindow *desktop_window);
+
+static gboolean
+_desktop_window_manager_update_loop_cb (gpointer _self)
+{
+  Example *self = _self;
+  for (GSList *l = self->desktop_window_list; l; l = l->next)
+    {
+      DesktopWindow *desktop_window = l->data;
+      _desktop_window_process_frame (self, desktop_window);
+    }
+  return TRUE;
+}
 
 static gboolean
 _sigint_cb (gpointer _self)
@@ -66,12 +86,6 @@ _sigint_cb (gpointer _self)
   g_main_loop_quit (self->loop);
   return TRUE;
 }
-
-static gboolean
-_init_example (Example *example, XrdClient *client);
-
-static void
-_cleanup (Example *self);
 
 static GdkPixbuf *
 load_gdk_pixbuf (const gchar* name)
@@ -92,64 +106,108 @@ load_gdk_pixbuf (const gchar* name)
   return pixbuf;
 }
 
-/* A placeholder callback that continuously submits the same texture to an
- * XrdWindow. A window manager will not use a callback like this, but submit
- * an updated texture whenever a window is repainted/redrawn/refreshed. */
-static gboolean
-_submit_texture_cb (gpointer _submitData)
-{
-  SubmitData *submitData = _submitData;
-  Example *self = (Example*) submitData->self;
 
-  ExampleWindow *example_window;
-  g_object_get (submitData->window, "native", &example_window, NULL);
+
+
+/* Wapper around a native desktop window that will be stored in a XrdWindow's
+ * "native" property.
+ *
+ * Store various window specific data here. For example useful:
+ * - Reference to the native window the XrdWindow mirrors.
+ * - Cache of the GulkanTexture to avoid allocating a new one every frame.
+ * - with external memory: cache of the GL texture shared with GulkanTexture.
+ * - Initial state of a desktop window, to restore when exiting VR mirror mode.
+ *   e.g. if it is displayed always above other windows.
+ */
+typedef struct WindowWrapper
+{
+  DesktopWindow *desktop_window;
+  GulkanTexture *gulkan_texture;
+} WindowWrapper;
+
+static GulkanTexture *
+_desktop_window_to_gulkan_texture (Example *self,
+                                   DesktopWindow *desktop_window)
+{
+  GulkanClient *gc = xrd_client_get_uploader (self->client);
+  VkImageLayout layout = xrd_client_get_upload_layout (self->client);
+
+  GulkanTexture *tex =
+    gulkan_client_texture_new_from_pixbuf (gc,
+                                           desktop_window->pixbuf,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           layout,
+                                           true);
+  return tex;
+}
+
+static gboolean
+_desktop_window_process_frame (Example *self, DesktopWindow *desktop_window)
+{
+  XrdWindow *xrd_window = xrd_client_lookup_window (self->client,
+                                                    desktop_window);
+
+  WindowWrapper *window_wrapper;
+  g_object_get (xrd_window, "native", &window_wrapper, NULL);
 
   /* it's important to always get the uploader from the client because
    * if the client is replaced, the previous uploader becomes invalid */
   GulkanClient *gc = xrd_client_get_uploader (self->client);
 
-  VkImageLayout layout = xrd_client_get_upload_layout (self->client);
+  guint window_texture_width =
+    (guint)gdk_pixbuf_get_width (desktop_window->pixbuf);
+  guint window_texture_height =
+    (guint)gdk_pixbuf_get_height (desktop_window->pixbuf);
 
-  if (example_window->gulkan_texture == NULL)
-    example_window->gulkan_texture =
-      gulkan_client_texture_new_from_pixbuf (gc,
-                                             example_window->pixbuf,
-                                             VK_FORMAT_R8G8B8A8_UNORM,
-                                             layout,
-                                             true);
+  /* a new Gulkan texture is needed if it has not been created (first use)
+   * or if the desktop window's dimensions have changed, so the cached
+   * texture's resolution doesn't match the desktop window anymore */
+  if (window_wrapper->gulkan_texture == NULL ||
+      window_texture_width !=
+        gulkan_texture_get_width (window_wrapper->gulkan_texture) ||
+      window_texture_height !=
+        gulkan_texture_get_height (window_wrapper->gulkan_texture))
+    {
+      // g_print ("Allocating new texture for %s\n", desktop_window->title);
+      if (window_wrapper->gulkan_texture)
+        g_object_unref (window_wrapper->gulkan_texture);
 
-  xrd_window_submit_texture (submitData->window, gc,
-                             example_window->gulkan_texture);
+      window_wrapper->gulkan_texture =
+        _desktop_window_to_gulkan_texture (self, desktop_window);
+    }
+  else
+    {
+      /* update window_wrapper->gulkan_texture with desktop window content */
+    }
+
+  xrd_window_submit_texture (xrd_window, gc, window_wrapper->gulkan_texture);
   return TRUE;
 }
 
 static XrdWindow *
 _add_window (Example *self,
-             gchar *title,
-             float width,
-             GdkPixbuf *texture_source,
+             DesktopWindow *desktop_window,
+             float width_meter,
              gboolean draggable)
+
 {
-  uint32_t texture_width = (uint32_t)gdk_pixbuf_get_width (texture_source);
-  uint32_t texture_height = (uint32_t)gdk_pixbuf_get_height (texture_source);
-  float ppm = texture_width / width;
+  /* a real window manager needs to find these from real desktop windows. */
+  gchar *title = desktop_window->title;
+  guint texture_width = (guint)gdk_pixbuf_get_width (desktop_window->pixbuf);
+  guint texture_height = (guint)gdk_pixbuf_get_height (desktop_window->pixbuf);
+
+  float ppm = texture_width / width_meter;
 
   XrdWindow *window =
     xrd_client_window_new_from_pixels (self->client, title,
                                        texture_width, texture_height, ppm);
 
-  ExampleWindow *native = g_malloc (sizeof (ExampleWindow));
+  WindowWrapper *native = g_malloc (sizeof (WindowWrapper));
   native->gulkan_texture = NULL;
-  native->pixbuf = texture_source;
   g_object_set (window, "native", native, NULL);
 
-  xrd_client_add_window (self->client, window, draggable);
+  xrd_client_add_window (self->client, window, draggable, desktop_window);
 
-  SubmitData *submitData = g_malloc (sizeof (SubmitData));
-  submitData->self = self;
-  submitData->window = window;
-  native->submit_source =
-    g_timeout_add (16, _submit_texture_cb, submitData);
   return window;
 }
 
@@ -170,14 +228,9 @@ perform_switch (gpointer data)
   for (GSList *l = windows; l != NULL; l = l->next)
     {
       XrdWindow *window = l->data;
-      ExampleWindow *native = NULL;
+      WindowWrapper *native = NULL;
       g_object_get (window, "native", &native, NULL);
       g_clear_object (&native->gulkan_texture);
-
-      /* This example uses a callback to submit textures to windows,
-       * this needs to be stopped before windows are being destroyed. */
-      g_source_remove (native->submit_source);
-      native->submit_source = 0;
     }
 
   self->client = xrd_client_switch_mode (self->client);
@@ -185,23 +238,6 @@ perform_switch (gpointer data)
   /* set up the example on the new client */
   _init_client (self, self->client);
 
-  windows = xrd_client_get_windows (self->client);
-  for (GSList *l = windows; l != NULL; l = l->next)
-    {
-      XrdWindow *window = l->data;
-      ExampleWindow *native = NULL;
-      g_object_get (window, "native", &native, NULL);
-
-      /* Start submitting textures to the new windows.
-       * A desktop will have to find which new XrdWindow belongs to its native
-       * window, for example by comparing its native window pointer with the
-       * native property of the new XrdWindow. */
-      SubmitData *submitData = g_malloc (sizeof (SubmitData));
-      submitData->self = self;
-      submitData->window = window;
-      native->submit_source =
-        g_timeout_add (16, _submit_texture_cb, submitData);
-    }
   return FALSE;
 }
 
@@ -224,8 +260,10 @@ static void
 _init_child_window (Example      *self,
                     XrdWindow    *window)
 {
-  XrdWindow *child = _add_window (self, "A child", 0.25f,
-                                  self->child_window_pixbuf, FALSE);
+  DesktopWindow *desktop_window =
+     _create_desktop_window (self, "A child", self->child_window_pixbuf);
+
+  XrdWindow *child = _add_window (self, desktop_window, 0.25f, FALSE);
 
   graphene_point_t offset = { .x = 25, .y = 25 };
   xrd_window_add_child (window, child, &offset);
@@ -290,8 +328,10 @@ _init_windows (Example *self)
       float max_window_height = 0;
       for (int row = 0; row < GRID_HEIGHT; row++)
         {
-          XrdWindow *window = _add_window (self, "A window.", 0.5f,
-                                           self->window_pixbuf, TRUE);
+          DesktopWindow *desktop_window =
+             _create_desktop_window (self, "A window", self->window_pixbuf);
+
+          XrdWindow *window = _add_window (self, desktop_window, 0.5f, TRUE);
 
           window_x += xrd_window_get_current_width_meters (window);
 
@@ -350,7 +390,7 @@ _cleanup (Example *self)
   for (GSList *l = windows; l; l = l->next)
     {
       XrdWindow *window = l->data;
-      ExampleWindow *example_window;
+      WindowWrapper *example_window;
       g_object_get (window, "native", &example_window, NULL);
       g_object_unref (example_window->gulkan_texture);
     }
@@ -499,6 +539,9 @@ _init_example (Example *self, XrdClient *client)
 
   g_unix_signal_add (SIGINT, _sigint_cb, self);
 
+  self->desktop_window_manager_update_loop =
+    g_timeout_add (16, _desktop_window_manager_update_loop_cb, self);
+
   return TRUE;
 }
 
@@ -534,6 +577,7 @@ main (int argc, char *argv[])
     .loop = g_main_loop_new (NULL, FALSE),
     .window_pixbuf = load_gdk_pixbuf ("/res/hawk.jpg"),
     .child_window_pixbuf = load_gdk_pixbuf ("/res/cat.jpg"),
+    .desktop_window_list = NULL,
   };
 
 

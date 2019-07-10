@@ -84,6 +84,9 @@ typedef struct _XrdClientPrivate
   gint64 last_poll_timestamp;
 
   gboolean always_show_overlay_pointer;
+
+  /* for desktops to lookup an #XrdWindow */
+  GHashTable *window_mapping;
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -183,11 +186,16 @@ xrd_client_remove_container (XrdClient *self,
  * It should be set to false for example for
  *  - child windows
  *  - windows in a container that is attached to the FOV, a controller, etc.
+ * @lookup_key: If looking up the #XrdWindow by a key with
+ * xrd_client_lookup_window() should be enabled, set to != NULL.
+ * Note that an #XrdWindow can be replaced by the overlay-scene switch.
+ * Therefore the #XrdWindow should always be looked up instead of cached.
  */
 void
 xrd_client_add_window (XrdClient *self,
                        XrdWindow *window,
-                       gboolean   draggable)
+                       gboolean   draggable,
+                       gpointer lookup_key)
 {
   XrdWindowFlags flags = XRD_WINDOW_HOVERABLE | XRD_WINDOW_DESTROY_WITH_PARENT;
 
@@ -208,6 +216,17 @@ xrd_client_add_window (XrdClient *self,
     }
 
   xrd_client_add_window_callbacks (self, window);
+
+  if (lookup_key != NULL)
+    g_hash_table_insert (priv->window_mapping, lookup_key, window);
+}
+
+XrdWindow *
+xrd_client_lookup_window (XrdClient *self,
+                          gpointer key)
+{
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  return g_hash_table_lookup (priv->window_mapping, key);
 }
 
 /**
@@ -558,6 +577,15 @@ xrd_client_get_manager (XrdClient *self)
   return priv->manager;
 }
 
+static gboolean
+_match_value_ptr (gpointer key,
+                  gpointer value,
+                  gpointer user_data)
+{
+  (void) key;
+  return value == user_data;
+}
+
 /**
  * xrd_client_remove_window:
  * @self: The #XrdClient
@@ -595,6 +623,8 @@ xrd_client_remove_window (XrdClient *self,
         xrd_controller_reset_grab_state (controller);
     }
   g_list_free(controllers);
+
+  g_hash_table_foreach_remove (priv->window_mapping, _match_value_ptr, window);
 }
 
 OpenVRActionSet *
@@ -1917,6 +1947,9 @@ xrd_client_init (XrdClient *self)
   priv->controllers = g_hash_table_new_full (g_int64_hash, g_int64_equal,
                                              g_free, g_object_unref);
 
+  priv->window_mapping = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                                NULL, g_object_unref);
+
   xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "scroll-to-push-ratio",
                                   &priv->scroll_to_push_ratio);
@@ -2120,6 +2153,10 @@ _replace_client (XrdClient *self)
 {
   XrdClient *ret = NULL;
   gboolean to_scene = XRD_IS_OVERLAY_CLIENT (self);
+
+  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+  g_hash_table_destroy (priv->window_mapping);
+
   if (to_scene)
     {
       g_object_unref (self);
@@ -2133,12 +2170,33 @@ _replace_client (XrdClient *self)
       ret = XRD_CLIENT (xrd_overlay_client_new ());
     }
 
+  XrdClientPrivate *ret_priv = xrd_client_get_instance_private (ret);
+  ret_priv->window_mapping =
+      g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                             NULL, g_object_unref);
+
   return ret;
+}
+
+static gpointer *
+_g_hash_table_reverse_lookup (GHashTable *hash_table, XrdWindow *find)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, hash_table);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      if (value == find)
+        return key;
+    }
+  return NULL;
 }
 
 static void
 _save_window_states (XrdClient *self,
                      XrdWindowState *state,
+                     gpointer *lookup_keys,
                      int window_count)
 {
   XrdWindowManager *manager = xrd_client_get_manager (self);
@@ -2148,6 +2206,10 @@ _save_window_states (XrdClient *self,
     {
       state[i].child_index = -1;
       XrdWindow *window = g_slist_nth_data (windows, (guint)i);
+
+      XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+      lookup_keys[i] = _g_hash_table_reverse_lookup (priv->window_mapping,
+                                                     window);
 
       XrdWindowData *data = xrd_window_get_data (window);
 
@@ -2218,7 +2280,9 @@ xrd_client_switch_mode (XrdClient *self)
   XrdWindowState *state = g_malloc (sizeof (XrdWindowState) *
                                     (guint)window_count);
 
-  _save_window_states (self, state, window_count);
+  gpointer *lookup_keys = g_malloc (sizeof (gpointer) * (guint)window_count);
+
+  _save_window_states (self, state, lookup_keys, window_count);
 
   XrdClient *ret = _replace_client (self);
   manager = xrd_client_get_manager (ret);
@@ -2244,7 +2308,8 @@ xrd_client_switch_mode (XrdClient *self)
                     NULL);
 
 
-      xrd_client_add_window (ret, window, state[i].is_draggable);
+      xrd_client_add_window (ret, window, state[i].is_draggable,
+                             lookup_keys[i]);
 
       xrd_window_set_transformation (window, &state[i].transform);
       xrd_window_set_reset_transformation (window, &state[i].reset_transform,
@@ -2280,6 +2345,7 @@ xrd_client_switch_mode (XrdClient *self)
                                          XRD_HOVER_MODE_EVERYTHING);
 
   g_free (state);
+  g_free (lookup_keys);
   return ret;
 }
 
