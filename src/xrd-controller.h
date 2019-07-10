@@ -19,15 +19,26 @@ G_BEGIN_DECLS
 #define XRD_TYPE_CONTROLLER xrd_controller_get_type()
 G_DECLARE_FINAL_TYPE (XrdController, xrd_controller, XRD, CONTROLLER, GObject)
 
+/**
+ * XrdTransformLock:
+ * @XRD_TRANSFORM_LOCK_NONE: The grab action does not currently have a transformation it is locked to.
+ * @XRD_TRANSFORM_LOCK_PUSH_PULL: Only push pull transformation can be performed.
+ * @XRD_TRANSFORM_LOCK_SCALE: Only a scale transformation can be performed.
+ *
+ * The type of transformation the grab action is currently locked to.
+ * This will be detected at the begginging of a grab transformation
+ * and reset after the transformation is done.
+ *
+ **/
 typedef enum {
-  LOCKED_NONE,
-  LOCKED_PUSHPULL,
-  LOCKED_SCALE
-} PushPullScaleLock;
+  XRD_TRANSFORM_LOCK_NONE,
+  XRD_TRANSFORM_LOCK_PUSH_PULL,
+  XRD_TRANSFORM_LOCK_SCALE
+} XrdTransformLock;
 
 typedef struct HoverState
 {
-  XrdWindow *window;
+  XrdWindow        *window;
   graphene_matrix_t pose;
   float             distance;
   graphene_point_t  intersection_2d;
@@ -43,7 +54,7 @@ typedef struct GrabState
   graphene_quaternion_t inverse_controller_rotation;
   graphene_point3d_t grab_offset;
 
-  PushPullScaleLock push_pull_scale_lock;
+  XrdTransformLock transform_lock;
 } GrabState;
 
 XrdController *xrd_controller_new (guint64 controller_handle);

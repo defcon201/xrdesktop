@@ -39,7 +39,7 @@ xrd_controller_init (XrdController *self)
   self->hover_state.distance = 1.0f;
   self->hover_state.window = NULL;
   self->grab_state.window = NULL;
-  self->grab_state.push_pull_scale_lock = LOCKED_NONE;
+  self->grab_state.transform_lock = XRD_TRANSFORM_LOCK_NONE;
 }
 
 XrdController *
@@ -110,7 +110,7 @@ xrd_controller_reset_grab_state (XrdController *self)
   graphene_quaternion_init_identity (
     &self->grab_state.inverse_controller_rotation);
   graphene_quaternion_init_identity (&self->grab_state.window_rotation);
-  self->grab_state.push_pull_scale_lock = LOCKED_NONE;
+  self->grab_state.transform_lock = XRD_TRANSFORM_LOCK_NONE;
 }
 
 void

@@ -796,29 +796,29 @@ _action_push_pull_scale_cb (OpenVRAction        *action,
   if (fabs (x_state) < priv->analog_threshold &&
       fabs (y_state) < priv->analog_threshold)
     {
-      grab_state->push_pull_scale_lock = LOCKED_NONE;
+      grab_state->transform_lock = XRD_TRANSFORM_LOCK_NONE;
       g_free (event);
       return;
     }
 
-  if (grab_state->push_pull_scale_lock == LOCKED_NONE)
+  if (grab_state->transform_lock == XRD_TRANSFORM_LOCK_NONE)
     {
       if (fabs (x_state) > fabs (y_state) &&
           fabs (x_state) > priv->analog_threshold)
-        grab_state->push_pull_scale_lock = LOCKED_SCALE;
+        grab_state->transform_lock = XRD_TRANSFORM_LOCK_SCALE;
 
       else if (fabs (y_state) > fabs (x_state) &&
           fabs (y_state) > priv->analog_threshold)
-        grab_state->push_pull_scale_lock = LOCKED_PUSHPULL;
+        grab_state->transform_lock = XRD_TRANSFORM_LOCK_PUSH_PULL;
     }
 
-  if (grab_state->push_pull_scale_lock == LOCKED_SCALE)
+  if (grab_state->transform_lock == XRD_TRANSFORM_LOCK_SCALE)
     {
       double factor = x_state * priv->scroll_to_scale_ratio;
       xrd_window_manager_scale (priv->manager, grab_state, (float) factor,
                                 ms_since_last_poll);
     }
-  else if (grab_state->push_pull_scale_lock == LOCKED_PUSHPULL)
+  else if (grab_state->transform_lock == XRD_TRANSFORM_LOCK_PUSH_PULL)
     _perform_push_pull (self, controller, graphene_vec3_get_y (&event->state),
                         ms_since_last_poll);
 

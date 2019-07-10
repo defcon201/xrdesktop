@@ -340,7 +340,7 @@ xrd_controller_set_pointer
 xrd_controller_set_pointer_tip
 xrd_controller_update_pose_hand_grip
 XRD_TYPE_CONTROLLER
-PushPullScaleLock
+XrdTransformLock
 </SECTION>
 
 <SECTION>
