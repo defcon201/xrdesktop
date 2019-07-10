@@ -150,7 +150,7 @@ xrd_client_get_upload_layout (XrdClient *self)
 /**
  * xrd_client_add_container:
  * @self: The #XrdClient
- * @container: The #XrdWindowContainer to add
+ * @container: The #XrdContainer to add
  *
  * For a container to start behaving according to its layout and attachment,
  * it must be added to the client.
