@@ -228,6 +228,12 @@ XRD_TYPE_SCENE_WINDOW
 XrdWindow
 XrdWindowFlags
 XrdWindowInterface
+XrdWindowData
+XrdWindowState
+XrdControllerIndexEvent
+XrdHoverEvent
+XrdGrabEvent
+XrdPixelSize
 xrd_window_add_child
 xrd_window_emit_grab
 xrd_window_emit_grab_start
@@ -271,6 +277,9 @@ XRD_TYPE_WINDOW
 <SECTION>
 <FILE>XrdWindowManager</FILE>
 XrdWindowManager
+XrdHoverMode
+XrdNoHoverEvent
+XrdTransformTransition
 xrd_window_manager_new
 xrd_window_manager_add_window
 xrd_window_manager_arrange_reset
@@ -291,7 +300,6 @@ xrd_window_manager_get_windows
 xrd_window_manager_remove_container
 xrd_window_manager_set_hover_mode
 XRD_TYPE_WINDOW_MANAGER
-XrdHoverMode
 </SECTION>
 
 <SECTION>
@@ -327,6 +335,9 @@ XRD_TYPE_CONTAINER
 <SECTION>
 <FILE>XrdController</FILE>
 XrdController
+XrdTransformLock
+XrdGrabState
+XrdHoverState
 xrd_controller_get_grab_state
 xrd_controller_get_handle
 xrd_controller_get_hover_state
@@ -340,7 +351,6 @@ xrd_controller_set_pointer
 xrd_controller_set_pointer_tip
 xrd_controller_update_pose_hand_grip
 XRD_TYPE_CONTROLLER
-XrdTransformLock
 </SECTION>
 
 <SECTION>
@@ -353,6 +363,7 @@ xrd_button_set_text
 <FILE>XrdDesktopCursor</FILE>
 XrdDesktopCursor
 XrdDesktopCursorInterface
+XrdDesktopCursorData
 xrd_desktop_cursor_get_data
 xrd_desktop_cursor_get_transformation
 xrd_desktop_cursor_hide
@@ -409,6 +420,9 @@ xrd_pointer_tip_update_apparent_size
 XRD_TYPE_POINTER_TIP
 XRD_TIP_APPARENT_SIZE_DISTANCE
 XRD_TIP_VIEWPORT_SCALE
+XrdPointerTipAnimation
+XrdPointerTipData
+XrdPointerTipSettings
 </SECTION>
 
 <SECTION>
