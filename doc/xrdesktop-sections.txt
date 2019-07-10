@@ -6,7 +6,6 @@ xrd_client_add_window
 xrd_client_remove_window
 xrd_client_add_button
 xrd_client_get_keyboard_window
-xrd_client_save_reset_transform
 xrd_client_get_uploader
 xrd_client_emit_keyboard_press
 xrd_client_emit_click
@@ -146,9 +145,6 @@ XrdScenePointer
 xrd_scene_pointer_new
 xrd_scene_pointer_initialize
 xrd_scene_pointer_render
-xrd_scene_pointer_reset_length
-xrd_scene_pointer_get_ray
-xrd_scene_pointer_get_intersection
 XRD_TYPE_SCENE_POINTER
 </SECTION>
 
@@ -157,7 +153,6 @@ XRD_TYPE_SCENE_POINTER
 XrdSceneWindow
 xrd_scene_window_new
 xrd_scene_window_draw
-xrd_scene_window_init_texture
 xrd_scene_window_initialize
 XRD_TYPE_SCENE_WINDOW
 </SECTION>
@@ -174,8 +169,6 @@ xrd_window_emit_hover_end
 xrd_window_emit_hover_start
 xrd_window_emit_release
 xrd_window_get_transformation
-xrd_window_intersection_to_2d_offset_meter
-xrd_window_intersection_to_pixels
 xrd_window_intersects
 xrd_window_poll_event
 xrd_window_set_transformation
@@ -197,13 +190,8 @@ xrd_window_manager_check_release
 xrd_window_manager_drag_start
 xrd_window_manager_get_grab_state
 xrd_window_manager_get_hover_state
-xrd_window_manager_is_grabbed
-xrd_window_manager_is_grabbing
-xrd_window_manager_is_hovered
-xrd_window_manager_is_hovering
 xrd_window_manager_poll_window_events
 xrd_window_manager_remove_window
-xrd_window_manager_save_reset_transform
 xrd_window_manager_scale
 xrd_window_manager_update_pose
 XRD_TYPE_WINDOW_MANAGER
@@ -218,11 +206,6 @@ xrd_settings_get_instance
 
 <SECTION>
 <FILE>Misc</FILE>
-Animation
-DEG_TO_RAD
-OPENVR_GLIB_INSIDE
-PI
-RAD_TO_DEG
 XRD_CHECK_VERSION
 XRD_ENCODE_VERSION
 XRD_MAJOR_VERSION
@@ -238,7 +221,6 @@ XrdMoveCursorEvent
 <SECTION>
 <FILE>New</FILE>
 XRD_TYPE_DESKTOP_CURSOR
-XRD_TYPE_FOLLOW_HEAD_CONTAINER
 XRD_TYPE_POINTER
 XRD_TYPE_POINTER_TIP
 XRD_TYPE_SCENE_BACKGROUND
@@ -251,7 +233,6 @@ XRD_TYPE_SHAKE_COMPENSATOR
 XrdClientClass
 XrdDesktopCursor
 XrdDesktopCursorInterface
-XrdFollowHeadContainer
 XrdPointer
 XrdPointerInterface
 XrdPointerTip
@@ -284,7 +265,6 @@ graphene_vec4_print
 xrd_button_set_text
 xrd_client_add_button_callbacks
 xrd_client_add_window_callbacks
-xrd_client_create_button_surface
 xrd_client_get_cursor
 xrd_client_get_input_synth
 xrd_client_get_manager
@@ -300,31 +280,19 @@ xrd_client_set_pointer
 xrd_client_set_pointer_tip
 xrd_client_show_pinned_only
 xrd_desktop_cursor_hide
-xrd_desktop_cursor_set_constant_width
 xrd_desktop_cursor_show
 xrd_desktop_cursor_submit_texture
 xrd_desktop_cursor_update
-xrd_follow_head_container_get_distance
-xrd_follow_head_container_get_speed
-xrd_follow_head_container_get_window
-xrd_follow_head_container_new
-xrd_follow_head_container_set_speed
-xrd_follow_head_container_set_window
-xrd_follow_head_container_step
 xrd_overlay_desktop_cursor_new
 xrd_overlay_window_new_from_meters
 xrd_overlay_window_new_from_native
-xrd_overlay_window_new_from_ppm
 xrd_pointer_get_default_length
 xrd_pointer_move
 xrd_pointer_reset_length
 xrd_pointer_set_length
 xrd_pointer_tip_animate_pulse
 xrd_pointer_tip_hide
-xrd_pointer_tip_init_vulkan
 xrd_pointer_tip_set_active
-xrd_pointer_tip_set_constant_width
-xrd_pointer_tip_set_transformation_matrix
 xrd_pointer_tip_show
 xrd_pointer_tip_update
 xrd_scene_background_initialize
@@ -339,8 +307,6 @@ xrd_scene_pointer_tip_new
 xrd_scene_renderer_draw
 xrd_scene_renderer_get_descriptor_set_layout
 xrd_scene_renderer_get_instance
-xrd_scene_renderer_init_vulkan
-xrd_scene_renderer_new
 xrd_scene_renderer_set_render_cb
 xrd_scene_selection_initialize
 xrd_scene_selection_new
@@ -352,11 +318,8 @@ xrd_scene_vector_render
 xrd_scene_vector_update
 xrd_scene_vector_update_from_plane
 xrd_scene_vector_update_from_ray
-xrd_scene_window_get_normal
-xrd_scene_window_get_plane
 xrd_scene_window_new_from_meters
 xrd_scene_window_new_from_native
-xrd_scene_window_new_from_ppm
 xrd_settings_update_double_val
 xrd_settings_update_int_val
 xrd_shake_compensator_get_button
@@ -370,16 +333,9 @@ xrd_shake_compensator_start_recording
 xrd_window_get_current_height_meters
 xrd_window_get_current_ppm
 xrd_window_get_current_width_meters
-xrd_window_get_hidden
 xrd_window_get_initial_ppm
 xrd_window_manager_get_buttons
 xrd_window_manager_get_windows
-xrd_window_manager_is_controls_shown
-xrd_window_manager_is_pinned
-xrd_window_manager_set_pin
-xrd_window_manager_show_controls
-xrd_window_manager_show_pinned_only
-xrd_window_set_hidden
 </SECTION>
 
 <SECTION>
