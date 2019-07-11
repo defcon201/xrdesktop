@@ -2215,8 +2215,7 @@ _save_window_states (XrdClient *self,
 
       state[i].pinned = data->pinned;
 
-      xrd_window_get_reset_transformation (window, &state[i].reset_transform,
-                                           &state[i].reset_scale);
+      xrd_window_get_reset_transformation (window, &state[i].reset_transform);
 
       /* Window state is saved in the order windows were added to the client.
        * So the reference to a child window is just an index in this array. */
@@ -2312,8 +2311,7 @@ xrd_client_switch_mode (XrdClient *self)
                              lookup_keys[i]);
 
       xrd_window_set_transformation (window, &state[i].transform);
-      xrd_window_set_reset_transformation (window, &state[i].reset_transform,
-                                           state[i].reset_scale);
+      xrd_window_set_reset_transformation (window, &state[i].reset_transform);
 
       xrd_window_set_pin (window, state[i].pinned, show_only_pinned);
     }

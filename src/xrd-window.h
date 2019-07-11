@@ -99,7 +99,6 @@ typedef struct {
   uint32_t texture_width;
   uint32_t texture_height;
   graphene_matrix_t reset_transform;
-  float reset_scale;
   gboolean pinned;
 
   float current_width;
@@ -156,7 +155,6 @@ typedef struct {
   graphene_point_t child_offset_center;
 
   graphene_matrix_t reset_transform;
-  float reset_scale;
 
   gboolean pinned;
 
@@ -381,13 +379,11 @@ xrd_window_set_color (XrdWindow *self, const graphene_vec3_t *color);
 
 void
 xrd_window_set_reset_transformation (XrdWindow *self,
-                                     graphene_matrix_t *transform,
-                                     float scale);
+                                     graphene_matrix_t *transform);
 
 void
 xrd_window_get_reset_transformation (XrdWindow *self,
-                                     graphene_matrix_t *transform,
-                                     float *scale);
+                                     graphene_matrix_t *transform);
 
 void
 xrd_window_set_pin (XrdWindow *self,

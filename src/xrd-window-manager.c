@@ -176,7 +176,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
 
       xrd_window_get_transformation_no_scale (window, &transition->from);
 
-      transition->to_scaling = data->reset_scale;
+      transition->to_scaling = 1.0f;
 
       g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
@@ -306,9 +306,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
               graphene_matrix_init_from_matrix (&transition->to, &transform);
 
-              XrdWindowData *data = xrd_window_get_data (window);
-
-              transition->to_scaling = data->reset_scale;
+              transition->to_scaling = 1.0f;
 
               g_timeout_add (20, _interpolate_cb, transition);
             }

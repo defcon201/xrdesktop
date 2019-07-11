@@ -672,45 +672,22 @@ xrd_window_get_aspect_ratio (XrdWindow *self)
 /**
  * xrd_window_set_reset_transformation:
  * @self: The #XrdWindow
- * @transform: A transformation matrix to save as reset transform, or NULL
- * to save the current transform as reset transform.
- * @scale: The scale to save with the reset transform. If @transform is NULL,
- * this parameter is ignored and the current #XrdWindow scale is saved instead.
+ * @transform: A transformation matrix to save as reset transform.
  */
 void
 xrd_window_set_reset_transformation (XrdWindow *self,
-                                     graphene_matrix_t *transform,
-                                     float scale)
+                                     graphene_matrix_t *transform)
 {
   XrdWindowData *data = xrd_window_get_data (self);
-
-  if (transform)
-    {
-      data->reset_scale = scale;
-
-      graphene_matrix_init_from_matrix (&data->reset_transform, transform);
-    }
-  else
-    {
-      graphene_matrix_t current_transform;
-      xrd_window_get_transformation_no_scale (self, &current_transform);
-      graphene_matrix_init_from_matrix (&data->reset_transform,
-                                        &current_transform);
-      gfloat reset_scale;
-      g_object_get (self, "scale", &reset_scale, NULL);
-      data->reset_scale = reset_scale;
-    }
+  graphene_matrix_init_from_matrix (&data->reset_transform, transform);
 }
 
 void
 xrd_window_get_reset_transformation (XrdWindow *self,
-                                     graphene_matrix_t *transform,
-                                     float *scale)
+                                     graphene_matrix_t *transform)
 {
   XrdWindowData *data = xrd_window_get_data (self);
   graphene_matrix_init_from_matrix (transform, &data->reset_transform);
-
-  *scale = data->reset_scale;
 }
 
 /**

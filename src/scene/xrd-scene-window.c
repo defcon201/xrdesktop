@@ -172,7 +172,6 @@ xrd_scene_window_init (XrdSceneWindow *self)
   priv->window_data.texture_height = 0;
   priv->window_data.texture = NULL;
   priv->window_data.selected = FALSE;
-  priv->window_data.reset_scale = 1.0f;
   graphene_matrix_init_identity (&priv->window_data.reset_transform);
 }
 

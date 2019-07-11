@@ -348,7 +348,7 @@ _init_windows (Example *self)
           graphene_matrix_init_translate (&transform, &point);
           xrd_window_set_transformation (window, &transform);
 
-          xrd_window_set_reset_transformation (window, NULL, 0);
+          xrd_window_set_reset_transformation (window, &transform);
 
           if ((col + row) % 2 == 0)
             xrd_window_set_flip_y (window, true);
