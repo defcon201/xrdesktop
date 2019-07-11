@@ -69,47 +69,6 @@ typedef struct {
   guint64 controller_handle;
 } XrdControllerIndexEvent;
 
-/**
- * XrdWindowState:
- * @native: native
- * @title: title
- * @scale: scale
- * @initial_width: initial_width
- * @initial_height: initial_height
- * @texture_width: texture_width
- * @texture_height: texture_height
- * @reset_transform: reset_transform
- * @reset_scale: reset_scale
- * @pinned: pinned
- * @current_width: current_width
- * @current_height: current_height
- * @transform: transform
- * @is_draggable: is_draggable
- * @child_index: child_index
- * @child_offset_center: child_offset_center
- *
- * The window state carried over in an overlay<->scene switch
- **/
-typedef struct {
-  gpointer native;
-  gchar *title;
-  float scale;
-  float initial_width;
-  float initial_height;
-  uint32_t texture_width;
-  uint32_t texture_height;
-  graphene_matrix_t reset_transform;
-  gboolean pinned;
-
-  float current_width;
-  float current_height;
-  graphene_matrix_t transform;
-
-  gboolean is_draggable;
-  int child_index;
-  graphene_point_t child_offset_center;
-} XrdWindowState;
-
 G_BEGIN_DECLS
 
 #define XRD_TYPE_WINDOW xrd_window_get_type()
@@ -124,7 +83,7 @@ G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
  * @selected: A #gboolean used in selection mode.
  * @initial_size_meters: The window dimensions in meters without scale.
  * @scale: A user applied scale.
- * @vr_transform: The transformation #graphene_matrix_t of the window.
+ * @transform: The transformation #graphene_matrix_t of the window.
  * @child_window: A window that is pinned on top of this window and follows this window's position and scaling.
  * @parent_window: The parent window, %NULL if the window does not have a parent.
  * @child_offset_center: If the window is a child, this stores the 2D offset to the parent in meters.
@@ -132,10 +91,12 @@ G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
  * @reset_scale: The scale that the window will be reset to.
  * @pinned: Whether the window will be visible in pinned only mode.
  * @texture: Cache of the currently rendered texture.
+ * @xrd_window: A pointer to the #XrdWindow this XrdWindowData belongs to.
+ * After switching the overlay/scene mode, it will point to a new #XrdWindow.
  *
  * Common struct for scene and overlay windows.
  **/
-typedef struct {
+typedef struct XrdWindowData {
   gpointer native;
 
   uint32_t texture_width;
@@ -147,10 +108,10 @@ typedef struct {
   graphene_point_t initial_size_meters;
 
   float scale;
-  graphene_matrix_t vr_transform;
+  graphene_matrix_t transform;
 
-  XrdWindow *child_window;
-  XrdWindow *parent_window;
+  struct XrdWindowData *child_window;
+  struct XrdWindowData *parent_window;
 
   graphene_point_t child_offset_center;
 
@@ -159,6 +120,8 @@ typedef struct {
   gboolean pinned;
 
   GulkanTexture *texture;
+
+  XrdWindow *xrd_window;
 } XrdWindowData;
 
 /**
@@ -395,6 +358,9 @@ xrd_window_set_pin (XrdWindow *self,
 
 gboolean
 xrd_window_is_pinned (XrdWindow *self);
+
+void
+xrd_window_close (XrdWindow *self);
 
 G_END_DECLS
 

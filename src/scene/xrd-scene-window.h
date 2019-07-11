@@ -48,6 +48,9 @@ xrd_scene_window_new_from_meters (const gchar *title,
                                   float        ppm);
 
 XrdSceneWindow *
+xrd_scene_window_new_from_data (XrdWindowData *data);
+
+XrdSceneWindow *
 xrd_scene_window_new_from_pixels (const gchar *title,
                                   uint32_t     width,
                                   uint32_t     height,

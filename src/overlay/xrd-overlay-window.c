@@ -18,7 +18,7 @@ struct _XrdOverlayWindow
   OpenVROverlay parent;
   gboolean      recreate;
 
-  XrdWindowData window_data;
+  XrdWindowData *window_data;
 };
 
 enum
@@ -50,27 +50,27 @@ xrd_overlay_window_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_TITLE:
-      if (self->window_data.title)
-        g_string_free (self->window_data.title, TRUE);
-      self->window_data.title = g_string_new (g_value_get_string (value));
+      if (self->window_data->title)
+        g_string_free (self->window_data->title, TRUE);
+      self->window_data->title = g_string_new (g_value_get_string (value));
       break;
     case PROP_SCALE:
-      self->window_data.scale = g_value_get_float (value);
+      self->window_data->scale = g_value_get_float (value);
       break;
     case PROP_NATIVE:
-      self->window_data.native = g_value_get_pointer (value);
+      self->window_data->native = g_value_get_pointer (value);
       break;
     case PROP_TEXTURE_WIDTH:
-      self->window_data.texture_width = g_value_get_uint (value);
+      self->window_data->texture_width = g_value_get_uint (value);
       break;
     case PROP_TEXTURE_HEIGHT:
-      self->window_data.texture_height = g_value_get_uint (value);
+      self->window_data->texture_height = g_value_get_uint (value);
       break;
     case PROP_WIDTH_METERS:
-      self->window_data.initial_size_meters.x = g_value_get_float (value);
+      self->window_data->initial_size_meters.x = g_value_get_float (value);
       break;
     case PROP_HEIGHT_METERS:
-      self->window_data.initial_size_meters.y = g_value_get_float (value);
+      self->window_data->initial_size_meters.y = g_value_get_float (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -89,25 +89,25 @@ xrd_overlay_window_get_property (GObject    *object,
   switch (property_id)
     {
     case PROP_TITLE:
-      g_value_set_string (value, self->window_data.title->str);
+      g_value_set_string (value, self->window_data->title->str);
       break;
     case PROP_SCALE:
-      g_value_set_float (value, self->window_data.scale);
+      g_value_set_float (value, self->window_data->scale);
       break;
     case PROP_NATIVE:
-      g_value_set_pointer (value, self->window_data.native);
+      g_value_set_pointer (value, self->window_data->native);
       break;
     case PROP_TEXTURE_WIDTH:
-      g_value_set_uint (value, self->window_data.texture_width);
+      g_value_set_uint (value, self->window_data->texture_width);
       break;
     case PROP_TEXTURE_HEIGHT:
-      g_value_set_uint (value, self->window_data.texture_height);
+      g_value_set_uint (value, self->window_data->texture_height);
       break;
     case PROP_WIDTH_METERS:
-      g_value_set_float (value, self->window_data.initial_size_meters.x);
+      g_value_set_float (value, self->window_data->initial_size_meters.x);
       break;
     case PROP_HEIGHT_METERS:
-      g_value_set_float (value, self->window_data.initial_size_meters.y);
+      g_value_set_float (value, self->window_data->initial_size_meters.y);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -129,7 +129,7 @@ _update_dimensions (XrdOverlayWindow *self)
 
   openvr_overlay_set_mouse_scale (OPENVR_OVERLAY (self), w, h);
 
-  if (self->window_data.child_window)
+  if (self->window_data->child_window)
     xrd_window_update_child (XRD_WINDOW (self));
 }
 
@@ -177,8 +177,14 @@ _set_transformation (XrdWindow         *window,
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
   gboolean res =
     openvr_overlay_set_transform_absolute (OPENVR_OVERLAY (self), mat);
-  if (self->window_data.child_window)
+  if (self->window_data->child_window)
     xrd_window_update_child (window);
+
+  XrdWindowData *data = xrd_window_get_data (window);
+  graphene_matrix_t transform_unscaled;
+  xrd_window_get_transformation_no_scale (window, &transform_unscaled);
+  graphene_matrix_init_from_matrix (&data->transform, &transform_unscaled);
+
   return res;
 }
 
@@ -242,7 +248,10 @@ _submit_texture (XrdWindow     *window,
   guint new_width = gulkan_texture_get_width (texture);
   guint new_height = gulkan_texture_get_height (texture);
 
-  if (current_width != new_width || current_height != new_height)
+  /* update overlay if there is no texture, even if the texture dims
+   * are already the same */
+  if (!self->window_data->texture ||
+      current_width != new_width || current_height != new_height)
     {
       g_object_set (self,
                     "texture-width", new_width,
@@ -262,10 +271,10 @@ _submit_texture (XrdWindow     *window,
   openvr_overlay_submit_texture (OPENVR_OVERLAY (self), client, texture);
 
   /* let the previous texture stay alive until this one has been submitted */
-  if (self->window_data.texture)
-    g_object_unref (self->window_data.texture);
-  self->window_data.texture = texture;
-  g_object_ref (self->window_data.texture);
+  if (self->window_data->texture)
+    g_object_unref (self->window_data->texture);
+  self->window_data->texture = texture;
+  g_object_ref (self->window_data->texture);
 }
 
 static void
@@ -289,15 +298,18 @@ _poll_event (XrdWindow *window)
 static void
 xrd_overlay_window_init (XrdOverlayWindow *self)
 {
-  self->window_data.title = NULL;
-  self->window_data.child_window = NULL;
-  self->window_data.parent_window = NULL;
-  self->window_data.native = NULL;
-  self->window_data.texture_width = 0;
-  self->window_data.texture_height = 0;
-  self->window_data.texture = NULL;
-  self->window_data.selected = FALSE;
-  graphene_matrix_init_identity (&self->window_data.reset_transform);
+  self->window_data = g_malloc (sizeof (XrdWindowData));
+  self->window_data->title = NULL;
+  self->window_data->child_window = NULL;
+  self->window_data->parent_window = NULL;
+  self->window_data->native = NULL;
+  self->window_data->texture_width = 0;
+  self->window_data->texture_height = 0;
+  self->window_data->texture = NULL;
+  self->window_data->selected = FALSE;
+  self->window_data->xrd_window = XRD_WINDOW (self);
+  self->window_data->pinned = FALSE;
+  graphene_matrix_init_identity (&self->window_data->reset_transform);
 }
 
 /** xrd_overlay_window_new:
@@ -328,6 +340,21 @@ xrd_overlay_window_new_from_meters (const gchar *title,
   return window;
 }
 
+XrdOverlayWindow *
+xrd_overlay_window_new_from_data (XrdWindowData *data)
+{
+  XrdOverlayWindow *window =
+    (XrdOverlayWindow*) g_object_new (XRD_TYPE_OVERLAY_WINDOW, NULL);
+
+  // TODO: avoid unnecessary allocation
+  g_free (window->window_data);
+
+  window->window_data = data;
+
+  _set_transformation (XRD_WINDOW (window), &data->transform);
+
+  return window;
+}
 
 XrdOverlayWindow *
 xrd_overlay_window_new_from_pixels (const gchar *title,
@@ -380,7 +407,7 @@ xrd_overlay_window_constructed (GObject *gobject)
   g_sprintf (overlay_id_str, "xrd-window-%d", iface->windows_created);
 
   openvr_overlay_create (OPENVR_OVERLAY (self), overlay_id_str,
-                         self->window_data.title->str);
+                         self->window_data->title->str);
 
   /* g_print ("Created overlay %s\n", overlay_id_str); */
 
@@ -404,23 +431,6 @@ xrd_overlay_window_constructed (GObject *gobject)
 static void
 xrd_overlay_window_finalize (GObject *gobject)
 {
-  XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (gobject);
-
-  XrdOverlayWindow *parent =
-    XRD_OVERLAY_WINDOW (self->window_data.parent_window);
-
-  if (parent != NULL)
-    parent->window_data.child_window = NULL;
-
-  XrdOverlayWindow *child = XRD_OVERLAY_WINDOW (self->window_data.child_window);
-  if (child)
-    child->window_data.parent_window = NULL;
-
-  if (self->window_data.texture)
-    g_object_unref (self->window_data.texture);
-
-  g_string_free (self->window_data.title, TRUE);
-
   G_OBJECT_CLASS (xrd_overlay_window_parent_class)->finalize (gobject);
 }
 
@@ -428,7 +438,7 @@ static XrdWindowData*
 _get_data (XrdWindow *window)
 {
   XrdOverlayWindow *self = XRD_OVERLAY_WINDOW (window);
-  return &self->window_data;
+  return self->window_data;
 }
 
 static void

@@ -85,7 +85,7 @@ typedef struct _XrdClientPrivate
 
   gboolean always_show_overlay_pointer;
 
-  /* for desktops to lookup an #XrdWindow */
+  /* maps a key to desktop #XrdWindows, but not buttons. */
   GHashTable *window_mapping;
 } XrdClientPrivate;
 
@@ -218,7 +218,8 @@ xrd_client_add_window (XrdClient *self,
   xrd_client_add_window_callbacks (self, window);
 
   if (lookup_key != NULL)
-    g_hash_table_insert (priv->window_mapping, lookup_key, window);
+    g_hash_table_insert (priv->window_mapping, lookup_key,
+                         xrd_window_get_data (window));
 }
 
 XrdWindow *
@@ -226,7 +227,13 @@ xrd_client_lookup_window (XrdClient *self,
                           gpointer key)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  return g_hash_table_lookup (priv->window_mapping, key);
+  XrdWindowData *data = g_hash_table_lookup (priv->window_mapping, key);
+  if (!data)
+    {
+      g_print ("Error looking up window %p\n", key);
+      return NULL;
+    }
+  return data->xrd_window;
 }
 
 /**
@@ -366,15 +373,18 @@ xrd_client_show_pinned_only (XrdClient *self,
 
   GulkanClient *client = xrd_client_get_uploader (self);
   VkImageLayout layout = xrd_client_get_upload_layout (self);
-  if (pinned_only)
+  if (priv->button_pinned_only)
     {
-      xrd_button_set_icon (priv->button_pinned_only, client, layout,
-                           "/icons/object-hidden-symbolic.svg");
-    }
-  else
-    {
-      xrd_button_set_icon (priv->button_pinned_only, client, layout,
-                           "/icons/object-visible-symbolic.svg");
+      if (pinned_only)
+        {
+          xrd_button_set_icon (priv->button_pinned_only, client, layout,
+                               "/icons/object-hidden-symbolic.svg");
+        }
+      else
+        {
+          xrd_button_set_icon (priv->button_pinned_only, client, layout,
+                               "/icons/object-visible-symbolic.svg");
+        }
     }
 }
 
@@ -600,6 +610,10 @@ xrd_client_remove_window (XrdClient *self,
                           XrdWindow *window)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
+  g_hash_table_foreach_remove (priv->window_mapping, _match_value_ptr,
+                               xrd_window_get_data (window));
+
   xrd_window_manager_remove_window (priv->manager, window);
 
   GList *controllers = g_hash_table_get_values (priv->controllers);
@@ -623,8 +637,6 @@ xrd_client_remove_window (XrdClient *self,
         xrd_controller_reset_grab_state (controller);
     }
   g_list_free(controllers);
-
-  g_hash_table_foreach_remove (priv->window_mapping, _match_value_ptr, window);
 }
 
 OpenVRActionSet *
@@ -1733,6 +1745,23 @@ xrd_client_window_new_from_meters (XrdClient  *client,
   return window;
 }
 
+static XrdWindow *
+xrd_client_window_new_from_data (XrdClient  *client,
+                                 XrdWindowData *data)
+{
+  XrdWindow *window;
+  if (XRD_IS_SCENE_CLIENT (client))
+    {
+      window = XRD_WINDOW (xrd_scene_window_new_from_data (data));
+      xrd_scene_window_initialize (XRD_SCENE_WINDOW (window));
+    }
+  else
+    {
+      window = XRD_WINDOW (xrd_overlay_window_new_from_data (data));
+    }
+  return window;
+}
+
 XrdWindow *
 xrd_client_window_new_from_pixels (XrdClient  *client,
                                    const char *title,
@@ -1947,8 +1976,7 @@ xrd_client_init (XrdClient *self)
   priv->controllers = g_hash_table_new_full (g_int64_hash, g_int64_equal,
                                              g_free, g_object_unref);
 
-  priv->window_mapping = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                NULL, g_object_unref);
+  priv->window_mapping = g_hash_table_new (g_direct_hash, g_direct_equal);
 
   xrd_settings_connect_and_apply (G_CALLBACK (xrd_settings_update_double_val),
                                   "scroll-to-push-ratio",
@@ -2154,9 +2182,6 @@ _replace_client (XrdClient *self)
   XrdClient *ret = NULL;
   gboolean to_scene = XRD_IS_OVERLAY_CLIENT (self);
 
-  XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  g_hash_table_destroy (priv->window_mapping);
-
   if (to_scene)
     {
       g_object_unref (self);
@@ -2169,80 +2194,33 @@ _replace_client (XrdClient *self)
       g_object_unref (self);
       ret = XRD_CLIENT (xrd_overlay_client_new ());
     }
-
-  XrdClientPrivate *ret_priv = xrd_client_get_instance_private (ret);
-  ret_priv->window_mapping =
-      g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                             NULL, g_object_unref);
-
   return ret;
 }
 
-static gpointer *
-_g_hash_table_reverse_lookup (GHashTable *hash_table, XrdWindow *find)
+static void
+_insert_into_new_hash_table (gpointer key,
+                             gpointer value,
+                             gpointer new_hash_table)
 {
-  GHashTableIter iter;
-  gpointer key, value;
-
-  g_hash_table_iter_init (&iter, hash_table);
-  while (g_hash_table_iter_next (&iter, &key, &value))
-    {
-      if (value == find)
-        return key;
-    }
-  return NULL;
+  g_hash_table_insert (new_hash_table, key, value);
 }
 
-static void
-_save_window_states (XrdClient *self,
-                     XrdWindowState *state,
-                     gpointer *lookup_keys,
-                     int window_count)
+static GHashTable *
+_g_hash_table_clone_direct (GHashTable *old_table)
 {
-  XrdWindowManager *manager = xrd_client_get_manager (self);
-  GSList *windows = xrd_window_manager_get_windows (manager);
+  GHashTable *new_table = g_hash_table_new (g_direct_hash, g_direct_equal);
+  g_hash_table_foreach (old_table, _insert_into_new_hash_table, new_table);
+  return new_table;
+}
 
-  for (int i = 0; i < window_count; i++)
-    {
-      state[i].child_index = -1;
-      XrdWindow *window = g_slist_nth_data (windows, (guint)i);
-
-      XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-      lookup_keys[i] = _g_hash_table_reverse_lookup (priv->window_mapping,
-                                                     window);
-
-      XrdWindowData *data = xrd_window_get_data (window);
-
-      state[i].pinned = data->pinned;
-
-      xrd_window_get_reset_transformation (window, &state[i].reset_transform);
-
-      /* Window state is saved in the order windows were added to the client.
-       * So the reference to a child window is just an index in this array. */
-      if (data->child_window)
-        {
-          state[i].child_index = g_slist_index (windows, data->child_window);
-          graphene_point_init_from_point (&state[i].child_offset_center,
-                                          &data->child_offset_center);
-        }
-
-      /* Window with parent window is child and is not draggable */
-      state[i].is_draggable = data->parent_window == NULL;
-
-      g_object_get (window,
-                    "native", &state[i].native,
-                    "title", &state[i].title,
-                    "scale", &state[i].scale,
-                    "initial-width-meters", &state[i].initial_width,
-                    "initial-height-meters", &state[i].initial_height,
-                    "texture-width", &state[i].texture_width,
-                    "texture-height", &state[i].texture_height,
-                    NULL);
-
-      state[i].current_width = xrd_window_get_current_width_meters (window);
-      state[i].current_height = xrd_window_get_current_height_meters (window);
-      xrd_window_get_transformation_no_scale (window, &state[i].transform);
-    }
+static GSList *
+_get_new_window_data_list (XrdClient *self)
+{
+  GSList *data = NULL;
+  GSList *windows = xrd_client_get_windows (self);
+  for (GSList *l = windows; l; l = l->next)
+    data = g_slist_append (data, xrd_window_get_data (l->data));
+  return data;
 }
 
 /**
@@ -2258,8 +2236,8 @@ _save_window_states (XrdClient *self,
  *
  * The caller is responsible for reconnecting callbacks to #XrdClient signals.
  * The caller is responsible to not use references to any previous #XrdWindow.
- * The caller may use xrd_client_get_windows() to get the list of new windows
- * and may use the "native" property to recognize each window.
+ * Pointers to #XrdWindowData will remain valid, however
+ * #XrdWindowData->xrd_window will point to a new #XrdWindow.
  *
  * Returns: A new #XrdClient of the opposite mode than the passed one.
  */
@@ -2267,73 +2245,41 @@ struct _XrdClient *
 xrd_client_switch_mode (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-
   gboolean show_only_pinned = priv->pinned_only;
   gboolean ignore_input = priv->ignore_input;
 
+  /* original hash table will be destroyed on XrdClient destroy */
+  GHashTable *window_mapping =
+    _g_hash_table_clone_direct (priv->window_mapping);
+
   XrdWindowManager *manager = xrd_client_get_manager (self);
 
-  int window_count =
-    (int)g_slist_length (xrd_window_manager_get_windows (manager));
-
-  XrdWindowState *state = g_malloc (sizeof (XrdWindowState) *
-                                    (guint)window_count);
-
-  gpointer *lookup_keys = g_malloc (sizeof (gpointer) * (guint)window_count);
-
-  _save_window_states (self, state, lookup_keys, window_count);
+  /* this list preserves the order in which windows were added */
+  GSList *window_data_list = _get_new_window_data_list (self);
+  for (GSList *l = window_data_list; l; l = l->next)
+    {
+      XrdWindowData *window_data = l->data;
+      if (window_data->texture)
+         g_clear_object (&window_data->texture);
+      xrd_client_remove_window (self, window_data->xrd_window);
+      g_clear_object (&window_data->xrd_window);
+    }
 
   XrdClient *ret = _replace_client (self);
   manager = xrd_client_get_manager (ret);
   priv = xrd_client_get_instance_private (ret);
+  priv->window_mapping = window_mapping;
 
-  for (int i = 0; i < window_count; i++)
+  for (GSList *l = window_data_list; l; l = l->next)
     {
-      float ppm = (float) state[i].texture_width / state[i].initial_width;
-      XrdWindow *window =
-        xrd_client_window_new_from_meters (ret,
-                                           state[i].title,
-                                           state[i].current_width,
-                                           state[i].current_height,
-                                           ppm);
+      XrdWindowData *window_data = l->data;
+      XrdWindow *window = xrd_client_window_new_from_data (ret, window_data);
+      window_data->xrd_window = window;
+      gboolean draggable = window_data->parent_window == NULL;
 
-      g_object_set (window,
-                    "native", state[i].native,
-                    "scale", (double)state[i].scale,
-                    "initial-width-meters", (double)state[i].initial_width,
-                    "initial-height-meters", (double)state[i].initial_height,
-                    "texture-width", state[i].texture_width,
-                    "texture-height", state[i].texture_height,
-                    NULL);
-
-
-      xrd_client_add_window (ret, window, state[i].is_draggable,
-                             lookup_keys[i]);
-
-      xrd_window_set_transformation (window, &state[i].transform);
-      xrd_window_set_reset_transformation (window, &state[i].reset_transform);
-
-      xrd_window_set_pin (window, state[i].pinned, show_only_pinned);
+      xrd_client_add_window (ret, window, draggable, NULL);
     }
-
-  /* Only after all windows are recreated do we search for child windows */
-  GSList *windows = xrd_window_manager_get_windows (manager);
-  for (int i = 0; i < window_count; i++)
-    {
-      XrdWindow *window = g_slist_nth_data (windows, (guint)i);
-      if (state[i].child_index >= 0)
-        {
-          int child_index = state[i].child_index;
-
-          XrdWindow *child_window =
-            g_slist_nth_data (windows, (guint)child_index);
-
-          xrd_window_add_child (window, child_window,
-                                &state[i].child_offset_center);
-          xrd_window_set_transformation (child_window,
-                                         &state[child_index].transform);
-        }
-    }
+  g_slist_free (window_data_list);
 
   xrd_client_show_pinned_only (ret, show_only_pinned);
 
@@ -2341,10 +2287,6 @@ xrd_client_switch_mode (XrdClient *self)
   xrd_window_manager_set_hover_mode (manager, ignore_input ?
                                          XRD_HOVER_MODE_BUTTONS :
                                          XRD_HOVER_MODE_EVERYTHING);
-
-  g_free (state);
-  g_free (lookup_keys);
   return ret;
 }
-
 

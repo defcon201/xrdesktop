@@ -35,6 +35,9 @@ xrd_overlay_window_new_from_meters (const gchar *title,
                                     float        ppm);
 
 XrdOverlayWindow *
+xrd_overlay_window_new_from_data (XrdWindowData *data);
+
+XrdOverlayWindow *
 xrd_overlay_window_new_from_pixels (const gchar *title,
                                     uint32_t     width,
                                     uint32_t     height,

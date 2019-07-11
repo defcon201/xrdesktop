@@ -45,7 +45,7 @@ typedef struct _XrdSceneWindowPrivate
   GulkanUniformBuffer *shading_buffer;
   XrdWindowUniformBuffer shading_buffer_data;
 
-  XrdWindowData window_data;
+  XrdWindowData *window_data;
 } XrdSceneWindowPrivate;
 
 G_DEFINE_TYPE_WITH_CODE (XrdSceneWindow, xrd_scene_window, XRD_TYPE_SCENE_OBJECT,
@@ -65,27 +65,27 @@ xrd_scene_window_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_TITLE:
-      if (priv->window_data.title)
-        g_string_free (priv->window_data.title, TRUE);
-      priv->window_data.title = g_string_new (g_value_get_string (value));
+      if (priv->window_data->title)
+        g_string_free (priv->window_data->title, TRUE);
+      priv->window_data->title = g_string_new (g_value_get_string (value));
       break;
     case PROP_SCALE:
-      priv->window_data.scale = g_value_get_float (value);
+      priv->window_data->scale = g_value_get_float (value);
       break;
     case PROP_NATIVE:
-      priv->window_data.native = g_value_get_pointer (value);
+      priv->window_data->native = g_value_get_pointer (value);
       break;
     case PROP_TEXTURE_WIDTH:
-      priv->window_data.texture_width = g_value_get_uint (value);
+      priv->window_data->texture_width = g_value_get_uint (value);
       break;
     case PROP_TEXTURE_HEIGHT:
-      priv->window_data.texture_height = g_value_get_uint (value);
+      priv->window_data->texture_height = g_value_get_uint (value);
       break;
     case PROP_WIDTH_METERS:
-      priv->window_data.initial_size_meters.x = g_value_get_float (value);
+      priv->window_data->initial_size_meters.x = g_value_get_float (value);
       break;
     case PROP_HEIGHT_METERS:
-      priv->window_data.initial_size_meters.y = g_value_get_float (value);
+      priv->window_data->initial_size_meters.y = g_value_get_float (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -105,25 +105,25 @@ xrd_scene_window_get_property (GObject    *object,
   switch (property_id)
     {
     case PROP_TITLE:
-      g_value_set_string (value, priv->window_data.title->str);
+      g_value_set_string (value, priv->window_data->title->str);
       break;
     case PROP_SCALE:
-      g_value_set_float (value, priv->window_data.scale);
+      g_value_set_float (value, priv->window_data->scale);
       break;
     case PROP_NATIVE:
-      g_value_set_pointer (value, priv->window_data.native);
+      g_value_set_pointer (value, priv->window_data->native);
       break;
     case PROP_TEXTURE_WIDTH:
-      g_value_set_uint (value, priv->window_data.texture_width);
+      g_value_set_uint (value, priv->window_data->texture_width);
       break;
     case PROP_TEXTURE_HEIGHT:
-      g_value_set_uint (value, priv->window_data.texture_height);
+      g_value_set_uint (value, priv->window_data->texture_height);
       break;
     case PROP_WIDTH_METERS:
-      g_value_set_float (value, priv->window_data.initial_size_meters.x);
+      g_value_set_float (value, priv->window_data->initial_size_meters.x);
       break;
     case PROP_HEIGHT_METERS:
-      g_value_set_float (value, priv->window_data.initial_size_meters.y);
+      g_value_set_float (value, priv->window_data->initial_size_meters.y);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -157,22 +157,26 @@ static void
 xrd_scene_window_init (XrdSceneWindow *self)
 {
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  priv->window_data = g_malloc (sizeof (XrdWindowData));
+
   priv->vertex_buffer = gulkan_vertex_buffer_new ();
   priv->sampler = VK_NULL_HANDLE;
   priv->aspect_ratio = 1.0;
-  priv->window_data.texture = NULL;
+  priv->window_data->texture = NULL;
   priv->shading_buffer = gulkan_uniform_buffer_new ();
   priv->shading_buffer_data.flip_y = false;
 
-  priv->window_data.title = NULL;
-  priv->window_data.child_window = NULL;
-  priv->window_data.parent_window = NULL;
-  priv->window_data.native = NULL;
-  priv->window_data.texture_width = 0;
-  priv->window_data.texture_height = 0;
-  priv->window_data.texture = NULL;
-  priv->window_data.selected = FALSE;
-  graphene_matrix_init_identity (&priv->window_data.reset_transform);
+  priv->window_data->title = NULL;
+  priv->window_data->child_window = NULL;
+  priv->window_data->parent_window = NULL;
+  priv->window_data->native = NULL;
+  priv->window_data->texture_width = 0;
+  priv->window_data->texture_height = 0;
+  priv->window_data->texture = NULL;
+  priv->window_data->selected = FALSE;
+  priv->window_data->xrd_window = XRD_WINDOW (self);
+  priv->window_data->pinned = FALSE;
+  graphene_matrix_init_identity (&priv->window_data->reset_transform);
 }
 
 XrdSceneWindow *
@@ -195,6 +199,26 @@ xrd_scene_window_new_from_meters (const gchar *title,
                 "initial-width-meters", (double) width,
                 "initial-height-meters", (double) height,
                 NULL);
+  return window;
+}
+
+static gboolean
+_set_transformation (XrdWindow         *window,
+                     graphene_matrix_t *mat);
+
+XrdSceneWindow *
+xrd_scene_window_new_from_data (XrdWindowData *data)
+{
+  XrdSceneWindow *window = xrd_scene_window_new (data->title->str);
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (window);
+
+  // TODO: avoid unnecessary allocation
+  g_free (priv->window_data);
+
+  priv->window_data = data;
+
+  _set_transformation (XRD_WINDOW (window), &data->transform);
+
   return window;
 }
 
@@ -240,36 +264,10 @@ xrd_scene_window_finalize (GObject *gobject)
   //g_object_unref (self->texture);
 
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
-
   vkDestroySampler (gulkan_client_get_device_handle (GULKAN_CLIENT (renderer)),
                     priv->sampler, NULL);
-
   g_object_unref (priv->vertex_buffer);
-
-  XrdSceneWindow *parent =
-    XRD_SCENE_WINDOW (priv->window_data.parent_window);
-
-  if (parent != NULL)
-    {
-      XrdSceneWindowPrivate *parent_priv =
-        xrd_scene_window_get_instance_private (parent);
-      parent_priv->window_data.child_window = NULL;
-    }
-
-  XrdSceneWindow *child = XRD_SCENE_WINDOW (priv->window_data.child_window);
-  if (child)
-    {
-      XrdSceneWindowPrivate *child_priv =
-        xrd_scene_window_get_instance_private (child);
-      child_priv->window_data.parent_window = NULL;
-    }
-
-  if (priv->window_data.texture)
-    g_object_unref (priv->window_data.texture);
-
   g_object_unref (priv->shading_buffer);
-
-  g_string_free (priv->window_data.title, TRUE);
 
   G_OBJECT_CLASS (xrd_scene_window_parent_class)->finalize (gobject);
 }
@@ -325,7 +323,7 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
                        graphene_matrix_t *vp)
 {
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  if (!priv->window_data.texture)
+  if (!priv->window_data->texture)
     {
       /* g_warning ("Trying to draw window with no texture.\n"); */
       return;
@@ -396,7 +394,7 @@ xrd_scene_window_update_descriptors (XrdSceneWindow *self)
           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
           .pImageInfo = &(VkDescriptorImageInfo) {
             .sampler = priv->sampler,
-            .imageView = gulkan_texture_get_image_view (priv->window_data.texture),
+            .imageView = gulkan_texture_get_image_view (priv->window_data->texture),
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
           },
           .pBufferInfo = NULL,
@@ -436,8 +434,13 @@ _set_transformation (XrdWindow         *window,
   xrd_scene_object_set_scale (XRD_SCENE_OBJECT (self), height_meters);
 
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  if (priv->window_data.child_window)
+  if (priv->window_data->child_window)
     xrd_window_update_child (window);
+
+  XrdWindowData *data = xrd_window_get_data (window);
+  graphene_matrix_t transform_unscaled;
+  xrd_window_get_transformation_no_scale (window, &transform_unscaled);
+  graphene_matrix_init_from_matrix (&data->transform, &transform_unscaled);
 
   return TRUE;
 }
@@ -468,7 +471,7 @@ _submit_texture (XrdWindow     *window,
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
 
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  if (texture == priv->window_data.texture)
+  if (texture == priv->window_data->texture)
     {
       gchar *title;
       g_object_get (window, "title", &title, NULL);
@@ -497,11 +500,11 @@ _submit_texture (XrdWindow     *window,
       gulkan_vertex_buffer_map_array (priv->vertex_buffer);
     }
 
-  if (priv->window_data.texture)
-    g_object_unref (priv->window_data.texture);
+  if (priv->window_data->texture)
+    g_object_unref (priv->window_data->texture);
 
-  priv->window_data.texture = texture;
-  g_object_ref (priv->window_data.texture);
+  priv->window_data->texture = texture;
+  g_object_ref (priv->window_data->texture);
 
   guint mip_levels = gulkan_texture_get_mip_levels (texture);
 
@@ -576,7 +579,7 @@ _get_data (XrdWindow *window)
 {
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
-  return &priv->window_data;
+  return priv->window_data;
 }
 
 static void

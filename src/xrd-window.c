@@ -502,13 +502,13 @@ xrd_window_add_child (XrdWindow        *self,
     return;
 
   XrdWindowData *data = xrd_window_get_data (self);
-  data->child_window = child;
+  XrdWindowData *child_data = xrd_window_get_data (child);
+  data->child_window = child_data;
   graphene_point_init_from_point (&data->child_offset_center, offset_center);
 
   xrd_window_update_child (self);
 
-  XrdWindowData *child_data = xrd_window_get_data (child);
-  child_data->parent_window = self;
+  child_data->parent_window = data;
 
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   iface->add_child (self, child, offset_center);
@@ -601,7 +601,11 @@ void
 xrd_window_update_child (XrdWindow *self)
 {
   XrdWindowData *data = xrd_window_get_data (self);
-  XrdWindow *child = data->child_window;
+  XrdWindow *child = data->child_window->xrd_window;
+
+  /* this can happen during the overlay scene switch */
+  if (!child)
+    return;
 
   g_object_set (G_OBJECT(child), "scale", (double) data->scale, NULL);
 
@@ -740,4 +744,30 @@ xrd_window_is_pinned (XrdWindow *self)
 {
   XrdWindowData *data = xrd_window_get_data (self);
   return data->pinned;
+}
+
+/**
+ * xrd_window_close:
+ * @self: The #XrdWindow
+ * MUST be called when destroying a window to free its resources.
+ */
+void
+xrd_window_close (XrdWindow *self)
+{
+  XrdWindowData *data = xrd_window_get_data (self);
+  /* cleanup: If we are a child, we set our parent's child ptr to NULL */
+  if (data->parent_window != NULL)
+    data->parent_window->child_window = NULL;
+
+  /* cleanup: If we are a parent, we set our childs parent ptr to NULL.
+   * Usually we don't close parent windows while child windows still live,
+   * but sometimes it can happen. */
+  if (data->child_window)
+    data->child_window->parent_window = NULL;
+
+
+  if (data->title)
+    g_string_free (data->title, TRUE);
+  if (data->texture)
+    g_object_unref (data->texture);
 }

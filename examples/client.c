@@ -146,6 +146,11 @@ _desktop_window_process_frame (Example *self, DesktopWindow *desktop_window)
 {
   XrdWindow *xrd_window = xrd_client_lookup_window (self->client,
                                                     desktop_window);
+  if (!xrd_window)
+    {
+      g_print ("Error processing frame, window is NULL\n");
+      return TRUE;
+    }
 
   WindowWrapper *window_wrapper;
   g_object_get (xrd_window, "native", &window_wrapper, NULL);
@@ -393,6 +398,8 @@ _cleanup (Example *self)
       WindowWrapper *example_window;
       g_object_get (window, "native", &example_window, NULL);
       g_object_unref (example_window->gulkan_texture);
+
+      xrd_window_close (window);
     }
 
   g_object_unref (self->window_pixbuf);
