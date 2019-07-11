@@ -19,11 +19,27 @@
 
 #include "xrd-pointer.h"
 
+/**
+ * XrdPixelSize:
+ * @width: The width in #uint32_t
+ * @height: The height in #uint32_t
+ *
+ * A 2D size in pixels.
+ **/
 typedef struct {
   uint32_t width;
   uint32_t height;
 } XrdPixelSize;
 
+/**
+ * XrdHoverEvent:
+ * @point: The point in 3D world space.
+ * @pose: A #graphene_matrix_t pose.
+ * @distance: Distance from the controller.
+ * @controller_handle: The controller the event was captured on.
+ *
+ * An event that gets emitted when a controller hovers a window.
+ **/
 typedef struct {
   graphene_point3d_t point;
   graphene_matrix_t  pose;
@@ -31,17 +47,49 @@ typedef struct {
   guint64            controller_handle;
 } XrdHoverEvent;
 
+/**
+ * XrdGrabEvent:
+ * @pose: A #graphene_matrix_t pose.
+ * @controller_handle: The controller the event was captured on.
+ *
+ * An event that gets emitted when a window get grabbed.
+ **/
 typedef struct {
   graphene_matrix_t  pose;
   guint64            controller_handle;
 } XrdGrabEvent;
 
+/**
+ * XrdControllerIndexEvent:
+ * @controller_handle: The controller the event was captured on.
+ *
+ * An event that carries a controller handle.
+ **/
 typedef struct {
   guint64 controller_handle;
 } XrdControllerIndexEvent;
 
-/** _XrdWindowState:
- * copy of the state of a window carried over an overlay<->scene switch */
+/**
+ * XrdWindowState:
+ * @native: native
+ * @title: title
+ * @scale: scale
+ * @initial_width: initial_width
+ * @initial_height: initial_height
+ * @texture_width: texture_width
+ * @texture_height: texture_height
+ * @reset_transform: reset_transform
+ * @reset_scale: reset_scale
+ * @pinned: pinned
+ * @current_width: current_width
+ * @current_height: current_height
+ * @transform: transform
+ * @is_draggable: is_draggable
+ * @child_index: child_index
+ * @child_offset_center: child_offset_center
+ *
+ * The window state carried over in an overlay<->scene switch
+ **/
 typedef struct {
   gpointer native;
   gchar *title;
@@ -68,8 +116,27 @@ G_BEGIN_DECLS
 #define XRD_TYPE_WINDOW xrd_window_get_type()
 G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
 
+/**
+ * XrdWindowData:
+ * @native: A native pointer to a window struct from a window manager.
+ * @texture_width: The width of the last submitted texture in pixels.
+ * @texture_height: The height of the last submitted texture in pixels.
+ * @title: A window title.
+ * @selected: A #gboolean used in selection mode.
+ * @initial_size_meters: The window dimensions in meters without scale.
+ * @scale: A user applied scale.
+ * @vr_transform: The transformation #graphene_matrix_t of the window.
+ * @child_window: A window that is pinned on top of this window and follows this window's position and scaling.
+ * @parent_window: The parent window, %NULL if the window does not have a parent.
+ * @child_offset_center: If the window is a child, this stores the 2D offset to the parent in meters.
+ * @reset_transform: The transformation that the window will be reset to.
+ * @reset_scale: The scale that the window will be reset to.
+ * @pinned: Whether the window will be visible in pinned only mode.
+ * @texture: Cache of the currently rendered texture.
+ *
+ * Common struct for scene and overlay windows.
+ **/
 typedef struct {
-  GObject parent;
   gpointer native;
 
   uint32_t texture_width;
@@ -83,8 +150,6 @@ typedef struct {
   float scale;
   graphene_matrix_t vr_transform;
 
-  /* A window that is pinned on top of this window and follows this window's
-   * position and scaling */
   XrdWindow *child_window;
   XrdWindow *parent_window;
 
@@ -95,10 +160,33 @@ typedef struct {
 
   gboolean pinned;
 
-  /* cache of the currently rendered texture */
   GulkanTexture *texture;
 } XrdWindowData;
 
+/**
+ * XrdWindowInterface:
+ * @parent: parent
+ * @set_transformation: Set a #graphene_matrix_t transformation.
+ * @get_transformation: Get a #graphene_matrix_t transformation including scale.
+ * @get_transformation_no_scale: Get a #graphene_matrix_t transformation without scale.
+ * @submit_texture: Submit a new texture to the window.
+ * @poll_event: Poll events on the window.
+ * @emit_grab_start: Emit an event when the grab action was started.
+ * @emit_grab: Emit a continous event during the grab action.
+ * @emit_release: Emit an event when the grab action was finished.
+ * @emit_hover_end: Emit an event when hovering the window was finished.
+ * @emit_hover: Emit a continous event when the window is hovered.
+ * @emit_hover_start: Emit an event when hovering the window started.
+ * @add_child: Add a child window.
+ * @set_color: Set a color that is multiplied to the texture.
+ * @set_flip_y: Flip the y axis of the texture.
+ * @show: Show the window.
+ * @hide: Hide the window.
+ * @is_visible: Check if the window is currently visible.
+ * @constructed: Common constructor.
+ * @get_data: Get common data struct.
+ * @windows_created: Static counter how many windows were created, used for creating automatic overlay names.
+ **/
 struct _XrdWindowInterface
 {
   GTypeInterface parent;
