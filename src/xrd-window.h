@@ -378,6 +378,9 @@ void
 xrd_window_set_color (XrdWindow *self, const graphene_vec3_t *color);
 
 void
+xrd_window_save_reset_transformation (XrdWindow *self);
+
+void
 xrd_window_set_reset_transformation (XrdWindow *self,
                                      graphene_matrix_t *transform);
 

@@ -670,6 +670,21 @@ xrd_window_get_aspect_ratio (XrdWindow *self)
 }
 
 /**
+ * xrd_window_save_reset_transformation:
+ * @self: The #XrdWindow
+ * Saves the current transformation as the reset transformation.
+  */
+void
+xrd_window_save_reset_transformation (XrdWindow *self)
+{
+  XrdWindowData *data = xrd_window_get_data (self);
+  graphene_matrix_t current_transform;
+  xrd_window_get_transformation_no_scale (self, &current_transform);
+  graphene_matrix_init_from_matrix (&data->reset_transform,
+                                    &current_transform);
+}
+
+/**
  * xrd_window_set_reset_transformation:
  * @self: The #XrdWindow
  * @transform: A transformation matrix to save as reset transform.
