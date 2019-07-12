@@ -463,7 +463,7 @@ _submit_texture (XrdWindow     *window,
       gchar *title;
       g_object_get (window, "title", &title, NULL);
       g_debug ("Texture %p was already submitted to window %p (%s).\n",
-                 (void*) texture, (void*) window, title);
+               (void*) texture, (void*) window, title);
       return;
     }
 

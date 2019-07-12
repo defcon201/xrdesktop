@@ -224,11 +224,8 @@ static void
 _init_child_window (Example      *self,
                     XrdWindow    *window)
 {
-  XrdWindow *child = _add_window (self,
-                                  "A child",
-                                  0.25f,
-                                  self->child_window_pixbuf,
-                                  FALSE);
+  XrdWindow *child = _add_window (self, "A child", 0.25f,
+                                  self->child_window_pixbuf, FALSE);
 
   graphene_point_t offset = { .x = 25, .y = 25 };
   xrd_window_add_child (window, child, &offset);
@@ -293,11 +290,8 @@ _init_windows (Example *self)
       float max_window_height = 0;
       for (int row = 0; row < GRID_HEIGHT; row++)
         {
-          XrdWindow *window = _add_window (self,
-                                            "A window.",
-                                            0.5f,
-                                            self->window_pixbuf,
-                                            TRUE);
+          XrdWindow *window = _add_window (self, "A window.", 0.5f,
+                                           self->window_pixbuf, TRUE);
 
           window_x += xrd_window_get_current_width_meters (window);
 
@@ -317,9 +311,7 @@ _init_windows (Example *self)
           xrd_window_set_reset_transformation (window, NULL, 0);
 
           if (col == 0 && row == 0)
-            {
-              _init_child_window (self, window);
-            }
+            _init_child_window (self, window);
         }
       window_x = 0;
       window_y += max_window_height;
