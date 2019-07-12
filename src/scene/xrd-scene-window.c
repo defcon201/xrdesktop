@@ -26,6 +26,11 @@ enum
 static void
 xrd_scene_window_window_interface_init (XrdWindowInterface *iface);
 
+typedef struct {
+  float color[4];
+  bool flip_y;
+} XrdWindowUniformBuffer;
+
 typedef struct _XrdSceneWindowPrivate
 {
   XrdSceneObject parent;
@@ -38,6 +43,7 @@ typedef struct _XrdSceneWindowPrivate
   graphene_vec3_t color;
 
   GulkanUniformBuffer *shading_buffer;
+  XrdWindowUniformBuffer shading_buffer_data;
 
   XrdWindowData window_data;
 } XrdSceneWindowPrivate;
@@ -156,6 +162,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
   priv->aspect_ratio = 1.0;
   priv->window_data.texture = NULL;
   priv->shading_buffer = gulkan_uniform_buffer_new ();
+  priv->shading_buffer_data.flip_y = false;
 
   priv->window_data.title = NULL;
   priv->window_data.child_window = NULL;
@@ -300,7 +307,7 @@ xrd_scene_window_initialize (XrdSceneWindow *self)
     return FALSE;
 
   if (!gulkan_uniform_buffer_allocate_and_map (priv->shading_buffer,
-                                               device, sizeof (float) * 4))
+                                               device, sizeof (XrdWindowUniformBuffer)))
     return FALSE;
 
   graphene_vec3_t white;
@@ -345,7 +352,11 @@ xrd_scene_window_set_color (XrdSceneWindow        *self,
 
   graphene_vec4_t color_vec4;
   graphene_vec4_init_from_vec3 (&color_vec4, color, 1.0f);
-  gulkan_uniform_buffer_update_vec4 (priv->shading_buffer, &color_vec4);
+
+  graphene_vec4_to_float (&color_vec4, priv->shading_buffer_data.color);
+
+  gulkan_uniform_buffer_update_struct (priv->shading_buffer,
+                                       (gpointer) &priv->shading_buffer_data);
 }
 
 void
@@ -539,6 +550,10 @@ _set_flip_y (XrdWindow *window,
   XrdSceneWindow *self = XRD_SCENE_WINDOW (window);
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
   priv->flip_y = flip_y;
+  priv->shading_buffer_data.flip_y = flip_y;
+
+  gulkan_uniform_buffer_update_struct (priv->shading_buffer,
+                                       (gpointer) &priv->shading_buffer_data);
 }
 
 void

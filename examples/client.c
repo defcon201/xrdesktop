@@ -310,6 +310,9 @@ _init_windows (Example *self)
 
           xrd_window_set_reset_transformation (window, NULL, 0);
 
+          if ((col + row) % 2 == 0)
+            xrd_window_set_flip_y (window, true);
+
           if (col == 0 && row == 0)
             _init_child_window (self, window);
         }
