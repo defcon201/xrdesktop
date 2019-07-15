@@ -1,4 +1,4 @@
-project('xrdesktop', 'c', version: '0.11.1',
+project('xrdesktop', 'c', version: '0.12.0',
   meson_version: '>= 0.45.1',
 )
 
@@ -51,7 +51,7 @@ c = meson.get_compiler('c')
 
 ## Required
 m_dep = c.find_library('m')
-openvr_glib_dep = dependency('openvr-glib-0.11')
+openvr_glib_dep = dependency('openvr-glib-0.12')
 
 subdir('shaders')
 subdir('res')
