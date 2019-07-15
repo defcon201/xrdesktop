@@ -88,7 +88,6 @@ G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
  * @parent_window: The parent window, %NULL if the window does not have a parent.
  * @child_offset_center: If the window is a child, this stores the 2D offset to the parent in meters.
  * @reset_transform: The transformation that the window will be reset to.
- * @reset_scale: The scale that the window will be reset to.
  * @pinned: Whether the window will be visible in pinned only mode.
  * @texture: Cache of the currently rendered texture.
  * @xrd_window: A pointer to the #XrdWindow this XrdWindowData belongs to.

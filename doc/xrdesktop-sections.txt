@@ -30,6 +30,7 @@ xrd_client_get_pointer_tip
 xrd_client_get_upload_layout
 xrd_client_get_windows
 xrd_client_get_wm_actions
+xrd_client_lookup_window
 xrd_client_init_controller
 xrd_client_is_grabbed
 xrd_client_is_grabbing
@@ -138,6 +139,7 @@ xrd_overlay_window_new
 xrd_overlay_window_new_from_meters
 xrd_overlay_window_new_from_native
 xrd_overlay_window_new_from_pixels
+xrd_overlay_window_new_from_data
 XRD_TYPE_OVERLAY_WINDOW
 </SECTION>
 
@@ -215,6 +217,7 @@ xrd_scene_window_new
 xrd_scene_window_new_from_meters
 xrd_scene_window_new_from_native
 xrd_scene_window_new_from_pixels
+xrd_scene_window_new_from_data
 xrd_scene_window_draw
 xrd_scene_window_initialize
 xrd_scene_window_set_color
@@ -229,7 +232,6 @@ XrdWindow
 XrdWindowFlags
 XrdWindowInterface
 XrdWindowData
-XrdWindowState
 XrdControllerIndexEvent
 XrdHoverEvent
 XrdGrabEvent
@@ -241,6 +243,7 @@ xrd_window_emit_hover
 xrd_window_emit_hover_end
 xrd_window_emit_hover_start
 xrd_window_emit_release
+xrd_window_close
 xrd_window_get_transformation
 xrd_window_intersects
 xrd_window_poll_event
@@ -269,6 +272,7 @@ xrd_window_is_visible
 xrd_window_select
 xrd_window_set_pin
 xrd_window_set_reset_transformation
+xrd_window_save_reset_transformation
 xrd_window_show
 xrd_window_update_child
 XRD_TYPE_WINDOW

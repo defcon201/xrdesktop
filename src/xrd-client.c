@@ -2232,7 +2232,6 @@ _get_new_window_data_list (XrdClient *self)
  *
  * xrd_client_switch_mode() replaces each #XrdWindow with an appropriate new
  * one, preserving its transformation matrix, scaling, pinned status, etc.
- * For details about preserved state, see #_XrdWindowState.
  *
  * The caller is responsible for reconnecting callbacks to #XrdClient signals.
  * The caller is responsible to not use references to any previous #XrdWindow.
