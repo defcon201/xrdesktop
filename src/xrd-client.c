@@ -1456,7 +1456,7 @@ _init_buttons (XrdClient *self, XrdController *controller)
   xrd_client_add_button (self, priv->button_ignore_input, &position,
                          (GCallback) _button_ignore_input_press_cb, self);
 
-  _grid_position (w, h, rows, columns, 2, 0, &relative_transform);
+  _grid_position (w, h, rows, columns, 2, 0.5f, &relative_transform);
   xrd_container_add_window (priv->wm_control_container,
                             priv->button_ignore_input,
                             &relative_transform);
