@@ -45,6 +45,10 @@ xrd_scene_object_set_position (XrdSceneObject     *self,
                                graphene_point3d_t *position);
 
 void
+xrd_scene_object_get_position (XrdSceneObject     *self,
+                               graphene_point3d_t *position);
+
+void
 xrd_scene_object_set_rotation_euler (XrdSceneObject   *self,
                                      graphene_euler_t *euler);
 
@@ -52,6 +56,16 @@ void
 xrd_scene_object_update_mvp_matrix (XrdSceneObject    *self,
                                     EVREye             eye,
                                     graphene_matrix_t *vp);
+
+void
+xrd_scene_object_update_transformation_buffer (XrdSceneObject    *self,
+                                               EVREye             eye,
+                                               graphene_matrix_t *view,
+                                               graphene_matrix_t *projection);
+
+void
+xrd_scene_object_get_model_matrix (XrdSceneObject    *self,
+                                   graphene_matrix_t *model_matrix);
 
 void
 xrd_scene_object_bind (XrdSceneObject    *self,

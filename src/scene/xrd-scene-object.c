@@ -11,10 +11,18 @@
 #include "xrd-scene-renderer.h"
 #include "graphene-ext.h"
 
+typedef struct {
+  float mvp[16];
+  float mv[16];
+  float m[16];
+  bool receive_light;
+} XrdSceneObjectTransformation;
+
 typedef struct _XrdSceneObjectPrivate
 {
   GObject parent;
 
+  XrdSceneObjectTransformation transformation[2];
   GulkanUniformBuffer *uniform_buffers[2];
 
   VkDescriptorPool descriptor_pool;
@@ -99,9 +107,48 @@ xrd_scene_object_update_mvp_matrix (XrdSceneObject    *self,
 
   graphene_matrix_t mvp;
   graphene_matrix_multiply (&priv->model_matrix, vp, &mvp);
+  graphene_matrix_to_float (&mvp, priv->transformation[eye].mvp);
+
+  priv->transformation[eye].receive_light = false;
 
   /* Update matrix in uniform buffer */
-  gulkan_uniform_buffer_update_matrix (priv->uniform_buffers[eye], &mvp);
+  gulkan_uniform_buffer_update_struct (priv->uniform_buffers[eye],
+                                       (gpointer) &priv->transformation[eye]);
+}
+
+void
+xrd_scene_object_update_transformation_buffer (XrdSceneObject    *self,
+                                               EVREye             eye,
+                                               graphene_matrix_t *view,
+                                               graphene_matrix_t *projection)
+{
+  XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
+
+  graphene_matrix_t vp;
+  graphene_matrix_multiply (view, projection, &vp);
+
+  graphene_matrix_to_float (&priv->model_matrix, priv->transformation[eye].m);
+
+  graphene_matrix_t mv;
+  graphene_matrix_multiply (&priv->model_matrix, view, &mv);
+  graphene_matrix_to_float (&mv, priv->transformation[eye].mv);
+
+  graphene_matrix_t mvp;
+  graphene_matrix_multiply (&priv->model_matrix, &vp, &mvp);
+  graphene_matrix_to_float (&mvp, priv->transformation[eye].mvp);
+
+  priv->transformation[eye].receive_light = true;
+
+  gulkan_uniform_buffer_update_struct (priv->uniform_buffers[eye],
+                                       (gpointer) &priv->transformation[eye]);
+}
+
+void
+xrd_scene_object_get_model_matrix (XrdSceneObject    *self,
+                                   graphene_matrix_t *model_matrix)
+{
+  XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
+  graphene_matrix_init_from_matrix (model_matrix, &priv->model_matrix);
 }
 
 void
@@ -134,6 +181,14 @@ xrd_scene_object_set_position (XrdSceneObject     *self,
 }
 
 void
+xrd_scene_object_get_position (XrdSceneObject     *self,
+                               graphene_point3d_t *position)
+{
+  XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
+  graphene_point3d_init_from_point (position, &priv->position);
+}
+
+void
 xrd_scene_object_set_rotation_euler (XrdSceneObject   *self,
                                      graphene_euler_t *euler)
 {
@@ -153,7 +208,7 @@ xrd_scene_object_initialize (XrdSceneObject        *self,
   /* Create uniform buffer to hold a matrix per eye */
   for (uint32_t eye = 0; eye < 2; eye++)
     if (!gulkan_uniform_buffer_allocate_and_map (priv->uniform_buffers[eye],
-                                                 device, sizeof (float) * 16))
+                                                 device, sizeof (XrdSceneObjectTransformation)))
       return FALSE;
 
   uint32_t set_count = 2;
@@ -166,6 +221,10 @@ xrd_scene_object_initialize (XrdSceneObject        *self,
     {
       .descriptorCount = set_count,
       .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    },
+    {
+      .descriptorCount = set_count,
+      .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
     },
     {
       .descriptorCount = set_count,

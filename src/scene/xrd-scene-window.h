@@ -75,6 +75,15 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
                        graphene_matrix_t *vp);
 
 void
+xrd_scene_window_draw_phong (XrdSceneWindow    *self,
+                             EVREye             eye,
+                             VkPipeline         pipeline,
+                             VkPipelineLayout   pipeline_layout,
+                             VkCommandBuffer    cmd_buffer,
+                             graphene_matrix_t *view,
+                             graphene_matrix_t *projection);
+
+void
 xrd_scene_window_set_width_meters (XrdSceneWindow *self,
                                    float           width_meters);
 

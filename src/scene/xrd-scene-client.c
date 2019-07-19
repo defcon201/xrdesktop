@@ -57,6 +57,9 @@ graphene_matrix_t _get_hmd_pose_matrix (EVREye eye);
 graphene_matrix_t _get_view_projection_matrix (XrdSceneClient *self,
                                                EVREye eye);
 
+graphene_matrix_t
+_get_view_matrix (XrdSceneClient *self, EVREye eye);
+
 void _update_matrices (XrdSceneClient *self);
 void _update_device_poses (XrdSceneClient *self);
 void _render_stereo (XrdSceneClient *self, VkCommandBuffer cmd_buffer);
@@ -172,6 +175,24 @@ _render_pointers (XrdSceneClient    *self,
   g_list_free (controllers);
 }
 
+/*
+ * Since we are using world space positons for the lights, this only needs
+ * to be run once for both eyes
+ */
+static void
+_update_lights_cb (gpointer _self)
+{
+  XrdSceneClient *self = XRD_SCENE_CLIENT (_self);
+
+  GList *controllers =
+    g_hash_table_get_values (xrd_client_get_controllers (XRD_CLIENT (self)));
+
+  XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
+  xrd_scene_renderer_update_lights (renderer, controllers);
+
+  g_list_free (controllers);
+}
+
 static void
 _render_eye_cb (uint32_t         eye,
                 VkCommandBuffer  cmd_buffer,
@@ -182,6 +203,7 @@ _render_eye_cb (uint32_t         eye,
   XrdSceneClient *self = XRD_SCENE_CLIENT (_self);
 
   graphene_matrix_t vp = _get_view_projection_matrix (self, eye);
+  graphene_matrix_t view = _get_view_matrix (self, eye);
 
   XrdWindowManager *manager = xrd_client_get_manager (XRD_CLIENT (self));
 
@@ -192,19 +214,21 @@ _render_eye_cb (uint32_t         eye,
   for (GSList *l = xrd_window_manager_get_windows (manager);
        l != NULL; l = l->next)
     {
-      xrd_scene_window_draw (XRD_SCENE_WINDOW (l->data), eye,
-                             pipelines[PIPELINE_WINDOWS],
-                             pipeline_layout,
-                             cmd_buffer, &vp);
+      xrd_scene_window_draw_phong (XRD_SCENE_WINDOW (l->data), eye,
+                                   pipelines[PIPELINE_WINDOWS],
+                                   pipeline_layout,
+                                   cmd_buffer, &view,
+                                  &self->mat_projection[eye]);
     }
 
   for (GSList *l = xrd_window_manager_get_buttons (manager);
        l != NULL; l = l->next)
     {
-      xrd_scene_window_draw (XRD_SCENE_WINDOW (l->data), eye,
-                             pipelines[PIPELINE_WINDOWS],
-                             pipeline_layout,
-                             cmd_buffer, &vp);
+      xrd_scene_window_draw_phong (XRD_SCENE_WINDOW (l->data), eye,
+                                   pipelines[PIPELINE_WINDOWS],
+                                   pipeline_layout,
+                                   cmd_buffer, &view,
+                                   &self->mat_projection[eye]);
     }
 
   _render_pointers (self, eye, cmd_buffer, pipelines, pipeline_layout, &vp);
@@ -277,6 +301,7 @@ _init_vulkan (XrdSceneClient *self)
   vkQueueWaitIdle (gulkan_device_get_queue_handle (device));
 
   xrd_scene_renderer_set_render_cb (renderer, _render_eye_cb, self);
+  xrd_scene_renderer_set_update_lights_cb (renderer, _update_lights_cb, self);
 
   return true;
 }
@@ -389,6 +414,15 @@ _get_view_projection_matrix (XrdSceneClient *self, EVREye eye)
   graphene_matrix_init_from_matrix (&mat, &self->mat_head_pose);
   graphene_matrix_multiply (&mat, &self->mat_eye_pos[eye], &mat);
   graphene_matrix_multiply (&mat, &self->mat_projection[eye], &mat);
+  return mat;
+}
+
+graphene_matrix_t
+_get_view_matrix (XrdSceneClient *self, EVREye eye)
+{
+  graphene_matrix_t mat;
+  graphene_matrix_init_from_matrix (&mat, &self->mat_head_pose);
+  graphene_matrix_multiply (&mat, &self->mat_eye_pos[eye], &mat);
   return mat;
 }
 
