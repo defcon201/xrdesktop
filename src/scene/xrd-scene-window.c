@@ -336,6 +336,35 @@ xrd_scene_window_draw (XrdSceneWindow    *self,
   vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
   xrd_scene_object_update_mvp_matrix (obj, eye, vp);
+
+  xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
+  gulkan_vertex_buffer_draw (priv->vertex_buffer, cmd_buffer);
+}
+
+void
+xrd_scene_window_draw_shaded (XrdSceneWindow    *self,
+                              EVREye             eye,
+                              VkPipeline         pipeline,
+                              VkPipelineLayout   pipeline_layout,
+                              VkCommandBuffer    cmd_buffer,
+                              graphene_matrix_t *view,
+                              graphene_matrix_t *projection)
+{
+  XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  if (!priv->window_data->texture)
+    {
+      /* g_warning ("Trying to draw window with no texture.\n"); */
+      return;
+    }
+
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  if (!xrd_scene_object_is_visible (obj))
+    return;
+
+  vkCmdBindPipeline (cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+  xrd_scene_object_update_transformation_buffer (obj, eye, view, projection);
+
   xrd_scene_object_bind (obj, eye, cmd_buffer, pipeline_layout);
   gulkan_vertex_buffer_draw (priv->vertex_buffer, cmd_buffer);
 }
@@ -362,6 +391,7 @@ xrd_scene_window_update_descriptors (XrdSceneWindow *self)
   XrdSceneRenderer *renderer = xrd_scene_renderer_get_instance ();
   VkDevice device = gulkan_client_get_device_handle (GULKAN_CLIENT (renderer));
   XrdSceneWindowPrivate *priv = xrd_scene_window_get_instance_private (self);
+  VkBuffer lights = xrd_scene_renderer_get_lights_buffer_handle (renderer);
 
   for (uint32_t eye = 0; eye < 2; eye++)
     {
@@ -412,10 +442,23 @@ xrd_scene_window_update_descriptors (XrdSceneWindow *self)
             .range = VK_WHOLE_SIZE
           },
           .pTexelBufferView = NULL
+        },
+        {
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = descriptor_set,
+          .dstBinding = 3,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          .pBufferInfo = &(VkDescriptorBufferInfo) {
+            .buffer = lights,
+            .offset = 0,
+            .range = VK_WHOLE_SIZE
+          },
+          .pTexelBufferView = NULL
         }
       };
 
-      vkUpdateDescriptorSets (device, 3, write_descriptor_sets, 0, NULL);
+      vkUpdateDescriptorSets (device, 4, write_descriptor_sets, 0, NULL);
     }
 }
 

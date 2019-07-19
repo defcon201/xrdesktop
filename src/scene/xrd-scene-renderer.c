@@ -12,10 +12,28 @@
 #include <gulkan.h>
 #include <openvr-glib.h>
 
+#include "xrd-controller.h"
+#include "xrd-scene-pointer.h"
+#include "xrd-scene-pointer-tip.h"
+
+#include "graphene-ext.h"
+
 typedef struct {
   graphene_point3d_t position;
   graphene_point_t   uv;
 } XrdSceneVertex;
+
+typedef struct {
+  float position[4];
+  float color[4];
+  float radius;
+  float unused[3];
+} XrdSceneLight;
+
+typedef struct {
+  XrdSceneLight lights[2];
+  int active_lights;
+} XrdSceneLights;
 
 struct _XrdSceneRenderer
 {
@@ -35,7 +53,10 @@ struct _XrdSceneRenderer
   uint32_t render_width;
   uint32_t render_height;
 
-  gpointer render_cb_data;
+  gpointer scene_client;
+
+  XrdSceneLights lights;
+  GulkanUniformBuffer *lights_buffer;
 
   void
   (*render_eye) (uint32_t         eye,
@@ -43,6 +64,8 @@ struct _XrdSceneRenderer
                  VkPipelineLayout pipeline_layout,
                  VkPipeline      *pipelines,
                  gpointer         data);
+
+  void (*update_lights) (gpointer data);
 };
 
 G_DEFINE_TYPE (XrdSceneRenderer, xrd_scene_renderer, GULKAN_TYPE_CLIENT)
@@ -63,7 +86,22 @@ xrd_scene_renderer_init (XrdSceneRenderer *self)
   self->msaa_sample_count = VK_SAMPLE_COUNT_4_BIT;
   self->super_sample_scale = 1.0f;
   self->render_eye = NULL;
-  self->render_cb_data = NULL;
+  self->scene_client = NULL;
+  self->lights_buffer = gulkan_uniform_buffer_new ();
+
+  self->lights.active_lights = 0;
+  graphene_vec4_t position;
+  graphene_vec4_init (&position, 0, 0, 0, 1);
+
+  graphene_vec4_t color;
+  graphene_vec4_init (&color,.078f, .471f, .675f, 1);
+
+  for (uint32_t i = 0; i < 2; i++)
+    {
+      graphene_vec4_to_float (&position, self->lights.lights[i].position);
+      graphene_vec4_to_float (&color, self->lights.lights[i].color);
+      self->lights.lights[i].radius = 0.1f;
+    }
 
   self->descriptor_set_layout = VK_NULL_HANDLE;
   self->pipeline_layout = VK_NULL_HANDLE;
@@ -84,6 +122,8 @@ xrd_scene_renderer_finalize (GObject *gobject)
 
   if (device != VK_NULL_HANDLE)
     {
+      g_object_unref (self->lights_buffer);
+
       for (uint32_t eye = 0; eye < 2; eye++)
         g_object_unref (self->framebuffer[eye]);
 
@@ -177,22 +217,32 @@ _init_descriptor_layout (XrdSceneRenderer *self)
 {
   VkDescriptorSetLayoutCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-    .bindingCount = 3,
+    .bindingCount = 4,
     .pBindings = (VkDescriptorSetLayoutBinding[]) {
+      // mvp buffer
       {
         .binding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
       },
+      // Window and device texture
       {
         .binding = 1,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
       },
+      // Window buffer
       {
         .binding = 2,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+      },
+      // Lights buffer
+      {
+        .binding = 3,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
@@ -525,6 +575,11 @@ _init_vulkan (XrdSceneRenderer *self)
   if (!_init_shaders (self))
     return false;
 
+  GulkanDevice *device = gulkan_client_get_device (GULKAN_CLIENT (self));
+  if (!gulkan_uniform_buffer_allocate_and_map (self->lights_buffer,
+                                               device, sizeof (XrdSceneLights)))
+    return false;
+
   if (!_init_descriptor_layout (self))
     return false;
   if (!_init_pipeline_layout (self))
@@ -587,10 +642,41 @@ _render_stereo (XrdSceneRenderer *self, VkCommandBuffer cmd_buffer)
 
       if (self->render_eye)
         self->render_eye (eye, cmd_buffer, self->pipeline_layout,
-                          self->pipelines, self->render_cb_data);
+                          self->pipelines, self->scene_client);
 
       vkCmdEndRenderPass (cmd_buffer);
     }
+}
+
+void
+xrd_scene_renderer_update_lights (XrdSceneRenderer  *self,
+                                  GList             *controllers)
+{
+  self->lights.active_lights = (int) g_list_length (controllers);
+  if (self->lights.active_lights > 2)
+    {
+      g_warning ("Update lights received more than 2 controllers.\n");
+      self->lights.active_lights = 2;
+    }
+
+  for (int i = 0; i < self->lights.active_lights; i++)
+    {
+      GList *l = g_list_nth (controllers, (guint) i);
+      XrdController *controller = XRD_CONTROLLER (l->data);
+
+      XrdScenePointerTip *scene_tip =
+        XRD_SCENE_POINTER_TIP (xrd_controller_get_pointer_tip (controller));
+
+      graphene_point3d_t tip_position;
+      xrd_scene_object_get_position (XRD_SCENE_OBJECT (scene_tip), &tip_position);
+
+      self->lights.lights[i].position[0] = tip_position.x;
+      self->lights.lights[i].position[1] = tip_position.y;
+      self->lights.lights[i].position[2] = tip_position.z;
+    }
+
+  gulkan_uniform_buffer_update_struct (self->lights_buffer,
+                                       (gpointer) &self->lights);
 }
 
 static void
@@ -598,6 +684,8 @@ _draw (XrdSceneRenderer *self)
 {
   GulkanCommandBuffer cmd_buffer;
   gulkan_client_begin_cmd_buffer (GULKAN_CLIENT (self), &cmd_buffer);
+
+  self->update_lights (self->scene_client);
 
   _render_stereo (self, cmd_buffer.handle);
 
@@ -654,10 +742,19 @@ xrd_scene_renderer_set_render_cb (XrdSceneRenderer *self,
                                                       VkPipelineLayout pipeline_layout,
                                                       VkPipeline      *pipelines,
                                                       gpointer         data),
-                                  gpointer data)
+                                  gpointer scene_client)
 {
   self->render_eye = render_eye;
-  self->render_cb_data = data;
+  self->scene_client = scene_client;
+}
+
+void
+xrd_scene_renderer_set_update_lights_cb (XrdSceneRenderer *self,
+                                         void (*update_lights) (gpointer data),
+                                         gpointer scene_client)
+{
+  self->update_lights = update_lights;
+  self->scene_client = scene_client;
 }
 
 GulkanDevice*
@@ -665,4 +762,10 @@ xrd_scene_renderer_get_device ()
 {
   XrdSceneRenderer *self = xrd_scene_renderer_get_instance ();
   return gulkan_client_get_device (GULKAN_CLIENT (self));
+}
+
+VkBuffer
+xrd_scene_renderer_get_lights_buffer_handle (XrdSceneRenderer *self)
+{
+  return gulkan_uniform_buffer_get_handle (self->lights_buffer);
 }

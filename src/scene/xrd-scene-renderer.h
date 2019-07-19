@@ -59,7 +59,19 @@ xrd_scene_renderer_set_render_cb (XrdSceneRenderer *self,
                                                       VkPipelineLayout pipeline_layout,
                                                       VkPipeline      *pipelines,
                                                       gpointer         data),
-                                  gpointer data);
+                                  gpointer scene_client);
+
+void
+xrd_scene_renderer_set_update_lights_cb (XrdSceneRenderer *self,
+                                         void (*update_lights) (gpointer data),
+                                         gpointer scene_client);
+
+VkBuffer
+xrd_scene_renderer_get_lights_buffer_handle (XrdSceneRenderer *self);
+
+void
+xrd_scene_renderer_update_lights (XrdSceneRenderer  *self,
+                                  GList             *controllers);
 
 G_END_DECLS
 
