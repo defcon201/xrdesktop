@@ -26,6 +26,8 @@
 
 #include "xrd-button.h"
 
+#include "xrd-client-menu.h"
+
 #define WINDOW_MIN_DIST .05f
 #define WINDOW_MAX_DIST 15.f
 
@@ -47,12 +49,6 @@ typedef struct _XrdClientPrivate
   XrdWindowManager *manager;
   OpenVRActionSet *wm_actions;
   XrdInputSynth *input_synth;
-
-  XrdWindow *button_reset;
-  XrdWindow *button_sphere;
-  XrdWindow *button_pinned_only;
-  XrdWindow *button_selection_mode;
-  XrdWindow *button_ignore_input;
 
   gboolean pinned_only;
   gboolean selection_mode;
@@ -87,6 +83,8 @@ typedef struct _XrdClientPrivate
 
   /* maps a key to desktop #XrdWindows, but not buttons. */
   GHashTable *window_mapping;
+
+  XrdClientMenu *menu;
 } XrdClientPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (XrdClient, xrd_client, G_TYPE_OBJECT)
@@ -369,22 +367,6 @@ xrd_client_show_pinned_only (XrdClient *self,
         xrd_window_show (window);
       else
         xrd_window_hide (window);
-    }
-
-  GulkanClient *client = xrd_client_get_uploader (self);
-  VkImageLayout layout = xrd_client_get_upload_layout (self);
-  if (priv->button_pinned_only)
-    {
-      if (pinned_only)
-        {
-          xrd_button_set_icon (priv->button_pinned_only, client, layout,
-                               "/icons/object-hidden-symbolic.svg");
-        }
-      else
-        {
-          xrd_button_set_icon (priv->button_pinned_only, client, layout,
-                               "/icons/object-visible-symbolic.svg");
-        }
     }
 }
 
@@ -918,29 +900,6 @@ _action_grab_cb (OpenVRAction        *action,
   g_free (event);
 }
 
-static void
-_action_menu_cb (OpenVRAction        *action,
-                 OpenVRDigitalEvent  *event,
-                 XrdClient           *self)
-{
-  (void) action;
-  XrdController *controller = _lookup_controller (self,
-                                                  event->controller_handle);
-  if (controller == NULL)
-    return;
-
-  if (event->changed && event->state == 1 &&
-      !xrd_controller_get_hover_state (controller)->window)
-    {
-      XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-      if (priv->wm_control_container)
-        _destroy_buttons (self);
-      else
-        _init_buttons (self, controller);
-    }
-  g_free (event);
-}
-
 typedef struct {
   XrdGrabState *grab_state;
   graphene_quaternion_t from;
@@ -1242,13 +1201,14 @@ _button_pinned_press_cb (XrdWindow               *button,
   if (priv->selection_mode)
     return;
 
+  xrd_client_menu_toggle_button (priv->menu, button, !priv->pinned_only);
   xrd_client_show_pinned_only (self, !priv->pinned_only);
   g_free (event);
 }
 
 
 static void
-_button_select_pinned_press_cb (XrdOverlayWindow        *button,
+_button_select_pinned_press_cb (XrdWindow               *button,
                                 XrdControllerIndexEvent *event,
                                 gpointer                 _self)
 {
@@ -1256,22 +1216,11 @@ _button_select_pinned_press_cb (XrdOverlayWindow        *button,
   (void) button;
   XrdClient *self = _self;
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+
   priv->selection_mode = !priv->selection_mode;
+  xrd_client_menu_toggle_button (priv->menu, button, priv->selection_mode);
+
   _mark_windows_for_selection_mode (self);
-
-  VkImageLayout layout = xrd_client_get_upload_layout (self);
-
-  GulkanClient *client = xrd_client_get_uploader (self);
-  if (priv->selection_mode)
-    {
-      xrd_button_set_icon (priv->button_selection_mode, client, layout,
-                           "/icons/object-select-symbolic.svg");
-    }
-  else
-    {
-      xrd_button_set_icon (priv->button_selection_mode, client, layout,
-                           "/icons/view-pin-symbolic.svg");
-    }
 
   g_free (event);
 }
@@ -1287,51 +1236,13 @@ _button_ignore_input_press_cb (XrdWindow               *button,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
   priv->ignore_input = !priv->ignore_input;
+  xrd_client_menu_toggle_button (priv->menu, button, priv->ignore_input);
 
   xrd_window_manager_set_hover_mode (priv->manager,
                                      priv->ignore_input ?
                                          XRD_HOVER_MODE_BUTTONS :
                                          XRD_HOVER_MODE_EVERYTHING);
-
-  VkImageLayout layout = xrd_client_get_upload_layout (self);
-  GulkanClient *client = xrd_client_get_uploader (self);
-  if (priv->ignore_input)
-    {
-      xrd_button_set_icon (priv->button_ignore_input, client, layout,
-                           "/icons/input-no-mouse-symbolic.svg");
-    }
-  else
-    {
-      xrd_button_set_icon (priv->button_ignore_input, client, layout,
-                           "/icons/input-mouse-symbolic.svg");
-    }
-
   g_free (event);
-}
-
-static void
-_grid_position (float widget_width,
-                float widget_height,
-                float grid_rows,
-                float grid_columns,
-                float row,
-                float column,
-                graphene_matrix_t *relative_transform)
-{
-  float grid_width = grid_columns * widget_width;
-  float grid_height = grid_rows * widget_height;
-
-  float y_offset = grid_height / 2.f -
-                   widget_height * row -
-                   widget_height / 2.f;
-
-  float x_offset = - grid_width / 2.f +
-                   widget_width * column +
-                   widget_width / 2.f;
-
-  graphene_point3d_t position;
-  graphene_point3d_init (&position, x_offset, y_offset, 0);
-  graphene_matrix_init_translate (relative_transform, &position);
 }
 
 gboolean
@@ -1343,138 +1254,47 @@ _init_buttons (XrdClient *self, XrdController *controller)
    * Controller attached requires more than 1 controller to use. */
   int attach_controller = g_hash_table_size (priv->controllers) > 1;
 
-  float w;
-  float h;
-  float ppm;
-  if (attach_controller)
-    {
-      w = 0.07f;
-      h = 0.07f;
-      ppm = 1500.0;
-    }
-  else
-    {
-      w = 0.25f;
-      h = 0.25f;
-      ppm = 450.0;
-    }
+  priv->menu = xrd_client_menu_new ();
+  xrd_client_menu_initialize (priv->menu, self,
+                              attach_controller ?
+                                  XRD_CONTAINER_ATTACHMENT_HAND :
+                                  XRD_CONTAINER_ATTACHMENT_HEAD,
+                              3, 2, controller);
 
-  float rows = 3;
-  float columns = 2;
+  XrdWindow *button =
+    xrd_client_menu_create_button (priv->menu, XRD_BUTTON_ICON, 0, 0,
+                                   "/icons/align-sphere-symbolic.svg",
+                                   (GCallback) _button_sphere_press_cb);
 
-  priv->wm_control_container = xrd_container_new ();
-  xrd_container_set_attachment (priv->wm_control_container,
-                                attach_controller ?
-                                    XRD_CONTAINER_ATTACHMENT_HAND :
-                                    XRD_CONTAINER_ATTACHMENT_HEAD,
-                                controller);
-  xrd_container_set_layout (priv->wm_control_container,
-                            XRD_CONTAINER_RELATIVE);
+  button =
+    xrd_client_menu_create_button (priv->menu, XRD_BUTTON_ICON, 0, 1,
+                                   "/icons/edit-undo-symbolic.svg",
+                                   (GCallback) _button_reset_press_cb);
 
-  /* position where button is initially created doesn't matter. */
-  graphene_point3d_t position = { .x =  0, .y = 0, .z = 0 };
+  button =
+    xrd_client_menu_create_button (priv->menu, XRD_BUTTON_ICON, 1, 0,
+                                   "/icons/view-pin-symbolic.svg",
+                                   (GCallback) _button_select_pinned_press_cb);
+  xrd_client_menu_set_button_toggleable (priv->menu, button,
+                                         "/icons/object-select-symbolic.svg",
+                                         priv->selection_mode);
 
-  graphene_matrix_t relative_transform;
-
-  priv->button_sphere =
-    xrd_client_button_new_from_icon (self, w, h, ppm,
-                                     "/icons/align-sphere-symbolic.svg");
-  if (!priv->button_sphere)
-    return FALSE;
-
-  xrd_client_add_button (self, priv->button_sphere, &position,
-                         (GCallback) _button_sphere_press_cb, self);
-
-  _grid_position (w, h, rows, columns, 0, 0, &relative_transform);
-  xrd_container_add_window (priv->wm_control_container,
-                            priv->button_sphere,
-                            &relative_transform);
-
-  priv->button_reset =
-    xrd_client_button_new_from_icon (self, w, h, ppm,
-                                     "/icons/edit-undo-symbolic.svg");
-  if (!priv->button_reset)
-    return FALSE;
-
-  xrd_client_add_button (self, priv->button_reset, &position,
-                         (GCallback) _button_reset_press_cb, self);
-
-  _grid_position (w, h, rows, columns, 0, 1, &relative_transform);
-  xrd_container_add_window (priv->wm_control_container,
-                            priv->button_reset,
-                            &relative_transform);
-
-  priv->button_selection_mode =
-    xrd_client_button_new_from_icon (self, w, h, ppm,
-                                     "/icons/view-pin-symbolic.svg");
-  if (!priv->button_selection_mode)
-    return FALSE;
-
-  xrd_client_add_button (self, priv->button_selection_mode, &position,
-                         (GCallback) _button_select_pinned_press_cb, self);
-
-  _grid_position (w, h, rows, columns, 1, 0, &relative_transform);
-  xrd_container_add_window (priv->wm_control_container,
-                            priv->button_selection_mode,
-                            &relative_transform);
-
-  if (priv->pinned_only)
-    {
-      priv->button_pinned_only =
-        xrd_client_button_new_from_icon (self, w, h, ppm,
-                                         "/icons/object-hidden-symbolic.svg");
-    }
-  else
-    {
-      priv->button_pinned_only =
-        xrd_client_button_new_from_icon (self, w, h, ppm,
-                                         "/icons/object-visible-symbolic.svg");
-
-    }
-  if (!priv->button_pinned_only)
-    return FALSE;
-
-  xrd_client_add_button (self, priv->button_pinned_only, &position,
-                         (GCallback) _button_pinned_press_cb, self);
-
-  _grid_position (w, h, rows, columns, 1, 1, &relative_transform);
-  xrd_container_add_window (priv->wm_control_container,
-                            priv->button_pinned_only,
-                            &relative_transform);
-
-  xrd_client_add_container (self, priv->wm_control_container);
+  button =
+    xrd_client_menu_create_button (priv->menu, XRD_BUTTON_ICON, 1, 1,
+                                   "/icons/object-visible-symbolic.svg",
+                                   (GCallback) _button_pinned_press_cb);
+  xrd_client_menu_set_button_toggleable (priv->menu, button,
+                                         "/icons/object-hidden-symbolic.svg",
+                                         priv->pinned_only);
 
 
-  if (priv->ignore_input)
-    {
-      priv->button_ignore_input =
-        xrd_client_button_new_from_icon (self, w, h, ppm,
-                                         "/icons/input-no-mouse-symbolic.svg");
-    }
-  else
-    {
-      priv->button_ignore_input =
-        xrd_client_button_new_from_icon (self, w, h, ppm,
-                                         "/icons/input-mouse-symbolic.svg");
-    }
-  if (!priv->button_ignore_input)
-    return FALSE;
-
-  xrd_client_add_button (self, priv->button_ignore_input, &position,
-                         (GCallback) _button_ignore_input_press_cb, self);
-
-  _grid_position (w, h, rows, columns, 2, 0.5f, &relative_transform);
-  xrd_container_add_window (priv->wm_control_container,
-                            priv->button_ignore_input,
-                            &relative_transform);
-
-  if (!attach_controller)
-    {
-      const float distance = 2.0f;
-      xrd_container_center_view (priv->wm_control_container,
-                                 distance);
-      xrd_container_set_distance (priv->wm_control_container, distance);
-    }
+  button =
+    xrd_client_menu_create_button (priv->menu, XRD_BUTTON_ICON, 2, 0.5f,
+                                   "/icons/input-mouse-symbolic.svg",
+                                   (GCallback) _button_ignore_input_press_cb);
+  xrd_client_menu_set_button_toggleable (priv->menu, button,
+                                         "/icons/input-no-mouse-symbolic.svg",
+                                         priv->ignore_input);
 
   return TRUE;
 }
@@ -1483,21 +1303,7 @@ static void
 _destroy_buttons (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
-  xrd_client_remove_window (self, priv->button_sphere);
-  g_clear_object (&priv->button_sphere);
-  xrd_client_remove_window (self, priv->button_reset);
-  g_clear_object (&priv->button_reset);
-  xrd_client_remove_window (self, priv->button_pinned_only);
-  g_clear_object (&priv->button_pinned_only);
-  xrd_client_remove_window (self, priv->button_selection_mode);
-  g_clear_object (&priv->button_selection_mode);
-  xrd_client_remove_window (self, priv->button_ignore_input);
-  g_clear_object (&priv->button_ignore_input);
-
-  xrd_window_manager_remove_container (priv->manager,
-                                       priv->wm_control_container);
-
-  g_clear_object (&priv->wm_control_container);
+  g_clear_object (&priv->menu);
 }
 
 static void
@@ -1729,6 +1535,31 @@ _synth_move_cursor_cb (XrdInputSynth      *synth,
 
   g_free (event);
 }
+
+static void
+_action_menu_cb (OpenVRAction        *action,
+                 OpenVRDigitalEvent  *event,
+                 XrdClient           *self)
+{
+  (void) action;
+  XrdController *controller = _lookup_controller (self,
+                                                  event->controller_handle);
+  if (controller == NULL)
+    return;
+
+  if (event->changed && event->state == 1 &&
+      !xrd_controller_get_hover_state (controller)->window)
+    {
+      XrdClientPrivate *priv = xrd_client_get_instance_private (self);
+      if (priv->menu)
+        _destroy_buttons (self);
+      else
+        _init_buttons (self, controller);
+
+    }
+  g_free (event);
+}
+
 
 XrdWindow *
 xrd_client_window_new_from_meters (XrdClient  *client,
@@ -1980,6 +1811,8 @@ xrd_client_init (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
+  priv->menu = NULL;
+
   priv->controllers = g_hash_table_new_full (g_int64_hash, g_int64_equal,
                                              g_free, g_object_unref);
 
@@ -2007,7 +1840,6 @@ xrd_client_init (XrdClient *self)
   priv->ignore_input = FALSE;
   priv->wm_actions = NULL;
   priv->cursor = NULL;
-  priv->wm_control_container = NULL;
 
   priv->context = openvr_context_get_instance ();
   priv->manager = xrd_window_manager_new ();
@@ -2057,13 +1889,6 @@ xrd_client_post_openvr_init (XrdClient *self)
 
   g_signal_connect (priv->context, "quit-event",
                     (GCallback) _system_quit_cb, self);
-
-  priv->button_sphere = NULL;
-  priv->button_reset = NULL;
-  priv->button_pinned_only = NULL;
-  priv->button_selection_mode = NULL;
-  priv->button_ignore_input = NULL;
-  priv->wm_control_container = NULL;
 
   openvr_action_set_connect (priv->wm_actions, OPENVR_ACTION_POSE,
                              "/actions/wm/in/hand_pose",
