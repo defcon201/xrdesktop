@@ -1644,8 +1644,8 @@ _manager_no_hover_cb (XrdWindowManager *manager,
   graphene_quaternion_init_from_matrix (&controller_rotation, &event->pose);
 
   graphene_point3d_t controller_translation_point;
-  graphene_matrix_get_translation_point3d (&event->pose,
-                                           &controller_translation_point);
+  graphene_ext_matrix_get_translation_point3d (&event->pose,
+                                               &controller_translation_point);
 
   graphene_matrix_init_identity (&tip_pose);
   graphene_matrix_translate (&tip_pose, &distance_translation_point);

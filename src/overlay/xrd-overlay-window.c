@@ -209,11 +209,11 @@ _get_transformation (XrdWindow         *window,
   graphene_matrix_init_scale (mat, height_meters, height_meters, height_meters);
 
   graphene_quaternion_t orientation;
-  graphene_matrix_get_rotation_quaternion (&mat_no_scale, &orientation);
+  graphene_ext_matrix_get_rotation_quaternion (&mat_no_scale, &orientation);
   graphene_matrix_rotate_quaternion (mat, &orientation);
 
   graphene_point3d_t position;
-  graphene_matrix_get_translation_point3d (&mat_no_scale, &position);
+  graphene_ext_matrix_get_translation_point3d (&mat_no_scale, &position);
   graphene_matrix_translate (mat, &position);
 
   return TRUE;

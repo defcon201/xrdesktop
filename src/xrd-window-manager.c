@@ -112,10 +112,10 @@ _interpolate_cb (gpointer _transition)
   float curve = - (float)pow ((double)transition->interpolate - 1.0, 4) + 1;
 
   graphene_matrix_t interpolated;
-  graphene_matrix_interpolate_simple (&transition->from,
-                                      &transition->to,
-                                       curve,
-                                      &interpolated);
+  graphene_ext_matrix_interpolate_simple (&transition->from,
+                                          &transition->to,
+                                           curve,
+                                          &interpolated);
   xrd_window_set_transformation (window, &interpolated);
 
   float interpolated_scaling =
@@ -180,7 +180,7 @@ xrd_window_manager_arrange_reset (XrdWindowManager *self)
 
       g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
-      if (!graphene_matrix_equals (&transition->from, &data->reset_transform))
+      if (!graphene_ext_matrix_equals (&transition->from, &data->reset_transform))
         {
           transition->interpolate = 0;
           transition->window = window;
@@ -208,7 +208,7 @@ static float
 _azimuth_from_pose (graphene_matrix_t *mat)
 {
   graphene_matrix_t rotation_matrix;
-  graphene_matrix_get_rotation_matrix (mat, &rotation_matrix);
+  graphene_ext_matrix_get_rotation_matrix (mat, &rotation_matrix);
 
   graphene_vec3_t start;
   graphene_vec3_init (&start, 0, 0,- 1);
@@ -235,7 +235,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
   graphene_matrix_t hmd_pose;
   openvr_system_get_hmd_pose (&hmd_pose);
   graphene_vec3_t hmd_vec;
-  graphene_matrix_get_translation_vec3 (&hmd_pose, &hmd_vec);
+  graphene_ext_matrix_get_translation_vec3 (&hmd_pose, &hmd_vec);
 
   graphene_vec3_t hmd_vec_neg;
   graphene_vec3_negate (&hmd_vec, &hmd_vec_neg);
@@ -298,7 +298,7 @@ xrd_window_manager_arrange_sphere (XrdWindowManager *self)
 
           g_object_get (G_OBJECT(window), "scale", &transition->from_scaling, NULL);
 
-          if (!graphene_matrix_equals (&transition->from, &transform))
+          if (!graphene_ext_matrix_equals (&transition->from, &transform))
             {
               transition->interpolate = 0;
               transition->window = window;
@@ -527,7 +527,8 @@ _drag_window (XrdWindowManager  *self,
   XrdGrabState *grab_state = xrd_controller_get_grab_state (controller);
 
   graphene_point3d_t controller_translation_point;
-  graphene_matrix_get_translation_point3d (pose, &controller_translation_point);
+  graphene_ext_matrix_get_translation_point3d (pose,
+                                              &controller_translation_point);
   graphene_quaternion_t controller_rotation;
   graphene_quaternion_init_from_matrix (&controller_rotation, pose);
 
@@ -605,14 +606,14 @@ xrd_window_manager_drag_start (XrdWindowManager *self,
   grab_state->window = hover_state->window;
 
   graphene_quaternion_t controller_rotation;
-  graphene_matrix_get_rotation_quaternion (&hover_state->pose,
-                                           &controller_rotation);
+  graphene_ext_matrix_get_rotation_quaternion (&hover_state->pose,
+                                               &controller_rotation);
 
   graphene_matrix_t window_transform;
   xrd_window_get_transformation_no_scale (grab_state->window, &window_transform);
 
-  graphene_matrix_get_rotation_quaternion (&window_transform,
-                                           &grab_state->window_rotation);
+  graphene_ext_matrix_get_rotation_quaternion (&window_transform,
+                                               &grab_state->window_rotation);
 
   graphene_point3d_t distance_translation_point;
   graphene_point3d_init (&distance_translation_point,

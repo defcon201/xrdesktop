@@ -270,8 +270,8 @@ xrd_scene_object_set_transformation (XrdSceneObject    *self,
                                      graphene_matrix_t *mat)
 {
   XrdSceneObjectPrivate *priv = xrd_scene_object_get_instance_private (self);
-  graphene_matrix_get_rotation_quaternion (mat, &priv->orientation);
-  graphene_matrix_get_translation_point3d (mat, &priv->position);
+  graphene_ext_matrix_get_rotation_quaternion (mat, &priv->orientation);
+  graphene_ext_matrix_get_translation_point3d (mat, &priv->position);
 
   // graphene_vec3_t scale;
   // graphene_matrix_get_scale (mat, &scale);

@@ -139,7 +139,7 @@ _hmd_facing_pose (graphene_matrix_t *hmd_pose,
                   graphene_matrix_t *pose_ws)
 {
   graphene_point3d_t hmd_location;
-  graphene_matrix_get_translation_point3d (hmd_pose, &hmd_location);
+  graphene_ext_matrix_get_translation_point3d (hmd_pose, &hmd_location);
 
   graphene_point3d_t look_at_from_hmd = {
     .x = look_at_point_ws->x - hmd_location.x,
@@ -288,7 +288,7 @@ _step_fov (XrdContainer *self)
                             &wc_transform_cs);
 
   graphene_vec3_t wc_vec_cs;
-  graphene_matrix_get_translation_vec3 (&wc_transform_cs, &wc_vec_cs);
+  graphene_ext_matrix_get_translation_vec3 (&wc_transform_cs, &wc_vec_cs);
 
   float left, right, top, bottom;
   xrd_math_get_frustum_angles (&left, &right, &top, &bottom);

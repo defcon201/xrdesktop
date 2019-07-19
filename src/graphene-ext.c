@@ -12,8 +12,8 @@
 // TODO: Move to upstream
 
 void
-graphene_quaternion_to_float (const graphene_quaternion_t *q,
-                              float                       *dest)
+graphene_ext_quaternion_to_float (const graphene_quaternion_t *q,
+                                  float                       *dest)
 {
   graphene_vec4_t v;
   graphene_quaternion_to_vec4 (q, &v);
@@ -21,17 +21,17 @@ graphene_quaternion_to_float (const graphene_quaternion_t *q,
 }
 
 void
-graphene_quaternion_print (const graphene_quaternion_t *q)
+graphene_ext_quaternion_print (const graphene_quaternion_t *q)
 {
   float f[4];
-  graphene_quaternion_to_float (q, f);
+  graphene_ext_quaternion_to_float (q, f);
   g_print ("| %f %f %f %f |\n",
            (double) f[0], (double) f[1], (double) f[2], (double) f[3]);
 }
 
 void
-graphene_matrix_get_translation_vec3 (const graphene_matrix_t *m,
-                                      graphene_vec3_t         *res)
+graphene_ext_matrix_get_translation_vec3 (const graphene_matrix_t *m,
+                                          graphene_vec3_t         *res)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
@@ -39,8 +39,8 @@ graphene_matrix_get_translation_vec3 (const graphene_matrix_t *m,
 }
 
 void
-graphene_matrix_get_translation_point3d (const graphene_matrix_t *m,
-                                         graphene_point3d_t      *res)
+graphene_ext_matrix_get_translation_point3d (const graphene_matrix_t *m,
+                                             graphene_point3d_t      *res)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
@@ -48,8 +48,8 @@ graphene_matrix_get_translation_point3d (const graphene_matrix_t *m,
 }
 
 void
-graphene_matrix_set_translation_vec3 (graphene_matrix_t     *m,
-                                      const graphene_vec3_t *t)
+graphene_ext_matrix_set_translation_vec3 (graphene_matrix_t     *m,
+                                          const graphene_vec3_t *t)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
@@ -60,8 +60,8 @@ graphene_matrix_set_translation_vec3 (graphene_matrix_t     *m,
 }
 
 void
-graphene_matrix_set_translation_point3d (graphene_matrix_t        *m,
-                                         const graphene_point3d_t *t)
+graphene_ext_matrix_set_translation_point3d (graphene_matrix_t        *m,
+                                             const graphene_point3d_t *t)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
@@ -72,8 +72,8 @@ graphene_matrix_set_translation_point3d (graphene_matrix_t        *m,
 }
 
 void
-graphene_matrix_get_scale (const graphene_matrix_t *m,
-                           graphene_vec3_t         *res)
+graphene_ext_matrix_get_scale (const graphene_matrix_t *m,
+                               graphene_vec3_t         *res)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
@@ -90,14 +90,14 @@ graphene_matrix_get_scale (const graphene_matrix_t *m,
 }
 
 void
-graphene_matrix_get_rotation_matrix (const graphene_matrix_t *m,
-                                     graphene_matrix_t *res)
+graphene_ext_matrix_get_rotation_matrix (const graphene_matrix_t *m,
+                                         graphene_matrix_t *res)
 {
   float f[16];
   graphene_matrix_to_float (m, f);
 
   graphene_vec3_t s_vec;
-  graphene_matrix_get_scale (m, &s_vec);
+  graphene_ext_matrix_get_scale (m, &s_vec);
   float s[3];
   graphene_vec3_to_float (&s_vec, s);
 
@@ -111,22 +111,22 @@ graphene_matrix_get_rotation_matrix (const graphene_matrix_t *m,
 }
 
 void
-graphene_matrix_get_rotation_quaternion (const graphene_matrix_t *m,
-                                         graphene_quaternion_t   *res)
+graphene_ext_matrix_get_rotation_quaternion (const graphene_matrix_t *m,
+                                             graphene_quaternion_t   *res)
 {
   graphene_matrix_t rot_m;
-  graphene_matrix_get_rotation_matrix (m, &rot_m);
+  graphene_ext_matrix_get_rotation_matrix (m, &rot_m);
   graphene_quaternion_init_from_matrix (res, &rot_m);
 }
 
 void
-graphene_matrix_get_rotation_angles (const graphene_matrix_t *m,
-                                     float                   *deg_x,
-                                     float                   *deg_y,
-                                     float                   *deg_z)
+graphene_ext_matrix_get_rotation_angles (const graphene_matrix_t *m,
+                                         float                   *deg_x,
+                                         float                   *deg_y,
+                                         float                   *deg_z)
 {
   graphene_quaternion_t q;
-  graphene_matrix_get_rotation_quaternion (m, &q);
+  graphene_ext_matrix_get_rotation_quaternion (m, &q);
   graphene_quaternion_to_angles (&q, deg_x, deg_y, deg_z);
 }
 
@@ -140,26 +140,26 @@ graphene_matrix_get_rotation_angles (const graphene_matrix_t *m,
  * the given @factor.
  */
 void
-graphene_point_scale (const graphene_point_t *p,
-                      float                   factor,
-                      graphene_point_t       *res)
+graphene_ext_point_scale (const graphene_point_t *p,
+                          float                   factor,
+                          graphene_point_t       *res)
 {
   graphene_point_init (res, p->x * factor, p->y * factor);
 }
 
 void
-graphene_ray_get_origin_vec4 (const graphene_ray_t *r,
-                              float                 w,
-                              graphene_vec4_t      *res)
+graphene_ext_ray_get_origin_vec4 (const graphene_ray_t *r,
+                                  float                 w,
+                                  graphene_vec4_t      *res)
 {
   graphene_vec3_t o;
-  graphene_ray_get_origin_vec3 (r, &o);
+  graphene_ext_ray_get_origin_vec3 (r, &o);
   graphene_vec4_init_from_vec3 (res, &o, w);
 }
 
 void
-graphene_ray_get_origin_vec3 (const graphene_ray_t *r,
-                              graphene_vec3_t      *res)
+graphene_ext_ray_get_origin_vec3 (const graphene_ray_t *r,
+                                  graphene_vec3_t      *res)
 {
   graphene_point3d_t o;
   graphene_ray_get_origin (r, &o);
@@ -167,9 +167,9 @@ graphene_ray_get_origin_vec3 (const graphene_ray_t *r,
 }
 
 void
-graphene_ray_get_direction_vec4 (const graphene_ray_t *r,
-                                 float                 w,
-                                 graphene_vec4_t      *res)
+graphene_ext_ray_get_direction_vec4 (const graphene_ray_t *r,
+                                     float                 w,
+                                     graphene_vec4_t      *res)
 {
   graphene_vec3_t d;
   graphene_ray_get_direction (r, &d);
@@ -177,7 +177,7 @@ graphene_ray_get_direction_vec4 (const graphene_ray_t *r,
 }
 
 void
-graphene_vec4_print (const graphene_vec4_t *v)
+graphene_ext_vec4_print (const graphene_vec4_t *v)
 {
   float f[4];
   graphene_vec4_to_float (v, f);
@@ -186,7 +186,7 @@ graphene_vec4_print (const graphene_vec4_t *v)
 }
 
 void
-graphene_vec3_print (const graphene_vec3_t *v)
+graphene_ext_vec3_print (const graphene_vec3_t *v)
 {
   float f[3];
   graphene_vec3_to_float (v, f);
@@ -194,8 +194,8 @@ graphene_vec3_print (const graphene_vec3_t *v)
 }
 
 bool
-graphene_matrix_equals (graphene_matrix_t *a,
-                        graphene_matrix_t *b)
+graphene_ext_matrix_equals (graphene_matrix_t *a,
+                            graphene_matrix_t *b)
 {
   float a_f[16];
   float b_f[16];
@@ -211,10 +211,10 @@ graphene_matrix_equals (graphene_matrix_t *a,
 }
 
 void
-graphene_matrix_interpolate_simple (const graphene_matrix_t *from,
-                                    const graphene_matrix_t *to,
-                                    float                    factor,
-                                    graphene_matrix_t       *result)
+graphene_ext_matrix_interpolate_simple (const graphene_matrix_t *from,
+                                        const graphene_matrix_t *to,
+                                        float                    factor,
+                                        graphene_matrix_t       *result)
 {
   float from_f[16];
   float to_f[16];

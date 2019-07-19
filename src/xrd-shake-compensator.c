@@ -105,7 +105,8 @@ xrd_shake_compensator_is_drag (XrdShakeCompensator *self,
 
 
   graphene_point3d_t controller_point;
-  graphene_matrix_get_translation_point3d (controller_pose, &controller_point);
+  graphene_ext_matrix_get_translation_point3d (controller_pose,
+                                              &controller_point);
 
   float window_controller_dist = graphene_point3d_distance (intersection,
                                                             &controller_point,

@@ -447,7 +447,7 @@ xrd_pointer_tip_update_apparent_size (XrdPointerTip *self)
   xrd_pointer_tip_get_transformation (self, &tip_pose);
 
   graphene_point3d_t tip_point;
-  graphene_matrix_get_translation_point3d (&tip_pose, &tip_point);
+  graphene_ext_matrix_get_translation_point3d (&tip_pose, &tip_point);
 
   graphene_matrix_t hmd_pose;
   gboolean has_pose = openvr_system_get_hmd_pose (&hmd_pose);
@@ -458,7 +458,7 @@ xrd_pointer_tip_update_apparent_size (XrdPointerTip *self)
     }
 
   graphene_point3d_t hmd_point;
-  graphene_matrix_get_translation_point3d (&hmd_pose, &hmd_point);
+  graphene_ext_matrix_get_translation_point3d (&hmd_pose, &hmd_point);
 
   float distance = graphene_point3d_distance (&tip_point, &hmd_point, NULL);
 

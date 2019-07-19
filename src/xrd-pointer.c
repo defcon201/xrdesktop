@@ -139,7 +139,7 @@ xrd_pointer_get_intersection (XrdPointer      *self,
   graphene_vec3_scale (res, *distance, res);
 
   graphene_vec3_t origin;
-  graphene_ray_get_origin_vec3 (&ray, &origin);
+  graphene_ext_ray_get_origin_vec3 (&ray, &origin);
   graphene_vec3_add (&origin, res, res);
 
   graphene_matrix_t inverse;

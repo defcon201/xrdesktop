@@ -100,7 +100,8 @@ _update_keep_apparent_size (GSettings *settings, gchar *key, gpointer _data)
       xrd_desktop_cursor_get_transformation (self, &cursor_pose);
 
       graphene_vec3_t cursor_point_vec;
-      graphene_matrix_get_translation_vec3 (&cursor_pose, &cursor_point_vec);
+      graphene_ext_matrix_get_translation_vec3 (&cursor_pose,
+                                                &cursor_point_vec);
       graphene_point3d_t cursor_point;
       graphene_point3d_init_from_vec3 (&cursor_point, &cursor_point_vec);
 
@@ -203,7 +204,7 @@ xrd_desktop_cursor_update_apparent_size (XrdDesktopCursor   *self,
     }
 
   graphene_point3d_t hmd_point;
-  graphene_matrix_get_translation_point3d (&hmd_pose, &hmd_point);
+  graphene_ext_matrix_get_translation_point3d (&hmd_pose, &hmd_point);
 
   float distance = graphene_point3d_distance (cursor_point, &hmd_point, NULL);
 

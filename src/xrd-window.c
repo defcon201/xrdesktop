@@ -612,9 +612,9 @@ xrd_window_update_child (XrdWindow *self)
   float initial_ppm = xrd_window_get_initial_ppm (XRD_WINDOW (self));
 
   graphene_point_t scaled_offset;
-  graphene_point_scale (&data->child_offset_center,
-                        data->scale / initial_ppm,
-                        &scaled_offset);
+  graphene_ext_point_scale (&data->child_offset_center,
+                             data->scale / initial_ppm,
+                            &scaled_offset);
 
   graphene_point3d_t scaled_offset3d = {
     .x = scaled_offset.x,
@@ -643,8 +643,8 @@ xrd_window_get_normal (XrdWindow       *self,
   xrd_window_get_transformation (self, &model_matrix);
 
   graphene_matrix_t rotation_matrix;
-  graphene_matrix_get_rotation_matrix (&model_matrix,
-                                       &rotation_matrix);
+  graphene_ext_matrix_get_rotation_matrix (&model_matrix,
+                                           &rotation_matrix);
 
   graphene_matrix_transform_vec3 (&rotation_matrix, normal, normal);
 }
@@ -660,7 +660,7 @@ xrd_window_get_plane (XrdWindow        *self,
   xrd_window_get_transformation (self, &model_matrix);
 
   graphene_point3d_t position;
-  graphene_matrix_get_translation_point3d (&model_matrix, &position);
+  graphene_ext_matrix_get_translation_point3d (&model_matrix, &position);
 
   graphene_plane_init_from_point (res, &normal, &position);
 }
