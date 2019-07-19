@@ -1112,6 +1112,13 @@ _mark_windows_for_selection_mode (XrdClient *self)
           XrdWindow *win = l->data;
 
           xrd_window_end_selection (win);
+          if (priv->pinned_only)
+            {
+              if (xrd_window_is_pinned (win))
+                xrd_window_show (win);
+              else
+                xrd_window_hide (win);
+            }
         }
     }
 }
