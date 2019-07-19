@@ -484,6 +484,29 @@ xrd_window_emit_hover_start (XrdWindow *self,
   g_signal_emit (self, window_signals[HOVER_START_EVENT], 0, event);
 }
 
+static void
+_inherit_state_from_parent (XrdWindow *parent, XrdWindow *child)
+{
+  /* child window should inherit pinned status */
+  xrd_window_set_pin (child, xrd_window_is_pinned (parent), FALSE);
+  /* we don't know if client is in pinned only modus, but it is better to
+   * inherit visibility from parent anyway. */
+  if (xrd_window_is_visible (parent))
+    xrd_window_show (child);
+  else
+    xrd_window_hide (child);
+
+  XrdWindowData *data = xrd_window_get_data (parent);
+
+  if (data->is_in_selection_mode)
+    {
+      if (data->selected)
+        xrd_window_select (child);
+      else
+        xrd_window_deselect (child);
+    }
+}
+
 /**
  * xrd_window_add_child:
  * @self: The #XrdWindow
@@ -512,6 +535,8 @@ xrd_window_add_child (XrdWindow        *self,
 
   XrdWindowInterface* iface = XRD_WINDOW_GET_IFACE (self);
   iface->add_child (self, child, offset_center);
+
+  _inherit_state_from_parent (self, child);
 }
 
 void
@@ -523,6 +548,7 @@ xrd_window_select (XrdWindow *self)
 
   XrdWindowData *data = xrd_window_get_data (self);
   data->selected = TRUE;
+  data->is_in_selection_mode = TRUE;
 }
 
 void
@@ -534,6 +560,7 @@ xrd_window_deselect (XrdWindow *self)
 
   XrdWindowData *data = xrd_window_get_data (self);
   data->selected = FALSE;
+  data->is_in_selection_mode = TRUE;
 }
 
 gboolean
@@ -552,6 +579,7 @@ xrd_window_end_selection (XrdWindow *self)
 
   XrdWindowData *data = xrd_window_get_data (self);
   data->selected = FALSE;
+  data->is_in_selection_mode = FALSE;
 }
 
 void

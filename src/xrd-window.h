@@ -80,6 +80,7 @@ G_DECLARE_INTERFACE (XrdWindow, xrd_window, XRD, WINDOW, GObject)
  * @texture_width: The width of the last submitted texture in pixels.
  * @texture_height: The height of the last submitted texture in pixels.
  * @title: A window title.
+ * @is_in_selection_mode: TRUE if between xrd_window_select()/xrd_window_deselect() and xrd_window_end_selection() calls
  * @selected: A #gboolean used in selection mode.
  * @initial_size_meters: The window dimensions in meters without scale.
  * @scale: A user applied scale.
@@ -102,6 +103,7 @@ typedef struct XrdWindowData {
   uint32_t texture_height;
   GString *title;
 
+  gboolean is_in_selection_mode;
   gboolean selected;
 
   graphene_point_t initial_size_meters;

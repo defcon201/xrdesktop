@@ -176,6 +176,7 @@ xrd_scene_window_init (XrdSceneWindow *self)
   priv->window_data->selected = FALSE;
   priv->window_data->xrd_window = XRD_WINDOW (self);
   priv->window_data->pinned = FALSE;
+  priv->window_data->is_in_selection_mode = FALSE;
   graphene_matrix_init_identity (&priv->window_data->reset_transform);
 }
 
