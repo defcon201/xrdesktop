@@ -7,7 +7,7 @@
 
 #include "xrd-scene-device.h"
 
-#include <openvr-glib.h>
+#include <gxr.h>
 #include <gulkan.h>
 
 struct _XrdSceneDevice

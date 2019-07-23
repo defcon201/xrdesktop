@@ -9,7 +9,7 @@
 
 #include <gdk/gdk.h>
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-math.h"
 #include "xrd-settings.h"

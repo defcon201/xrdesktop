@@ -97,7 +97,7 @@ configure_file(
 
 xrdesktop_deps = [
   m_dep,
-  openvr_glib_dep
+  gxr_dep
 ]
 
 xrdesktop_inc = include_directories('.', 'scene', 'overlay')
@@ -130,7 +130,7 @@ pkg.generate(
      filebase: api_path,
       version: meson.project_version(),
       subdirs: api_path,
-     requires: 'openvr-glib-' + api_version,
+     requires: 'gxr-' + api_version,
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 

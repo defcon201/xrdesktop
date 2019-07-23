@@ -15,7 +15,7 @@
 #include <glib-object.h>
 #include <gmodule.h>
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-client.h"
 

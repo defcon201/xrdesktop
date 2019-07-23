@@ -15,7 +15,7 @@
 #include <glib-object.h>
 
 #include <gulkan.h>
-#include <openvr-glib.h>
+#include <gxr.h>
 
 G_BEGIN_DECLS
 

@@ -14,7 +14,7 @@
 
 #include <glib-object.h>
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-window.h"
 #include "xrd-overlay-window.h"

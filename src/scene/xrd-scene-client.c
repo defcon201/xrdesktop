@@ -12,7 +12,7 @@
 #include <gmodule.h>
 
 #include <gulkan.h>
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include <signal.h>
 

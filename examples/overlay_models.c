@@ -8,7 +8,7 @@
 
 #include <glib-unix.h>
 
-#include <openvr-glib.h>
+#include <gxr.h>
 #include "xrd.h"
 
 typedef struct Example
@@ -202,8 +202,8 @@ main ()
       return false;
     }
 
-  if (!openvr_io_load_cached_action_manifest (
-        "openvr-glib",
+  if (!gxr_io_load_cached_action_manifest (
+        "gxr",
         "/res/bindings",
         "example_model_actions.json",
         "example_model_bindings_vive_controller.json",

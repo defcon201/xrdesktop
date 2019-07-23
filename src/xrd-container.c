@@ -7,7 +7,7 @@
 
 #include "xrd-container.h"
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-math.h"
 #include "graphene-ext.h"

@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "graphene-ext.h"
 
@@ -18,7 +18,7 @@ xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
   graphene_point3d_to_vec3 (intersection_point, &intersection_vec);
 
   graphene_vec3_t pose_translation;
-  openvr_math_matrix_get_translation (pose, &pose_translation);
+  gxr_math_matrix_get_translation (pose, &pose_translation);
 
   graphene_vec3_t distance_vec;
   graphene_vec3_subtract (&pose_translation,
@@ -28,7 +28,7 @@ xrd_math_point_matrix_distance (graphene_point3d_t *intersection_point,
   return graphene_vec3_length (&distance_vec);
 }
 
-/* TODO: Put GetProjectionRaw into openvr-glib */
+/* TODO: Put GetProjectionRaw into gxr */
 /**
  * xrd_math_get_frustum_angles:
  * @left: The angle from the center view axis to the left in deg.

@@ -7,7 +7,7 @@
 
 #include "xrd-overlay-client.h"
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include <gdk/gdk.h>
 #include <glib/gprintf.h>

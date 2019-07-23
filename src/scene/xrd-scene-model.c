@@ -7,7 +7,7 @@
 
 #include "xrd-scene-model.h"
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-scene-renderer.h"
 

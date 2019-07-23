@@ -7,7 +7,7 @@
 
 #include "xrd-client.h"
 
-#include <openvr-io.h>
+#include <gxr.h>
 
 #include "graphene-ext.h"
 
@@ -16,14 +16,10 @@
 #include "xrd-desktop-cursor.h"
 #include "xrd-settings.h"
 #include "xrd-controller.h"
-
 #include "xrd-scene-client.h"
 #include "xrd-overlay-client.h"
-
 #include "xrd-container.h"
-
 #include "xrd-math.h"
-
 #include "xrd-button.h"
 
 #define WINDOW_MIN_DIST .05f
@@ -2039,7 +2035,7 @@ xrd_client_post_openvr_init (XrdClient *self)
 {
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  if (!openvr_io_load_cached_action_manifest (
+  if (!gxr_io_load_cached_action_manifest (
         "xrdesktop",
         "/res/bindings",
         "actions.json",
@@ -2234,7 +2230,7 @@ _get_new_window_data_list (XrdClient *self)
  * xrd_client_switch_mode:
  * @self: current #XrdClient to be destroyed.
  *
- * References to gulkan, openvr-glib and xrdesktop objects (like #XrdWindow)
+ * References to gulkan, gxr and xrdesktop objects (like #XrdWindow)
  * will be invalid after calling this function.
  *
  * xrd_client_switch_mode() replaces each #XrdWindow with an appropriate new

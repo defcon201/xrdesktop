@@ -8,7 +8,7 @@
 #include "xrd-scene-device-manager.h"
 #include "xrd-scene-model.h"
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 struct _XrdSceneDeviceManager
 {
@@ -169,7 +169,7 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
         continue;
 
       graphene_matrix_t mat;
-      openvr_math_matrix34_to_graphene (&poses[i].mDeviceToAbsoluteTracking,
+      gxr_math_matrix34_to_graphene (&poses[i].mDeviceToAbsoluteTracking,
                                         &mat);
 
       XrdSceneObject *obj = XRD_SCENE_OBJECT (device);
@@ -182,7 +182,7 @@ xrd_scene_device_manager_update_poses (XrdSceneDeviceManager *self,
 
   if (poses[k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
     {
-      openvr_math_matrix34_to_graphene (
+      gxr_math_matrix34_to_graphene (
         &poses[k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking,
         mat_head_pose);
       graphene_matrix_inverse (mat_head_pose, mat_head_pose);

@@ -7,7 +7,7 @@
 
 #include <gdk/gdk.h>
 
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-overlay-pointer-tip.h"
 #include "xrd-settings.h"

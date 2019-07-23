@@ -10,7 +10,7 @@
 #include <graphene.h>
 
 #include <gulkan.h>
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-controller.h"
 #include "xrd-scene-pointer.h"

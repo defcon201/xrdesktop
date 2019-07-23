@@ -51,7 +51,7 @@ c = meson.get_compiler('c')
 
 ## Required
 m_dep = c.find_library('m')
-openvr_glib_dep = dependency('openvr-glib-0.12')
+gxr_dep = dependency('gxr-0.12')
 
 subdir('shaders')
 subdir('res')

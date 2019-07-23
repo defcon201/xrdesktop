@@ -6,7 +6,7 @@
  */
 
 #include "xrd-overlay-model.h"
-#include <openvr-glib.h>
+#include <gxr.h>
 
 typedef struct  _XrdOverlayModelPrivate
 {

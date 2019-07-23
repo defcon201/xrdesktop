@@ -15,7 +15,7 @@
 #include <glib-object.h>
 
 #include <gulkan.h>
-#include <openvr-glib.h>
+#include <gxr.h>
 
 #include "xrd-window.h"
 
