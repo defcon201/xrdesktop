@@ -11,7 +11,7 @@
       <para>This document is the API reference for the xrdesktop library.</para>
       <para>
         The latest version of xrdesktop, as well as the latest version of
-        this API reference, is <ulink role="online-location" url="http://gitlab.com/">available online</ulink>.
+        this API reference, is <ulink role="online-location" url="https://xrdesktop.freedesktop.org/doc/xrdesktop/master">available online</ulink>.
       </para>
     </releaseinfo>
   </bookinfo>
@@ -21,10 +21,7 @@
 
     <refsect2 id="overview">
       <para>
-        xrdesktop is a Vulkan wrapper for glib.
-      </para>
-      <para>
-        xrdesktop manages Vulkan.
+        A library for XR interaction with classical desktop compositors.
       </para>
     </refsect2>
 
@@ -71,6 +68,7 @@
     <title>API Index</title>
     <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
   </index>
-
+<!--
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+-->
 </book>

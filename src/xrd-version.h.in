@@ -13,7 +13,7 @@
 #endif
 
 /**
- * SECTION:openvrversion
+ * SECTION:xrdversion
  * @short_description: xrdesktop version checking
  *
  * xrdesktop provides macros to check the version of the library
