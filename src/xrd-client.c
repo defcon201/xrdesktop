@@ -1165,10 +1165,7 @@ _window_hover_end_cb (XrdWindow               *window,
 
   if (!priv->always_show_overlay_pointer &&
       !active && XRD_IS_OVERLAY_CLIENT (self))
-    {
-      xrd_pointer_hide (xrd_controller_get_pointer (controller));
-      xrd_pointer_tip_hide (xrd_controller_get_pointer_tip (controller));
-    }
+    xrd_controller_hide_pointer (controller);
 
   XrdInputSynth *input_synth = xrd_client_get_input_synth (self);
   xrd_input_synth_reset_press_state (input_synth);
@@ -1605,10 +1602,7 @@ _window_hover_start_cb (XrdWindow               *window,
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
   /* not necessary for scene because there pointer is always shown. */
   if (!priv->always_show_overlay_pointer && !XRD_IS_SCENE_CLIENT (self))
-    {
-      xrd_pointer_show (xrd_controller_get_pointer (controller));
-      xrd_pointer_tip_show (xrd_controller_get_pointer_tip (controller));
-    }
+    xrd_controller_show_pointer (controller);
 
   g_free (event);
 }
@@ -1898,10 +1892,7 @@ _device_activate_cb (OpenVRContext          *context,
     xrd_input_synth_hand_off_to_controller (priv->input_synth, handle);
 
   if (!priv->always_show_overlay_pointer && XRD_IS_OVERLAY_CLIENT (self))
-    {
-       xrd_pointer_hide (xrd_controller_get_pointer (controller));
-       xrd_pointer_tip_hide (xrd_controller_get_pointer_tip (controller));
-    }
+    xrd_controller_hide_pointer (controller);
 }
 
 static void
@@ -1938,35 +1929,20 @@ _update_show_overlay_pointer (GSettings *settings, gchar *key, gpointer _data)
   XrdClient *self = _data;
   XrdClientPrivate *priv = xrd_client_get_instance_private (self);
 
-  gboolean val = g_settings_get_boolean (settings, key);
-  priv->always_show_overlay_pointer = val;
+  gboolean always_show_pointer = g_settings_get_boolean (settings, key);
+  priv->always_show_overlay_pointer = always_show_pointer;
 
   if (XRD_IS_SCENE_CLIENT (self))
     return;
 
   GHashTable *controller_table = xrd_client_get_controllers (self);
   GList *controllers = g_hash_table_get_values (controller_table);
-  if (val)
+  for (GList *l = controllers; l; l = l->next)
     {
-      for (GList *l = controllers; l; l = l->next)
-        {
-          XrdController *controller = l->data;
-          xrd_pointer_show (xrd_controller_get_pointer (controller));
-          xrd_pointer_tip_show (xrd_controller_get_pointer_tip (controller));
-        }
-    }
-  else
-    {
-      for (GList *l = controllers; l; l = l->next)
-        {
-          XrdController *controller = l->data;
-          if (xrd_controller_get_hover_state (controller)->window == NULL)
-            {
-              xrd_pointer_hide (xrd_controller_get_pointer (controller));
-              xrd_pointer_tip_hide (
-                xrd_controller_get_pointer_tip (controller));
-            }
-        }
+      if (always_show_pointer)
+        xrd_controller_show_pointer (l->data);
+      else if (xrd_controller_get_hover_state (l->data)->window == NULL)
+        xrd_controller_hide_pointer (l->data);
     }
   g_list_free (controllers);
 }

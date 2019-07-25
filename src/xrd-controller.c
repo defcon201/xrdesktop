@@ -158,7 +158,7 @@ xrd_controller_show_pointer (XrdController *self)
     xrd_pointer_is_visible (self->pointer_ray) ||
     xrd_pointer_tip_is_visible (self->pointer_tip);
 
-  if (visible)
+  if (!visible)
     {
       xrd_pointer_show (self->pointer_ray);
       xrd_pointer_tip_show (self->pointer_tip);
