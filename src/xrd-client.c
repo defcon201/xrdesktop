@@ -1544,6 +1544,12 @@ _keyboard_close_cb (OpenVRContext *context,
   priv->keyboard_press_signal = 0;
   priv->keyboard_close_signal = 0;
 
+  GHashTable *controller_table = xrd_client_get_controllers (self);
+  GList *controllers = g_hash_table_get_values (controller_table);
+  for (GList *l = controllers; l; l = l->next)
+    xrd_controller_show_pointer (l->data);
+  g_list_free (controllers);
+
   g_print ("Keyboard closed\n");
 }
 
@@ -1574,6 +1580,12 @@ _action_show_keyboard_cb (OpenVRAction       *action,
       priv->keyboard_close_signal =
           g_signal_connect (context, "keyboard-close-event",
                             (GCallback) _keyboard_close_cb, self);
+
+      GHashTable *controller_table = xrd_client_get_controllers (self);
+      GList *controllers = g_hash_table_get_values (controller_table);
+      for (GList *l = controllers; l; l = l->next)
+        xrd_controller_hide_pointer (l->data);
+      g_list_free (controllers);
     }
 
   g_free (event);
