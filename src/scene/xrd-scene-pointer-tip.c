@@ -110,6 +110,14 @@ _hide (XrdPointerTip *tip)
   xrd_scene_object_hide (obj);
 }
 
+static gboolean
+_is_visible (XrdPointerTip *tip)
+{
+  XrdScenePointerTip *self = XRD_SCENE_POINTER_TIP (tip);
+  XrdSceneObject *obj = XRD_SCENE_OBJECT (self);
+  return xrd_scene_object_is_visible (obj);
+}
+
 static void
 _set_width_meters (XrdPointerTip *tip,
                    float          meters)
@@ -151,6 +159,7 @@ xrd_scene_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->get_transformation = _get_transformation;
   iface->show = _show;
   iface->hide = _hide;
+  iface->is_visible = _is_visible;
   iface->set_width_meters = _set_width_meters;
   iface->submit_texture = _submit_texture;
   iface->get_data = _get_data;

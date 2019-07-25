@@ -136,6 +136,13 @@ _hide (XrdPointerTip *tip)
   openvr_overlay_hide (OPENVR_OVERLAY (self));
 }
 
+static gboolean
+_is_visible (XrdPointerTip *tip)
+{
+  XrdOverlayPointerTip *self = XRD_OVERLAY_POINTER_TIP (tip);
+  return openvr_overlay_is_visible (OPENVR_OVERLAY (self));
+}
+
 static XrdPointerTipData*
 _get_data (XrdPointerTip *tip)
 {
@@ -167,6 +174,7 @@ xrd_overlay_pointer_tip_interface_init (XrdPointerTipInterface *iface)
   iface->get_transformation = _get_transformation;
   iface->show = _show;
   iface->hide = _hide;
+  iface->is_visible = _is_visible;
   iface->set_width_meters = _set_width_meters;
   iface->submit_texture = _submit_texture;
   iface->get_data = _get_data;
