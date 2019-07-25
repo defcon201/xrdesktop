@@ -136,3 +136,39 @@ xrd_controller_get_pose_hand_grip (XrdController *self,
   graphene_matrix_init_from_matrix (pose, &self->pose_hand_grip);
 }
 
+void
+xrd_controller_hide_pointer (XrdController *self)
+{
+  gboolean visible =
+    xrd_pointer_is_visible (self->pointer_ray) ||
+    xrd_pointer_tip_is_visible (self->pointer_tip);
+
+  if (visible)
+    {
+      xrd_pointer_hide (self->pointer_ray);
+      xrd_pointer_tip_hide (self->pointer_tip);
+    }
+
+}
+
+void
+xrd_controller_show_pointer (XrdController *self)
+{
+  gboolean visible =
+    xrd_pointer_is_visible (self->pointer_ray) ||
+    xrd_pointer_tip_is_visible (self->pointer_tip);
+
+  if (visible)
+    {
+      xrd_pointer_show (self->pointer_ray);
+      xrd_pointer_tip_show (self->pointer_tip);
+    }
+}
+
+gboolean
+xrd_controller_is_pointer_visible (XrdController *self)
+{
+  return
+    xrd_pointer_is_visible (self->pointer_ray) ||
+    xrd_pointer_tip_is_visible (self->pointer_tip);
+}

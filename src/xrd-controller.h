@@ -92,6 +92,15 @@ void
 xrd_controller_get_pose_hand_grip (XrdController *self,
                                    graphene_matrix_t *pose);
 
+void
+xrd_controller_hide_pointer (XrdController *self);
+
+void
+xrd_controller_show_pointer (XrdController *self);
+
+gboolean
+xrd_controller_is_pointer_visible (XrdController *self);
+
 G_END_DECLS
 
 #endif /* XRD_CONTROLLER_H_ */
