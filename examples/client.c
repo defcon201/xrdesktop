@@ -516,11 +516,11 @@ _init_client (Example *self, XrdClient *client)
   if (XRD_IS_SCENE_CLIENT (client))
     self->render_source = g_timeout_add (1, _iterate_cb, self);
 
-  GulkanClient *gc = xrd_client_get_uploader (client);
-  if (!_init_cursor (self, gc))
-    return FALSE;
+   _init_buttons (self);
 
-  _init_buttons (self);
+   GulkanClient *gc = xrd_client_get_uploader (client);
+    if (!_init_cursor (self, gc))
+      return FALSE;
 
   return TRUE;
 }
